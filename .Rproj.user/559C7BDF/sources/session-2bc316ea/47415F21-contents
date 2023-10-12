@@ -1,0 +1,503 @@
+
+
+# List of required packages
+required_packages <- c("dplyr", "forcats", "readr","dplyr","ggplot2",
+                       "purrr","sp","tidyverse","sf","RWmisc","ggthemes","geosphere")
+
+# Check if packages are installed
+missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
+
+# Install missing packages
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+# Load all packages
+lapply(required_packages, library, character.only = TRUE)
+
+
+  
+###############################################################################################
+######## Importing the ethnologue Dataset and cleaning ########################################
+###############################################################################################
+
+
+## Importing the table for each language-in-country (LIC) of cameroon and removing
+## Those with nan or ==0 in the number of primary language users
+  
+table_of_lic_cm <- read.delim("input_data/ethnologue_data/Ethnologue 21 Global Dataset/Table_of_LICs.tab") %>% 
+    filter(Country_Code==cntry_code_lic) %>% 
+    dplyr::select(ISO_639, Language_Name, Uninverted_Name,L1_Users,Family) %>% 
+    filter(!is.na(L1_Users) & L1_Users!=0)
+
+## Importing the languages shapefile
+lang_polygon_cm <- read_sf("input_data/ethnologue_data/Eth GIS Dataset 24/SIL_Language_Polygons_Feb2021.shp") %>% 
+  filter(COUNTRY_IS==cntry_code_plg) %>% 
+  dplyr::select(ID, ISO_LANGUA,ETH_LG_R, LAT,LONG_,geometry)
+
+#### Importing the curr_shapefile 
+curr_shapefile <- read_rds(paste0("output_data/",folder_name_output,"/",shp_file,".rds"))
+
+## Merging with the country data to have the number of speaker : ISO_639 identify each linguistics group
+## so it can be use to merge the two df
+lang_polygon_cm <- left_join(table_of_lic_cm,lang_polygon_cm,
+                             by=c("ISO_639"="ISO_LANGUA")) %>% 
+  st_as_sf()
+
+## Selecting the centroïde of each ethnologistic data 
+lang_polygon_cm_centroids <- lang_polygon_cm %>% 
+  dplyr::select(ETH_LG_R,LAT,LONG_) 
+ 
+st_geometry(lang_polygon_cm_centroids) <- NULL
+lang_polygon_cm_centroids <- as.data.frame(lang_polygon_cm_centroids) 
+
+lang_polygon_cm_centroids$LAT <- as.numeric(lang_polygon_cm_centroids$LAT)
+lang_polygon_cm_centroids$LONG_ <- as.numeric(lang_polygon_cm_centroids$LONG_)
+
+
+### I this code i compute the erea occupied by each language in each polygone
+
+#### I first select the df_final with that i need to compute the erea
+destination_shp <- curr_shapefile %>% 
+  dplyr::select(destination_code_survey,survey_name) %>% 
+  mutate(area_dest=st_area(geometry))
+
+
+# duplicate vertex
+# The st_is_valid function is a function in the sf package in R that checks the validity of a spatial object's geometry. When applied to a polygon object, it checks whether the polygon satisfies the criteria for being considered a valid polygon according to the Open Geospatial Consortium (OGC) Simple Features Specification.
+# 
+# Specifically, st_is_valid checks for the following criteria:
+# 
+# The polygon must have at least 4 points.
+# The first and last points must be the same.
+# There must not be any self-intersections or overlaps in the polygon.
+# The polygon must not have any duplicate or overlapping points.
+# The polygon must not have any missing or invalid holes.
+# The polygon must not be empty.
+# If the polygon does not satisfy any of these criteria, st_is_valid will return a boolean FALSE value, indicating that the polygon is invalid. If the polygon satisfies all of the criteria, st_is_valid will return a boolean TRUE value, indicating that the polygon is valid.
+# 
+# In summary, st_is_valid is a useful tool for checking the validity of polygon geometries and identifying issues that may need to be addressed before performing spatial analysis or visualization.
+# The st_make_valid corret for the issues
+
+#### The interesection of the language area with the shapefile.
+
+####In this part I use the function split to split my lang_polygon_cm by language and I
+#### compute the intersection with the shapefile then, I compute the area and every thing
+
+lang_dest_table <- lang_polygon_cm %>% 
+  st_as_sf() %>% 
+  split(.$ID) %>% 
+  map_dfr(., function(curr_language){
+    
+    # curr_language is the current row in the language dataframe (lang_dest_table)
+    curr_language <- sf::st_make_valid(curr_language)
+    
+    # Intersection_tempDf is the temp df result from the intersection between the 
+    # The shapefile and the language df. area_lang_in_dest is the area of the curr
+    # Language in each destination
+    intersection_tempDf <- st_intersection(curr_language, destination_shp) %>% 
+      mutate(area_lang_in_dest=st_area(geometry))
+    
+  
+    ## lang_tot_area is the total area of the curr language
+    ## prop_area_lang_in_dest is the prop of area that represent the lang in the 
+    ## area of the destination
+    intersection_tempDf  <- intersection_tempDf %>% 
+        mutate(lang_tot_area = sum(area_lang_in_dest, na.rm = T),
+              prop_area_lang_in_dest= area_lang_in_dest/area_dest) %>% 
+      ungroup()
+    
+    # Transform as a dataframe and export
+    intersection_tempDf <- as.data.frame(intersection_tempDf)
+    
+    intersection_tempDf
+  }, .progress=T)
+## Com:: sometimes the sum of the proportion can be over 0 because of the overlaping
+
+## For each language and destination we compute the number of speakers then the 
+## proportion 
+
+lang_dest_table <- lang_dest_table %>% 
+  mutate(nbr_speaker_lang_dest = L1_Users * prop_area_lang_in_dest) %>% 
+  group_by(destination_code_survey) %>% 
+  mutate(tot_speaker_dest = sum(nbr_speaker_lang_dest, na.rm = T)) %>% 
+  ungroup() %>% 
+  mutate(lang_wght_dest=nbr_speaker_lang_dest/tot_speaker_dest) 
+
+# We keep only the variables we needed
+lang_dest_table <- lang_dest_table %>% 
+  dplyr::select(ID, ISO_639, ETH_LG_R,LAT, LONG_, survey_name, 
+         destination_code_survey, lang_wght_dest,Family,prop_area_lang_in_dest)
+
+# To view the sum of each language by destination(==1) 
+View(lang_dest_table %>% group_by(destination_code_survey) %>% summarize(tot=sum(lang_wght_dest, na.rm = T)))
+
+
+###############################################################################################
+######## Computing the linguistic distance betweent the arrondissements #######################
+###############################################################################################
+
+## Fist creating a dataframe of all distances between the group of language
+
+### Importing the languages table and I keep those that are in the cameroon
+### Remarque : if i make a filter with table_of_languages 
+### I will only have the language that are born in cameroon but if i use the LIC dataframe
+### I will also have the language that are not from CM but are speak 
+
+lstIsoCM <- table_of_lic_cm %>% dplyr::select(ISO_639) %>% pull() %>% unique()
+
+## Importing the table of language in curr 
+table_of_languages_cm <- 
+  read.delim("input_data/ethnologue_data/Ethnologue 21 Global Dataset/Table_of_Languages_2019.tab") %>% 
+  filter(ISO_639 %in% lstIsoCM ) %>% 
+  dplyr::select(ISO_639,Language_Name,Uninverted_Name,Country_Code,
+                Country_Name,Region_Code,Region_Name, Family, Is_Written,Classification )
+
+### Splitting by virgule the languages table
+### Name_1 are name of the for the first language and Name_2 is the name for the
+### Second language.
+
+table_of_languages_cm <- table_of_languages_cm %>% 
+  split(.$ISO_639) %>% 
+  map_dfr(., function(df){
+    
+    ## Rename to the name_1 for the language 1 name
+    df <- df %>% 
+      dplyr::select(ISO_639,Language_Name,Classification) %>% 
+      rename(Language_1_name=Language_Name,
+             ISO_639_1 = ISO_639,
+             Classification_1=Classification)
+      
+    ## Get the list of category
+    temp_lst <- unlist(strsplit(df$Classification_1, ',', fixed=T))  
+    
+    ## Rename to the name_2 for the other dataset 
+    table_of_languages_temp <- table_of_languages_cm %>% 
+      dplyr::select(ISO_639,Language_Name,Classification) %>% 
+      rename(Language_2_name=Language_Name,
+             ISO_639_2=ISO_639 ,
+             Classification_2=Classification)
+    
+    ## Creating the variable of the linguistic distance and deleting 
+    ## Those with the same names
+    df <- df %>% 
+      cbind(table_of_languages_temp) %>% 
+      mutate(shared_branches=0)
+      
+    
+    ## For each row, compute the distance between the groupes of 2 language
+    ## I compare the two list to see if they have the same elements
+    
+    df <- plyr::adply(df,.margins=1, .fun=function(donne){ 
+      temp_vec <- unlist(strsplit(donne$Classification_2, ',', fixed=T))
+      
+      ## Here we test if the first element in the two lists are the same
+      ## If it is the case, we compute the distance between the languages
+      if(temp_lst[1]==temp_vec[1]){
+        
+        donne$shared_branches <- length(intersect(temp_lst, temp_vec))
+      }
+      else{
+        
+        donne$shared_branches <- 0
+      }
+      
+
+      # To return the row
+      donne
+    })
+    
+    
+    # Computing the d_mn
+    df <- df %>% 
+      mutate(d_mn = 1-(shared_branches/15)^(.5))
+    
+    # to return the dataframe
+    df
+  }, .progress=T)
+
+## We know that the distance between the same language==0 then we correct for it 
+## here. If same language 1 and 2 then 0 ifelse d_mn
+
+table_of_languages_cm <- table_of_languages_cm %>% 
+  mutate(d_mn=ifelse(ISO_639_1==ISO_639_2, 0, d_mn))
+
+################################################################################
+####### Merging with the migration dataset and computing the LD_ij##############
+################################################################################
+
+
+# Estimated time : 1h
+df_langLDij <- lang_dest_table %>% 
+          split(.$destination_code_survey) %>% 
+          map_dfr(., function(df1){
+            
+            # In df1 we have the current crossing, and list_lang_1 are the
+            # Codes of the languages spoken in df1
+            
+            list_lang_1 <- df1 %>% 
+              dplyr::select(ISO_639) %>% 
+              distinct(.keep_all = T) %>% 
+              pull()
+            
+            # dplyr::select all the arrondissements that are different from the current one
+            # in df1, then i did all the possible crossing
+            
+            df_temp <-lang_dest_table %>% 
+                split(.$destination_code_survey) %>%
+                map_dfr(., function(df2){
+                  
+                  # In df2 we have the current crossing, and list_lang_2 are the
+                  # Codes of the languages spoken in df2
+                  list_lang_2 <- df2 %>% 
+                    dplyr::select(ISO_639) %>% 
+                    distinct(.keep_all = T) %>% 
+                    pull()
+                  
+                  # Here i dplyr::select all the language that are in list_lang_2 and list_lang_1
+                  # Then i compute the cross product in tot and send back the results
+                  dist_lang <- table_of_languages_cm %>% 
+                    filter(ISO_639_1 %in% list_lang_1 & ISO_639_2 %in% list_lang_2) %>% 
+                    right_join(df1 %>% 
+                                 dplyr::select(ISO_639, survey_name, destination_code_survey,lang_wght_dest) %>% 
+                                 rename(ISO_639_i=ISO_639,
+                                        survey_name_i = survey_name,
+                                        destination_code_survey_i = destination_code_survey,
+                                        lang_wght_dest_i = lang_wght_dest),
+                                by = c("ISO_639_1"="ISO_639_i"), multiple = "all") %>% 
+                    right_join(df2 %>% 
+                                 dplyr::select(ISO_639, survey_name, destination_code_survey,lang_wght_dest) %>% 
+                                 rename(ISO_639_j=ISO_639,
+                                        survey_name_j = survey_name,
+                                        destination_code_survey_j = destination_code_survey,
+                                        lang_wght_dest_j = lang_wght_dest),
+                               by = c("ISO_639_2"="ISO_639_j"), multiple = "all") %>% 
+                    summarise(tot=sum(lang_wght_dest_i * lang_wght_dest_j*d_mn))
+                    
+                  ## I create then a tibble to containt the results of the compilation
+                  ## This creates i row of the final dataset with arrondissement that are crossted
+                  res <- tibble(
+                    destination_code_survey_i = first(df1$destination_code_survey),
+                    survey_name_i = as.character(first(df1$survey_name)),
+                    destination_code_survey_j = first(df2$destination_code_survey),
+                    survey_name_j = as.character(first(df2$survey_name)),
+                    LD_ij = as.numeric(dist_lang)
+                  )
+                  
+                  ## I send the results back 
+                  res
+                })
+              
+            df_temp
+              
+          }, .progress=T)
+
+
+
+## Merging the dataset lang_dest_table with the migration dataset
+## and saving the dataset
+
+## Exporting the final df
+write_rds(df_langLDij, paste0("output_data/",folder_name_output,"/df_ldij_temp.rds")) 
+df_langLDij <- read_rds(paste0("output_data/",folder_name_output,"/df_ldij_temp.rds"))
+
+## importing the first results 
+df_final <- read_rds(paste0("output_data/",folder_name_output,"/df_final.rds"))
+
+df_langLDij <- df_final %>% 
+  left_join(df_langLDij, by=c("destination_code_survey"="destination_code_survey_i",
+                              "origin_code_survey"="destination_code_survey_j"
+                              )) 
+
+## Testing the distribution data
+df_langLDij %>% 
+  ggplot(aes(LD_ij))+
+  geom_histogram()+
+  labs(x="languistic distance",
+       y="number of couple destination * origin")
+ggsave(paste0("output/",folder_name_output,"/LDIJ.pdf"))
+
+## Computing the distance the most spoken language
+###mst_spok_lang : for each dep, we have the most spoken language
+mst_spok_lang <- lang_dest_table %>% 
+  group_by(destination_code_survey) %>% 
+  filter(lang_wght_dest == max(lang_wght_dest, na.rm=TRUE)) %>% 
+  ungroup() %>% 
+  dplyr::select(destination_code_survey,lang_wght_dest,ISO_639) %>% 
+  rename(mst_spk_wght = lang_wght_dest,
+         mst_spk_iso=ISO_639) %>% 
+  drop_na()
+
+
+mst_spok_lang <- mst_spok_lang %>% 
+  split(.$destination_code_survey) %>% 
+  map_dfr(., function(df1){
+    
+    # In df1 we have the current crossing, and list_lang_1 are the
+    # Codes of the languages spoken in df1
+    
+    lang_1 <- df1 %>% 
+      dplyr::select(mst_spk_iso) %>%
+      pull() %>% 
+      unique() 
+      
+
+    # dplyr::select all the arrondissements that are different from the current one
+    # In df1, then i did all the possible crossing
+    
+    df_temp <-mst_spok_lang %>% 
+      split(.$destination_code_survey) %>%
+      map_dfr(., function(df2){
+        
+        # In df2 we have the current crossing, and list_lang_2 are the
+        # codes of the languages spoken in df2
+        lang_2 <- df2 %>% 
+          dplyr::select(mst_spk_iso) %>% 
+          pull() %>% 
+          unique() 
+         
+        
+        # Here i dplyr::select all the language that are in list_lang_2 and list_lang_1
+        # Then i compute the cross product in tot and send back the results
+        dist_lang <- table_of_languages_cm %>% 
+          filter(ISO_639_1 == lang_1 & ISO_639_2 == lang_2) %>% 
+          right_join(df1 %>% 
+                      dplyr::select(mst_spk_iso, destination_code_survey,mst_spk_wght) %>% 
+                      rename(mst_spk_iso_i=mst_spk_iso,
+                             destination_code_survey_i = destination_code_survey,
+                             mst_spk_wght_i = mst_spk_wght),
+                    by = c("ISO_639_1"="mst_spk_iso_i"), multiple = "all") %>% 
+          right_join(df2 %>% 
+                      dplyr::select(mst_spk_iso, destination_code_survey,mst_spk_wght) %>% 
+                      rename(mst_spk_iso_j = mst_spk_iso,
+                             destination_code_survey_j = destination_code_survey,
+                             mst_spk_wght_j = mst_spk_wght),
+                    by = c("ISO_639_2"="mst_spk_iso_j"), multiple = "all") %>% 
+          summarise(tot=sum(d_mn, na.rm = T))
+        
+        
+        ## I create then a tibble to containt the results of the compilation
+        ## This creates i row of the final dataset with arrondissement that are crossted
+        
+        res <- tibble(
+          destination_code_survey_i = first(df1$destination_code_survey),
+          mst_spk_iso_i = first(df1$mst_spk_iso),
+          destination_code_survey_j = first(df2$destination_code_survey),
+          mst_spk_iso_j = first(df2$mst_spk_iso),
+          mst_spk_LD_ij = as.numeric(dist_lang)
+        )
+        
+        ## I send the results back 
+        res
+      })
+    
+    df_temp
+    
+  }, .progress=T)
+### Then i merge with each origin and destination to have the most spoken language 
+### in each.
+
+df_langLDij <- df_langLDij %>% 
+  left_join(mst_spok_lang %>% 
+              rename(mst_spk_iso_origin = mst_spk_iso_i,
+                     mst_spk_iso_dest = mst_spk_iso_j)
+              , 
+            by=c(
+              "origin_code_survey"="destination_code_survey_i",
+                     "destination_code_survey"="destination_code_survey_j"))
+
+
+###############################################################################
+############# Compute the distance between origin and destination #############
+###############################################################################
+
+# the package geosphere is used to compute the distance between 2 geoemetry
+library(geosphere)
+
+# st_centroid get the coordinate and return an sf object. st_coordinates gives the lat and long
+dest_centr_coord <- st_coordinates(st_point_on_surface(df_langLDij$geometry_destination)) %>% 
+  as.data.frame() %>% 
+  rename(lon_dest_centr=X,
+         lat_dest_centr=Y)
+
+origin_centr_coord <- st_coordinates(st_point_on_surface(df_langLDij$geometry_origin)) %>% 
+  as.data.frame() %>% 
+  rename(lon_origin_centr=X,
+         lat_origin_centr=Y)
+
+# binding the centroids coordinate 
+df_langLDij <- df_langLDij %>% 
+  cbind(dest_centr_coord) %>% 
+  cbind(origin_centr_coord)
+
+# Computing the geographic distance between the centroid
+df_langLDij <- df_langLDij %>% 
+  split(.$destination_code_survey) %>% 
+  map_dfr(., function(df1){
+    
+    df1 <- plyr::adply(df1, .margins=1,.fun=function(dfGist){
+      
+      as.numeric(distm(c(as.numeric(dfGist$lon_origin_centr), as.numeric(dfGist$lat_origin_centr)), 
+                                                  c(as.numeric(dfGist$lon_dest_centr), as.numeric(dfGist$lat_dest_centr)), fun=distGeo))
+      
+      }) %>% 
+      rename(dist_origin_dest=V1)
+  }, .progress=T)
+
+# Set LDIJ==0 when origin==destination
+df_langLDij <- df_langLDij %>% 
+  mutate(LD_ij=ifelse(origin_code_survey==destination_code_survey,0,LD_ij))
+
+#Set lower case for origin and destination_name
+df_langLDij <- df_langLDij %>% 
+  mutate(origin_name=tolower(origin_name),
+         destination_name=tolower(destination_name))
+
+# Test
+df_langLDij %>% 
+  ggplot(aes(LD_ij))+
+  geom_histogram()+
+  labs(x="languistic distance",
+       y="number of couple destination * origin")
+ggsave(paste0("output/",folder_name_output,"/LDIJ.pdf"))
+
+
+ 
+
+################################################################################
+####################### Adding control variables & Exporting ###################
+################################################################################
+
+
+
+### To convert the distance to km
+df_langLDij <- df_langLDij %>% 
+  mutate(dist_origin_dest_km = dist_origin_dest/1000,
+         log_dist_origin_dest_km = log((dist_origin_dest/1000)),
+         origin_code_survey=as_factor(origin_code_survey),
+         destination_code_survey=as_factor(destination_code_survey))
+
+### Importing the dataset with control and merging it with the regression data
+df_control <- 
+  read_rds(paste0("output_data/",folder_name_output,"/df_control.rds")) %>% 
+  mutate(origin_code_survey=as_factor(origin_code_survey),
+         destination_code_survey=as_factor(destination_code_survey),
+         log_lcp_value = log(lcp_value)) %>% 
+  dplyr::select(origin_code_survey,destination_code_survey,log_lcp_value,
+                starts_with("diff_"))
+
+
+### Changing the type of origin and destination code before merging
+df_langLDij <- df_langLDij %>% 
+  mutate(origin_code_survey=as_factor(origin_code_survey),
+         destination_code_survey=as_factor(destination_code_survey))
+  
+### Merging the dataframes
+df_langLDij <- df_langLDij %>% 
+  left_join(df_control, by=c("origin_code_survey"="origin_code_survey",
+                             "destination_code_survey"="destination_code_survey"))
+### Exporting the final df
+write_rds(df_langLDij, paste0("output_data/",folder_name_output,"/df_ldij_final.rds"))  
+
+### Remove all objects
+rm(list = setdiff(ls(), c("folder_name_output","shp_file","cntry_code_lic","cntry_code_plg")))

@@ -1,0 +1,230 @@
+---
+title: "How to make spatial plot with R?"
+author: "Habibou"
+date: "2023-09-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error=FALSE)
+```
+
+\newpage
+
+## Preface
+
+I will start this test by first downloading and loading all the necessary 
+libraries required.
+
+\vspace*{0.5em}
+
+```{r, results='hide'}
+
+# List of required packages
+required_packages <- c("tidyverse", # For data management. It include dplyr 
+                     "dplyr", # For data management.
+                     "sf", # For spatial object management
+                      "readxl",  # To read excel files 
+                     "ggplot2", # For plotting
+                     "ggthemes", # For theme in ggplot
+                     "lubridate" # For datetime data management
+                     )
+
+# Check if packages are installed and getting those which are not installed
+missing_packages <- 
+  base::setdiff(required_packages, installed.packages()[,"Package"])
+
+# Install missing packages 
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+# Loading all needed packages
+library(sf)
+library(tidyverse) 
+library(dplyr)
+library(readxl)
+library(ggplot2)
+library(ggthemes)
+```
+
+
+I will now retrieve the current working directory, which is essential for 
+loading and saving datasets. To ensure the correct execution of the code, 
+please make sure that the datasets are placed in the same working directory 
+as this code.
+
+\vspace*{0.5em}
+
+```{r}
+# Choosing the working directory
+root <- base::getwd()
+
+# Setting the paths for the two dataset 
+path <- base::paste0(root,"/")
+```
+
+## Importing the datasets
+
+I will now import the *sf* object. The **sf** object is a shapefile 
+representing the country we are interested in, which in my case is Nigeria. 
+You can find these files on the following websites: [GADM](https://gadm.org/) or [DIVAGIS](https://www.diva-gis.org/gdata).
+
+```{r}
+# Importing the sf object
+my_sfdf <- read_sf(paste0(path,"/NGA_adm/NGA_adm1.shp"))
+
+# Plotting the object (raw data)
+ggplot(my_sfdf) +
+  geom_sf()
+```
+
+Importing the BH conflict dataset.
+
+```{r}
+# Importing the conflict dataset from an Excel file
+BH_df <- read_excel(paste0(path, "BK_datacorrected.xlsx"),
+                    sheet = "from2006")
+
+# Selecting the specific columns of interest from the dataset
+BH_df <- BH_df %>%
+  select(event_date, year, admin1, latitude, longitude,
+         fatalities, Countries_part, Acor_corrected_bis)
+
+# Display the first five rows of the dataset
+head(BH_df, 5L)
+```
+
+## Data cleaning
+
+Data cleaning is typically necessary before creating a plot.
+```{r}
+# Set the system locale to use English for datetime formatting
+Sys.setlocale(locale = "en_EN.UTF-8")
+
+# Filter the dataset for conflicts related to BH (Boko Haram or Islamic State)
+BH_df <- BH_df %>% 
+  filter(Acor_corrected_bis == "islamic state or boko haram") %>% 
+  mutate(event_date = as_date(event_date, format = "%d %B %Y")) %>% 
+  # Filter events that occurred after July 2009
+  filter(event_date >= ymd("2009-07-01")) 
+
+# Count the number of conflicts in each part of the country
+BH_df <- BH_df %>% 
+  group_by(Countries_part) %>% 
+  mutate(nbr_events = n()) %>% 
+  ungroup()
+
+# Display the first five rows of the filtered dataset
+head(BH_df, 5L)
+```
+
+
+```{r}
+
+# Merge the BH conflict dataset with the sf object
+merge_df <- full_join(BH_df,  # BH conflict dataset
+                      my_sfdf,  # The sf object
+                      by = c("admin1" = "NAME_1")  # Merge using the 
+                                                   # name as the key
+                      ) %>%
+  # Replace missing numeric values with 0
+  mutate_if(is.numeric, ~replace_na(., 0))
+
+
+```
+
+```{r, echo=FALSE}
+
+merge_df <- merge_df %>% 
+  mutate(Countries_part=ifelse(admin1=="Abia" | admin1=="Anambra"| admin1=="Ebonyi"|admin1=="Imo" ,"South East",
+                               ifelse(admin1=="Akwa Ibom" | admin1=="Cross River"| admin1=="Delta" | admin1=="Bayelsa" ,"South South", 
+                                      ifelse(admin1=="Lagos" | admin1=="Ogun" |admin1=="Osun" | admin1=="Oyo", "South West", 
+                                             ifelse(admin1=="Kebbi" , "North West" ,
+                                                    ifelse(admin1=="Kwara", "North Central" ,Countries_part))))))%>% 
+filter(admin1!="Water body")
+
+my_sfdf <- my_sfdf %>% 
+  filter(NAME_1!="Water body")
+```
+
+
+I will combine information from the same country part to create an individual 
+plot for each part of the country.
+
+```{r}
+# Ensure distinct combinations of Countries_part and admin1
+merge_df <- merge_df %>% 
+  
+  # Keep only distinct combinations while retaining all columns
+  distinct(Countries_part, admin1, .keep_all = TRUE) %>%
+  
+  # Group by Countries_part
+  group_by(Countries_part) %>% 
+  
+  # Merge state boundaries to obtain country part boundaries
+  mutate(geometry = sf::st_union(geometry)) %>%
+  ungroup() %>% 
+  
+  # Ensure distinct Countries_part values while retaining all columns
+  distinct(Countries_part, .keep_all = TRUE) %>%
+  
+  # Select only relevant columns and replace NAs with 0 for numeric columns
+  select(Countries_part, nbr_events, geometry) %>% 
+  mutate_if(is.numeric, ~replace_na(., 0))
+
+# Display the first five rows of the filtered dataset
+head(merge_df, 5L)
+```
+
+## The plot
+
+In this section, we are creating a plot for the country of the BH conflict. 
+The challenge lies in obtaining the coordinates of the centroids (the center 
+points) for each part of the country. We need these centroid coordinates to 
+accurately place the names of the country parts in the center of their 
+respective areas on the plot.
+
+```{r}
+# Convert merge_df to a spatial object
+merge_df <- st_as_sf(merge_df)
+
+# Create a data frame with Countries_part and centroid coordinates
+merge_df_centroids_cp <- 
+  cbind(merge_df$Countries_part, st_coordinates(st_centroid(merge_df)))
+
+# Convert the result to a data frame and ensure X and Y are numeric
+# the variable V1 contains the name of the country part
+merge_df_centroids_cp <- as.data.frame(merge_df_centroids_cp)
+merge_df_centroids_cp$X <- as.numeric(merge_df_centroids_cp$X)
+merge_df_centroids_cp$Y <- as.numeric(merge_df_centroids_cp$Y)
+
+
+# Define a color palette for the plot
+plotclr <- grey.colors(n=3, start = 1, end = 0.35)
+
+# Create a categorical variable 'nbrEvent_cat' based on 'nbr_events'
+merge_df <- merge_df %>% 
+  mutate(nbrEvent_cat = as.factor(cut(nbr_events, c(0, 10, 110, 2000), 
+                      labels = FALSE, include.lowest = FALSE, right = TRUE))) 
+
+# Create a ggplot map
+ggplot(merge_df) + 
+  geom_sf(aes(fill = nbrEvent_cat)) +
+  scale_fill_manual(values = plotclr, 
+                    name = "Number of armed conflicts related to BH by zone", 
+                  labels = c("0-10", "10-110", ">110")) +
+  geom_text(data = merge_df_centroids_cp, 
+            aes(label = V1, X, Y), 
+            color = "black", size = 2) +
+  labs(caption = "N = 6 zones. The northeastern zone account for 92 percent of the BH conflicts. \n Data source: ACLED (author's own calculation)") +
+  theme_map(base_size = 8) +
+  theme(legend.position = 'bottom', text = element_text(size = 8), 
+        legend.direction = "horizontal") 
+
+# Save the plot as a PDF file
+ggsave(paste0(path, "BH_conflict.pdf"), width = 17.8, height = 8, 
+       units = "cm")
+
+```
+

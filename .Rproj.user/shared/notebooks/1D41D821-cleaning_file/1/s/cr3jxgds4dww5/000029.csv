@@ -1,0 +1,4 @@
+"0",""
+"0",""
+"0","individus_2002 <- haven::read_sav(paste0(here::here(),""/data/Données/1. RGPH 2002/Requete PDBA2k2 Individus.v2.sav""))"
+"0","individus_2002 %>% janitor::get_dupes() "

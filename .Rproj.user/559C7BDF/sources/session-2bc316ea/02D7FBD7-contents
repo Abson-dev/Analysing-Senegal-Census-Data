@@ -1,0 +1,308 @@
+################################################################################
+######### Project Benin ########################################################
+################################################################################
+
+# In this file, I do all the cleaning of the dataset
+
+
+## Importing library
+### List of required packages
+required_packages <- c("tidyverse", "ipumsr", "readr","dplyr","stringr","tidyr","sf","sp")
+
+# Check if packages are installed
+missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
+
+### Install missing packages
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+### Load all packages
+lapply(required_packages, library, character.only = TRUE)
+
+
+
+### importing dataset
+if (!require("ipumsr")) 
+  stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
+
+ddi <- read_ipums_ddi(paste0("input_data/census_data/Benin/IPUMS2013/",ipums_data_name_xml,".xml"))
+df <- read_ipums_micro(ddi)
+
+
+# Data cleaning
+## we correct them before
+df$GEO2_BJ2013 <- lbl_clean(df$GEO2_BJ2013)
+
+
+
+## Additional cleaning
+df <- df %>% 
+  mutate(destination_code_survey=as.numeric(GEO2_BJ2013),
+         destination_name=as.character(as_factor(GEO2_BJ2013))) %>% 
+  group_by(destination_name) %>% 
+  arrange(destination_name) %>% 
+  mutate(destination_code_survey=first(destination_code_survey)) %>% 
+  ungroup()
+
+
+df$BJ2013A_BPLCOMM<- lbl_clean(df$BJ2013A_BPLCOMM)
+
+df <- df %>% 
+  mutate(origin_code_survey=as.numeric(BJ2013A_BPLCOMM),
+         origin_name=as.character(as_factor(BJ2013A_BPLCOMM))) %>% 
+  group_by(origin_name) %>% 
+  arrange(origin_name) %>% 
+  mutate(origin_code_survey=first(origin_code_survey)) %>% 
+  ungroup()
+
+## creating the birth cohorte variable and plotting the graphs
+df <- df %>% 
+  mutate(age = 2013 - BIRTHYR,
+         age_factor=as_factor(age),
+         birth_cohorte = base::cut(age, breaks = seq(5, max(age, na.rm = T) + 10, by = 10), 
+                                   include.lowest = TRUE, labels = F),
+         birth_cohorte = as_factor(birth_cohorte))
+
+## creating the birth cohorte variable and plotting the graphs
+df$AGE<- lbl_clean(df$AGE)
+
+df <- df %>% 
+  mutate(age = ifelse(AGE==999,NA,AGE), 
+         age_factor=as_factor(age)) 
+
+
+## Computing the birth cohorte data and histogram: those < 5 == 49540
+df <- df %>% 
+  mutate(birth_cohorte = base::cut(age, breaks = seq(5, max(age, na.rm = T) + 10, by = 10), 
+                                   include.lowest = TRUE, labels = F),
+         birth_cohorte = as_factor(birth_cohorte))
+
+# cleaning the education variable and plotting
+df$EDATTAIN  <- lbl_clean(df$EDATTAIN)
+df$EDATTAIN  <- as_factor(df$EDATTAIN)
+
+df <- df %>% 
+  filter(!(EDATTAIN %in% c("NIU (not in universe)","Unknown"))) %>% 
+  filter(!(is.na(EDATTAIN))) %>% 
+  rename(education = EDATTAIN,
+         sex=BJ2013A_SEX)
+
+## Cleaning sex
+df$sex  <- lbl_clean(df$sex)
+df$sex  <- as_factor(df$sex)
+
+## drop NA
+df <- df %>% 
+  drop_na()
+
+## Graphs
+df %>%  
+  select(education) %>% 
+  group_by(education) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(perc = `n` / sum(`n`)) %>% 
+  arrange(perc) %>%
+  mutate(labels = scales::percent(perc)) %>% 
+  ggplot(aes(x = education, y = perc, fill= education)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label=labels), vjust=-0.3, size=3.5) +
+  labs(fill="", x="education group", y="proportion")+
+  scale_fill_grey() + 
+  theme_light(base_size = 8)+
+  theme(legend.position = "none",text = element_text(size=8))
+ggsave(paste0("output/",folder_name_output,"/education_by_group.pdf"), width = 8, height = 5)
+
+
+ggplot(df, aes(birth_cohorte))+
+  geom_bar(colour = "black", position = "dodge",alpha=0.6)+
+  labs(title="Histogram of cohorte (in the survey) without NAN",
+       x="birth cohort, with a step of 5",
+       y="nbr individuals") +
+  theme_light(base_size = 8) 
+ggsave(paste0("output/",folder_name_output,"/dist_birth_corrected.pdf"), width = 8, height = 5)
+
+## ggplot for age distribution
+ggplot(df, aes(age_factor))+
+  geom_bar(colour = "black", position = "dodge",alpha=0.6) +
+  scale_x_discrete(breaks = as.character(seq(5, max(df$age, na.rm = T) + 10, by=5))) +
+  labs(title="Histogram of age",
+       x="age",
+       y="nbr persons")+
+  theme_light(base_size = 8) 
+ggsave(paste0("output/",folder_name_output,"/age_distribution.pdf"), width = 16, height = 5)
+
+
+
+## Selecting only relavant columns
+df <- df %>% 
+  dplyr::select(destination_code_survey,destination_name,origin_code_survey,
+                origin_name,sex,birth_cohorte, education)
+
+################################################################################
+### Importing and cleaning the Benenise shapefile ##############################
+################################################################################
+
+# Reading the Benin shapefile
+benin_shapefile <- read_sf(links_shapefile) %>% 
+  mutate(code_arr=iconv(NAME_2,to="ASCII//TRANSLIT"),
+         code_arr=str_replace_all(code_arr, "[^[:alnum:]]", ""),
+         code_arr = toupper(code_arr))
+
+#lst1 <- benin_shapefile %>%  as.data.frame() %>% pull(NAME_2) %>% unique() %>% sort()
+lst1 <- df %>% select(origin_name) %>% pull() %>% unique() %>% sort()
+lst2 <- df %>% select(destination_name) %>% pull() %>% unique() %>% sort()
+setdiff(lst1, lst2)
+### We transform to upper and remove accents (we change the encoding) and also remove spaces
+### Importing the crosswalk excel data to do the merging with the shapefile
+crosswalk <- readxl::read_excel(paste0("input_data/crosswalk/",cross_walk_name,".xlsx"), 
+                                sheet = cross_walk_sheet_1) %>% 
+  mutate(code_arr=iconv(survey_name_corrected,to="ASCII//TRANSLIT"),
+         code_arr=str_replace_all(code_arr, "[^[:alnum:]]", ""),
+         code_arr = toupper(code_arr))
+
+
+### Merging with the shapefile and combining the arrondissement
+benin_shapefile <- sp::merge(benin_shapefile,crosswalk,
+                             by.x = "code_arr", by.y = "code_arr",all=T, duplicateGeoms=T)
+
+
+# notMatchdest_in_shp : those who are in the survey file but not in the shapefile
+# notMatchshp_in_dest : those who are in the shapefile but not in the survey
+
+notMatchdest_in_shp <- benin_shapefile$survey_name[which(is.na(benin_shapefile$NAME_2))] %>% unique()
+notMatchshp_in_dest <- benin_shapefile$NAME_2[which(is.na(benin_shapefile$survey_name))] %>% unique()
+
+### We don't need the Na that are in notMatchshp_in_dest :let drop them
+benin_shapefile <- benin_shapefile %>% 
+  filter(!(NAME_2 %in%  notMatchshp_in_dest)) %>% 
+  dplyr::select(destination_code_survey,survey_name_corrected,geometry) %>% 
+  rename(survey_name=survey_name_corrected)
+
+# to correct the geography
+benin_shapefile <- st_make_valid(benin_shapefile)
+### Combining the geometry based on the surveyName and merging with the sp object
+benin_shapefile <- cbind(benin_shapefile %>% 
+                           distinct(destination_code_survey, .keep_all = T) %>% 
+                           arrange(destination_code_survey),
+                         benin_shapefile %>% 
+                           group_by(destination_code_survey) %>%
+                           summarise(geometry_cor = sf::st_union(geometry)) %>%
+                           ungroup() %>% 
+                           arrange(destination_code_survey)) %>% 
+  dplyr::select(-c(geometry,destination_code_survey.1)) %>% 
+  mutate(geometry=geometry_cor) %>% 
+  dplyr::select(-c(geometry_cor))
+
+### Deleting empty geometry
+benin_shapefile <- benin_shapefile %>% 
+  filter(!st_is_empty(.))
+
+### Merging the shapefile with the temp data and replacing the NA value by 0, this is important for no surveyed arrondissement
+mergeDf <- sp::merge(df %>% 
+                       select(-destination_name),
+                     benin_shapefile %>% 
+                       rename(destination_name = survey_name), by.x="destination_code_survey", 
+                     by.y="destination_code_survey",suffixes = c(".x",".y"), 
+                     all=T, duplicateGeoms=T)
+
+
+### Importing the origin_destination crosstable, merging and correcting
+crosswalk_dest_origin <- readxl::read_excel(paste0("input_data/crosswalk/",cross_walk_name,".xlsx"), 
+                                            sheet = cross_walk_sheet_2) %>% 
+  dplyr::select(origin_code_survey,origin_name,destination_origin_code) 
+
+mergeDf <- left_join(mergeDf %>% 
+                       select(-origin_name),
+                     crosswalk_dest_origin,
+                     by=c("origin_code_survey"="origin_code_survey")) %>% 
+  rename(geometry_destination = geometry) 
+
+
+
+### We need also the geometry for the origin to make the emigration graph
+## I use origin_code_survey_new as id for origin: this id is use to provide
+## the same base as the destination datase
+mergeDf <- sp::merge(mergeDf,benin_shapefile %>% 
+                       dplyr::select(destination_code_survey,geometry), 
+                     by.x="destination_origin_code", by.y="destination_code_survey",
+                     suffixes = c(".x",".y"), 
+                     all=T, duplicateGeoms=T)%>% 
+  rename(geometry_origin = geometry) %>% 
+  dplyr::select(destination_origin_code, destination_code_survey,
+                origin_name, destination_name,sex,birth_cohorte,
+                education, geometry_destination, geometry_origin) %>% 
+  rename(origin_code_survey=destination_origin_code)
+
+
+## By cohorte computations
+mergeDf <- mergeDf %>%
+  group_by(origin_code_survey,destination_code_survey, birth_cohorte) %>% 
+  mutate(nbr_male_chrt = sum(sex=="Male", na.rm = T),
+         nbr_female_chrt = sum(sex=="Female", na.rm = T),
+         total_chrt = nbr_male_chrt + nbr_female_chrt) %>% 
+  ungroup() 
+
+## By education computations
+mergeDf <- mergeDf %>%
+  group_by(origin_code_survey, destination_code_survey, education) %>% 
+  mutate(nbr_male_educ = sum(sex=="Male", na.rm = T),
+         nbr_female_educ = sum(sex=="Female", na.rm = T),
+         total_educ = nbr_male_educ + nbr_female_educ) %>% 
+  ungroup() 
+
+## Selected columns of interest and computing the nbr of male and female in each 
+## origin-destination code and additional cleaning
+df_final <- mergeDf %>%
+  group_by(origin_code_survey, destination_code_survey) %>% 
+  mutate(nbr_male = sum(sex=="Male", na.rm = T),
+         nbr_female = sum(sex=="Female", na.rm = T)) %>% 
+  ungroup() %>% 
+  dplyr::select(origin_code_survey,destination_code_survey,
+                origin_name, destination_name, geometry_destination, 
+                geometry_origin, nbr_male, nbr_female, birth_cohorte,
+                nbr_male_chrt,nbr_female_chrt, total_chrt, education,
+                nbr_male_educ,nbr_female_educ, total_educ) %>% 
+  distinct(origin_code_survey,destination_code_survey,birth_cohorte, education,
+           .keep_all = TRUE)%>% 
+  mutate(total=nbr_male + nbr_female) %>% 
+  filter(!(is.na(origin_code_survey)))
+
+
+## We find there all the possible combinations of origin_id and destination_id and
+## and merge them with our survey data
+
+df_final <- left_join(df_final %>% tidyr::expand(origin_code_survey,destination_code_survey, birth_cohorte, education),
+                      df_final)
+
+## I add the name for destination and origin that don't have one
+## I set to 0, NAN for the combinaison that don't exist
+df_final <- df_final %>% 
+  group_by(origin_code_survey) %>% 
+  arrange(origin_name) %>% 
+  mutate(origin_name=first(origin_name),
+         geometry_origin=first(geometry_origin)) %>% 
+  ungroup()
+
+df_final <- df_final %>% 
+  group_by(destination_code_survey) %>% 
+  arrange(destination_name) %>% 
+  mutate(destination_name=first(destination_name),
+         geometry_destination=first(geometry_destination)) %>% 
+  ungroup()
+
+df_final <- df_final %>% 
+  mutate_if(is.numeric, ~replace_na(., 0))
+
+
+
+# Saving the final dataframe and the benin_shapefile
+write_rds(df_final, paste0("output_data/",folder_name_output,"/df_final.rds"))
+write_rds(benin_shapefile,paste0("output_data/",folder_name_output,"/benin_shp.rds"))
+
+# To recover the shapefile name
+shp_file <- "benin_shp"
+
+# Remove all objects
+rm(list = setdiff(ls(), c("folder_name_output","shp_file","cntry_code_lic","cntry_code_plg")))

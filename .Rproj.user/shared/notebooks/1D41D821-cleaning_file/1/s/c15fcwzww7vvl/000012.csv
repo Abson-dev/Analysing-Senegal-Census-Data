@@ -1,0 +1,2 @@
+"0","deces_2013 <- read_sav(paste0(here::here(),""/data/Données/4. RGPH 2013/Requete PDBA2k13 Deces_Guediawaye.sav""))"
+"0","deces_2013 %>% janitor::get_dupes() "

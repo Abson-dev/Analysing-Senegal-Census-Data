@@ -1,0 +1,122 @@
+---
+title: "Cleaning File"
+author: "IBRAHIM KASSOUM Habibou"
+date: "2023-10-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error=FALSE)
+```
+
+
+## Project Sénégal
+
+### Preambule: 
+
+```{r Package needed}
+
+## Importing library
+### List of required packages
+required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf","sp")
+
+# Check if packages are installed
+missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
+
+### Install missing packages
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+### Load all packages
+lapply(required_packages, library, character.only = TRUE)
+
+```
+
+
+### Importing the dataset
+
+```{r}
+
+# Read shapefile data for 2002 and 2013
+sp_rgph_2002 <- sf::read_sf(paste0(here::here(),"/data/Données/SHAPEFILE/EAs_2002.shp"))
+
+sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/data/Données/SHAPEFILE/EAs_2013.shp"))
+
+# Display the first 10 rows of the 2002 and 2013 shapefiles
+head(sp_rgph_2002, 10L)
+head(sp_rgph_2013, 10L)
+```
+### Importing the dataset an checking for duplicated row
+
+```{r}
+# Read and check for duplicated rows in 2002 datasets
+
+deces_2002 <- read_sav(paste0(here::here(),"/data/Données/1. RGPH 2002/Requete PDBA2k2 Deces.sav"))
+deces_2002 %>% janitor::get_dupes() 
+
+
+individus_2002 <- haven::read_sav(paste0(here::here(),"/data/Données/1. RGPH 2002/Requete PDBA2k2 Individus.v2.sav"))
+individus_2002 %>% janitor::get_dupes() 
+
+
+menage_2002 <- haven::read_sav(paste0(here::here(),"/data/Données/1. RGPH 2002/Requete PDBA2k2 menage.sav"))
+menage_2002 %>% janitor::get_dupes() 
+```
+
+
+```{r}
+
+# Read and check for duplicated rows in 2013 datasets
+deces_2013 <- read_sav(paste0(here::here(),"/data/Données/4. RGPH 2013/Requete PDBA2k13 Deces_Guediawaye.sav"))
+deces_2013 %>% janitor::get_dupes() 
+
+
+individus_2013 <- haven::read_sav(paste0(here::here(),"/data/Données/4. RGPH 2013/Requete PDBA2k13 Indidivus GUEDIAWAYE.sav"))
+individus_2013 %>% janitor::get_dupes() 
+
+
+menage_2013 <- haven::read_sav(paste0(here::here(),"/data/Données/4. RGPH 2013/Requete PDBA2k13 menage.sav"))
+menage_2013 %>% janitor::get_dupes() 
+```
+
+
+```{r}
+
+# 2013
+lst_dr_sp <- sp_rgph_2013 %>% as.data.frame() %>% select(COD_DR2012) %>% pull()  
+
+lst_dr_menage <- menage_2013 %>% select(IDDR) %>% pull() 
+
+```
+
+
+### -	Calcul des indices sur les variables composants liés au ménage (Age des chefs de ménage, par sexe entre les deux recensements
+
+```{r}
+# Select the CM and compute it average age
+individus_2013 %>% 
+  
+  # Transform all "haven_labelled" to factor variable
+  #labelled::unlabelled() %>% 
+  
+  ##  Select Household head informations
+  filter(B04==1) %>% 
+  
+  # Grouping by sexe
+  group_by(B06) %>% 
+  
+  # Computing number of HH and average age
+  summarise("Nombre d'individus" = n(), 
+            "Age moyen" = mean(B08, na.rm = TRUE))
+```
+
+
+
+### -	Calcul multivarié pour des indices de pauvreté (bien des ménages, Niveau d’instruction, accès aux services (bien d’aisance, eau, etc.)
+
+
+### -	Calcul indice sur la dynamique de la population (croissance démographique au niveau des DR)
+
+
+

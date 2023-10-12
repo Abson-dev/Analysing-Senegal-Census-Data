@@ -1,0 +1,4 @@
+"0",""
+"0",""
+"0","individus_2013 <- haven::read_sav(paste0(here::here(),""/data/Données/4. RGPH 2013/Requete PDBA2k13 Indidivus GUEDIAWAYE.sav""))"
+"0","individus_2013 %>% janitor::get_dupes() "

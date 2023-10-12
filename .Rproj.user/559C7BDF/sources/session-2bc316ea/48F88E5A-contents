@@ -1,0 +1,873 @@
+# In this Part, I compute the Iliana Regio indicator of BP
+
+library(dplyr)
+library(tidyverse)
+
+
+
+df_curr <- df_global %>% 
+  dplyr::select(Zone,KIDBORD,stunting,IDHSHID,wasting,underweight,FatalityTotal,KIDBIRTHYR,empDecfamvisit,empDechusearn,empDecfemhcare,empWkearnsmore,Difage,Difeduc,
+                KIDSEX,IDHSPID,kidtwin_rec,kidfirstborn,KIDTWIN,numberEventTotal,KIDBIRTHMO,EDYRTOTAL,HUSEDYRS,MotherAge,empDechusearn,
+                YEAR,DHSID,URBAN,religion_rec,husjob_rec,wkcurrjob_rec,EDUCLVL,MotherAgesqr,AGEFRSTMAR, husjob_rec,HHEADSEXHH,HHMEMTOTAL,HHKIDLT5,
+                marstat_rec,husedyr_rec,WEALTHQ,empDecbighh,empDecfemearn,empIndex_2,empIndex_3,ETHNICITYNG,huswrkAgri,womwrkAgri,HUSAGE,
+                Fatality_post,prevregionng_rec,numberEventpost,empMarbef18,HUSEDYRS,KIDCURAGE,PREGTERMIN,numberEventpostGlob,
+                numberEventpostBHR,RESIDENT,stateNameCorrected,Fatality_post,numberEventTotalBHR,numberEventWomen,empfirstbirthbef18,
+                numberEventpost5,numberEventpost20,numberEventpost30,numberEventpost40,numberEventpost50,numberEventpostGlobBHR,
+                DECBIGHH, DECDAILYPUR, DECFAMVISIT, DECFEMEARN,DECFEMHCARE, sex_ratio
+                ) %>% 
+  #rop_na() %>% 
+  mutate(LognumberEventpost = log(numberEventpost + 1),
+         LognumberFatpost = log(Fatality_post + 1)) %>% 
+  dplyr::mutate(Zone=as_factor(ifelse(stateNameCorrected %in% stateNameExposed,1,0))) %>% 
+  filter(stateNameCorrected %in% stateNameExposed)
+
+
+#### We recode the variables to build the indicator for BP
+
+df_curr <- df_curr %>% 
+  mutate(
+    decbighh_rec = as_factor(recode(DECBIGHH, 
+                          "Woman alone"="2",
+                          "Woman and husband/partner"="1",
+                          "Husband/partner"="0",
+                          .default = NA_character_)),
+    
+    decdailypur_rec = as_factor(recode(DECDAILYPUR, 
+                          "Woman alone"="2",
+                          "Woman and husband/partner"="1",
+                          "Husband/partner"="0",
+                          .default = NA_character_)),
+    
+    decfamvisit_rec = as_factor(recode(DECFAMVISIT, 
+                          "Woman alone"="2",
+                          "Woman and husband/partner"="1",
+                          "Husband/partner"="0",
+                          .default = NA_character_)),
+    
+    decfemearn_rec = as_factor(recode(DECFEMEARN, 
+                          "Woman alone"="2",
+                          "Woman and husband/partner"="1",
+                          "Husband/partner"="0",
+                          .default = NA_character_)),
+    
+    decfemhcare_rec = as_factor(recode(DECFEMHCARE, 
+                            "Woman alone"="2",
+                            "Woman and husband/partner"="1",
+                            "Husband/partner"="0",
+                            .default = NA_character_))
+    )%>% 
+  distinct(IDHSHID, IDHSPID, .keep_all = TRUE) 
+
+
+
+df_curr <- df_curr %>% 
+  select(sex_ratio, IDHSHID, IDHSPID, religion_rec, decbighh_rec, HHMEMTOTAL,
+         decfamvisit_rec,HHKIDLT5, EDYRTOTAL,HUSEDYRS,Difage) %>% 
+  drop_na()
+
+# buildin gthe good df
+df_long <- df_curr %>% 
+  group_by(IDHSPID, IDHSHID)%>%
+  group_split() %>% 
+  map_dfr(., function(splitted_df){
+    
+    # collect sociaux economic data
+    soc_df <- splitted_df %>% 
+      select(sex_ratio, IDHSHID, religion_rec, decbighh_rec, HHMEMTOTAL, 
+             EDYRTOTAL,HUSEDYRS,Difage)
+    
+    # select the value contained in the response variable
+    val <- as.numeric(as.character(splitted_df$decbighh_rec))
+    
+    
+    # building the da1 variables
+    da1 <- as.vector(ifelse(val==0, 1, 0))
+    da2 <- as.vector(ifelse(val==1, 1, 0))
+    da3 <- as.vector(ifelse(val==2, 1, 0))
+    
+    df_temp <- bind_cols(
+      da1=da1,
+      da2=da2,
+      da3=da3,
+      soc_df,
+      row.names = NULL
+    )
+    
+  }, .progress=T)
+
+
+# Define likelihood functions using the multinom function
+likelihood <- function(params, df_loglik) {
+  #model_1 <- multinom(Y1 ~ X1 + X2 + X3, data = data)
+  #log_likelihood_1 <- logLik(model_1)
+  
+  # the coefficients
+  theta_1 <- params[1]
+  theta_2 <- params[2]
+  
+  beta_1_1 <- params[3]
+  beta_1_2 <- params[4]
+  beta_1_3 <- params[5]
+  
+  beta_2_1 <- params[6]
+  beta_2_2 <- params[7]
+  beta_2_3 <- params[8]
+  
+  beta_3_1 <- params[9]
+  beta_3_2 <- params[10]
+  beta_3_3 <- params[11]
+  # the vector
+  da1 <- df_loglik$da1
+  da2 <- df_loglik$da2
+  da3 <- df_loglik$da3
+  
+  zh_1 <- df_loglik$sex_ratio
+  zh_2 <- df_loglik$Difage
+  
+  xh_1 <- df_loglik$HHMEMTOTAL
+  xh_2 <- df_loglik$EDYRTOTAL
+  xh_3 <- df_loglik$HUSEDYRS
+  
+  log_likelihood <- sum(
+    
+    da1 * (theta_1 * zh_1 + theta_2 * zh_2 + beta_1_1 * xh_1 + beta_1_2 * xh_2 + beta_1_3 * xh_3 - log(sum(exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_1_1 * xh_1 + beta_1_2 * xh_2 + beta_1_3 * xh_3) + exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_2_1 * xh_1 + beta_2_2 * xh_2 + beta_2_3 * xh_3) + exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_3_1 * xh_1 + beta_3_2 * xh_2 + beta_3_3 * xh_3) , na.rm = TRUE))) + 
+    da2 * (theta_1 * zh_1 + theta_2 * zh_2 + beta_2_1 * xh_1 + beta_2_2 * xh_2 + beta_2_3 * xh_3 - log(sum(exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_1_1 * xh_1 + beta_1_2 * xh_2 + beta_1_3 * xh_3) + exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_2_1 * xh_1 + beta_2_2 * xh_2 + beta_2_3 * xh_3) + exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_3_1 * xh_1 + beta_3_2 * xh_2 + beta_3_3 * xh_3) , na.rm = TRUE))) + 
+    da3 * (theta_1 * zh_1 + theta_2 * zh_2 + beta_3_1 * xh_1 + beta_3_2 * xh_2 + beta_3_3 * xh_3 - log(sum(exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_1_1 * xh_1 + beta_1_2 * xh_2 + beta_1_3 * xh_3) + exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_2_1 * xh_1 + beta_2_2 * xh_2 + beta_2_3 * xh_3) + exp(theta_1 * zh_1 + theta_2 * zh_2 + beta_3_1 * xh_1 + beta_3_2 * xh_2 + beta_3_3 * xh_3) , na.rm = TRUE))),
+    na.rm = TRUE)
+
+  return(log_likelihood)
+}
+
+# likelihood_2 <- function(params, data) {
+#   model_2 <- multinom(Y2 ~ X1 + X2 + X3, data = data)
+#   log_likelihood_2 <- logLik(model_2)
+#   return(-log_likelihood_2)
+# }
+# 
+# likelihood_3 <- function(params, data) {
+#   model_3 <- multinom(Y3 ~ X1 + X2 + X3, data = data)
+#   log_likelihood_3 <- logLik(model_3)
+#   return(-log_likelihood_3)
+# }
+
+# Pseudo-likelihood function
+pseudo_likelihood <- function(params, weights, data1, data2, data3) {
+  params_decision_1 <- params[1:11]
+  #params_decision_2 <- params[(length(coef(data1)) + 1):(length(coef(data1)) + length(coef(data2)))]
+  #params_decision_3 <- params[(length(coef(data1)) + length(coef(data2)) + 1):length(params)]
+  
+  log_likelihood_value <- 
+    weights[1] * likelihood(params_decision_1, data1) #+
+    #weights[2] * likelihood_2(params_decision_2, data2) +
+    #weights[3] * likelihood_3(params_decision_3, data3)
+  return(-log_likelihood_value)
+}
+
+# Specify initial parameter values
+initial_params <- c(rep(-10, 11))  # Initial values for beta coefficients
+
+# Specify weights for each equation
+weights <- c(1, 1, 1)  # Adjust the weights based on your problem
+
+# Perform optimization to estimate parameters
+result <- optim(par = initial_params, fn = pseudo_likelihood, 
+                weights = weights, 
+                data1 = df_long, 
+                data2 = df_long, 
+                data3 = df_long, hessian=T
+                )
+
+# Estimated parameters
+estimated_params <- result$par
+
+#The standart error
+OI<-solve(result$hessian)
+se<-sqrt(diag(OI))
+se
+
+################################## MULTIDIMENTIONAL DATA ANALYSIS ###################################################
+
+df_curr <- df_childrenLong %>% 
+  select(IDHSHID, IDHSPID, DECBIGHH, DECFAMVISIT, DECFEMEARN,WKEARNSMORE,
+         DECFAMVISIT,DECFEMEARN,DECHUSEARN,DECFEMHCARE,FEMOWNHOUSE, FEMOWNLAND,
+         DECFEMHCARE, HHKIDLT5, husjob_rec, wkcurrjob_rec, EDYRTOTAL, HUSEDYRS, 
+         Difage, HHMEMTOTAL, sex_ratio, femownland_rec, femownhouse_rec, huswrkAgri, 
+         womwrkAgri, YEAR, DHSID,stateNameCorrected,CLUSTERNO, marstat_rec) %>% 
+  distinct(IDHSHID, IDHSPID, .keep_all = TRUE) %>% 
+  mutate(decbighh_rec = fct_collapse(DECBIGHH, "Woman and husband jointly" = "Woman and husband/partner", 
+                                     "Husband alone" = c("Husband/partner","Someone else","Other or not applicable"), Missing=c("Missing","NIU (not in universe)")),
+         
+         # decdailypur_rec = fct_collapse(DECDAILYPUR, "Woman and husband jointly" = "Woman and husband/partner", 
+         #                             "Husband alone" = c("Husband/partner","Someone else"), Missing=c("Other or not applicable","Missing","NIU (not in universe)")),
+         # 
+         decfamvisit_rec = fct_collapse(DECFAMVISIT, "Woman and husband jointly" = "Woman and husband/partner", 
+                                     "Husband alone" = c("Husband/partner","Someone else","Other or not applicable"), Missing=c("Missing","NIU (not in universe)")),
+         
+         decfemearn_rec = fct_collapse(DECFEMEARN, "Woman and husband jointly" = "Woman and husband/partner", 
+                                     "Husband alone" = c("Husband/partner","Someone else","Other or not applciable"), Missing=c("Missing","NIU (not in universe)")),
+         
+         decfemhcare_rec = fct_collapse(DECFEMHCARE, "Woman and husband jointly" = "Woman and husband/partner", 
+                                       "Husband alone" = c("Husband/partner","Someone else","Other/not applicable"), Missing=c("Missing","NIU (not in universe)")),
+         
+         wkearnsmore_rec = fct_collapse(WKEARNSMORE, "Husband has no earnings" = "Husband/partner has no earnings", 
+                                        "More or about the same" = c("More than him","About the same"), Missing=c("Don't know","Missing","NIU (not in universe)")),
+                              
+         dechusearn_rec = fct_collapse(DECHUSEARN, "Woman and husband jointly" = "Woman and husband/partner", 
+                                       "Husband alone" = c("Husband/partner","Husband/partner has no earnings","Other or not applicable"), Missing=c("Missing","NIU (not in universe)")),
+         
+         femownhouse_rec = fct_collapse(femownhouse_rec, "Woman and husband jointly" = c("Owns jointly only","Owns both alone and jointly"), 
+                                        "Woman alone"="Owns alone only", "Husband alone or other" = "Does not own", Missing=c("NULL")),
+         
+         femownland_rec = fct_collapse(femownland_rec, "Woman and husband jointly" = c("Owns jointly only","Owns both alone and jointly"), 
+                                        "Woman alone"="Owns alone only", "Husband alone or other" = "Does not own land", Missing=c("NULL")),
+         sqr_sex_ratio = sex_ratio^2,
+         sqr_Difage = Difage^2,
+         prod_sexR_DifAge = Difage * sex_ratio
+         ) %>% 
+  filter(stateNameCorrected %in% new_state) 
+
+
+df_curr <- df_curr %>% 
+  mutate(
+    decbighh_rec = as_factor(recode(decbighh_rec, 
+                                    "Woman alone"="2",
+                                    "Woman and husband jointly"="1",
+                                    "Husband alone"="0",
+                                    .default = NA_character_)),
+    
+    # decdailypur_rec = as_factor(recode(decdailypur_rec, 
+    #                                    "Woman alone"="2",
+    #                                    "Woman and husband jointly"="1",
+    #                                    "Husband alone"="0",
+    #                                    .default = NA_character_)),
+    # 
+    decfamvisit_rec = as_factor(recode(decfamvisit_rec, 
+                                       "Woman alone"="2",
+                                       "Woman and husband jointly"="1",
+                                       "Husband alone"="0",
+                                       .default = NA_character_)),
+    
+    decfemearn_rec = as_factor(recode(decfemearn_rec, 
+                                      "Woman alone"="2",
+                                      "Woman and husband jointly"="1",
+                                      "Husband alone"="0",
+                                      .default = NA_character_)),
+    
+    decfemhcare_rec = as_factor(recode(decfemhcare_rec, 
+                                       "Woman alone"="2",
+                                       "Woman and husband jointly"="1",
+                                       "Husband alone"="0",
+                                       .default = NA_character_)),
+    
+    wkearnsmore_rec = as_factor(recode(wkearnsmore_rec, 
+                                       "More or about the same"="2",
+                                       "Less than him"="1",
+                                       "Husband has no earnings"="0",
+                                       .default = NA_character_)),
+    
+    dechusearn_rec = as_factor(recode(dechusearn_rec, 
+                                      "Woman alone"="2",
+                                      "Woman and husband jointly"="1",
+                                      "Husband alone"="0",
+                                      .default = NA_character_)),
+    
+    femownhouse_rec = as_factor(recode(femownhouse_rec, 
+                                      "Woman alone"="2",
+                                      "Woman and husband jointly"="1",
+                                      "Husband alone or other"="0",
+                                      .default = NA_character_)),
+    
+    femownland_rec = as_factor(recode(femownland_rec, 
+                                      "Woman alone"="2",
+                                      "Woman and husband jointly"="1",
+                                      "Husband alone or other"="0",
+                                      .default = NA_character_))
+    ) %>% 
+  select(IDHSHID, IDHSPID, decbighh_rec, decfamvisit_rec, decfemearn_rec, decfemhcare_rec, wkearnsmore_rec, 
+         dechusearn_rec, IDHSHID, IDHSPID,Difage,sex_ratio, sqr_sex_ratio, sqr_Difage, 
+         prod_sexR_DifAge,HUSEDYRS,EDYRTOTAL,huswrkAgri,womwrkAgri,DHSID) %>% 
+ drop_na()
+
+# IDHSHID, IDHSPID, femownland_rec,femownhouse_rec, decbighh_rec, 
+# decfamvisit_rec, decfemearn_rec, decfemhcare_rec, wkearnsmore_rec, 
+# dechusearn_rec, IDHSHID, IDHSPID,Difage,sex_ratio, sqr_sex_ratio, sqr_Difage, 
+# prod_sexR_DifAge,HUSEDYRS,EDYRTOTAL,huswrkAgri,womwrkAgri,DHSID,CLUSTERNO,femownland_rec, 
+# femownhouse_rec, dechusearn_rec
+
+## the PCA
+
+# the PCA
+res.mca <- df_curr %>% 
+  select(decbighh_rec, 
+         decfemhcare_rec,decfamvisit_rec, 
+         dechusearn_rec, wkearnsmore_rec, decfemearn_rec) %>% 
+  FactoMineR::MCA(ncp = 5, graph = TRUE, method="Burt", na.method = "Average")
+
+# Eigen values
+library("factoextra")
+eig.val <- get_eigenvalue(res.mca)
+fviz_screeplot(res.mca, addlabels = TRUE, ylim = c(0, 80))
+
+# Correlation between variables and Principal dimensions
+fviz_mca_var(res.mca, col.var = "contrib", 
+             repel = TRUE, # Avoid text overlapping (slow)
+             choice = c("var.cat"),
+             ggtheme = theme_minimal()) +
+  scale_color_gradient2(low = "white", mid = "grey",
+                        high = "black", midpoint = 2)
+ggsave("reg_tables/TotalEvent/conflict_post/default/variable_graphique.jpeg")
+
+# fviz_mca_ind(res.mca, 
+#              label = "none", # hide individual labels
+#              habillage = "decbighh_rec", # color by groups 
+#             # palette = c("#00AFBB", "#E7B800","#8fd175"),
+#              addEllipses = TRUE, ellipse.type = "confidence",
+#              ggtheme = theme_minimal()) 
+
+# fviz_mca_biplot(res.mca, 
+#                  repel = TRUE, # Avoid text overlapping (slow if many point)
+#                  ggtheme = theme_minimal())
+
+var <- get_mca_var(res.mca)
+var
+round(var$coord, 2)
+
+
+
+# Get the individual coordinates (loadings) for each observation
+individual_coordinates <- res.mca$ind$coord
+
+# affect the first dimension of the dataframe
+df_curr$burt_mat <- individual_coordinates[,1]
+
+# regression for predict
+
+my_regmod <- lfe::felm(burt_mat ~ Difage + sex_ratio + sqr_Difage + sqr_sex_ratio + prod_sexR_DifAge  + HUSEDYRS + EDYRTOTAL + huswrkAgri + womwrkAgri |0|0|0, data = df_curr)
+summary(my_regmod)
+
+stargazer::stargazer(my_regmod, title="",digits=4,float = TRUE,se.position = "below",
+                     type="text",omit.stat=c("LL","ser","f","adj.rsq","res.dev"), dep.var.labels.include = TRUE,font.size="small",
+                     se.position = "below",notes.align = "l",table.placement = "H",header = F,
+                     column.labels = paste0(expression(alpha), "coefficient"),
+                     
+                     
+                     covariate.labels = c('Age difference',
+                                          'Sex ratio',
+                                          'Age difference squared','Sex ratio squared',
+                                          'Sex ratio * Age difference','Husband education','Woman education',"Husband working in agriculture","Woman working in agriculture"),
+                     
+                     add.lines=list(c('Survey year fixed effects','No'),
+                                    c('Cluster fixed effects','No'),
+                                    c('Mother fixed effects','No'),
+                                    c('Children year of birth fixed effects','No'),
+                                    c('Children month of birth fixed effects','No')),
+                     out=paste0("reg_tables/TotalEvent/conflict_post/default/reg_emp.text",sep=""), notes = "")
+
+matSelect <- matrix(0, nrow = 5, ncol = length(coef(my_regmod)))
+colnames(matSelect) <- names(coef(my_regmod))
+
+
+matSelect[, "Difage"] <- c(1,0,0,0,0)
+matSelect[, "sex_ratio"] <- c(0,1,0,0,0)
+matSelect[, "sqr_Difage"] <- c(0,0,1,0,0)
+matSelect[, "sqr_sex_ratio"] <- c(0,0,0,1,0)
+matSelect[, "prod_sexR_DifAge"] <- c(0,0,0,0,1)
+
+
+coefs <- as.numeric(matSelect %*% coef(my_regmod))
+
+df_curr_temp <- df_curr %>% 
+  select(Difage,sex_ratio, sqr_Difage,sqr_sex_ratio,prod_sexR_DifAge)
+
+df_curr$Index_emp <- as.numeric(data.matrix(df_curr_temp) %*% coefs)
+
+df_curr <- df_curr %>% 
+  mutate(
+    emp_index_1 = as.factor(ifelse(Index_emp > median(Index_emp, na.rm = T)
+                                , 1,0)),
+    emp_index_2 = as.factor(ifelse(burt_mat > median(burt_mat, na.rm = T)
+                                                       , 1,0))
+  )
+# building the quantile
+df_curr <- df_curr %>% 
+  mutate(quantile_1 = ntile(Index_emp, 10))
+
+df_curr <- df_curr %>% 
+  mutate(quantile_2 = ntile(burt_mat, 10))
+# Perform k-means clustering on the individual coordinates
+# You should choose the number of clusters 'k' based on your problem
+# k <- 2  # Example: Setting the number of clusters to 3
+# kmeans_result <- kmeans(individual_coordinates, centers = k)
+# 
+# ## add the cluster vector to iris_dataset
+# 
+# 
+# df_curr$kmeans_cluster <- factor(kmeans_result$cluster)
+# df_curr$dim_1 <- individual_coordinates[,1]
+# df_curr$dim_2 <- individual_coordinates[,2]
+# head(df_curr)
+
+
+# ggplot(df_curr, aes(dim_1, dim_2)) +
+#   geom_point(aes(color = kmeans_cluster)) +
+#   ggtitle("Kmeans with 2 Groups")
+# 
+# df_curr <- df_curr %>% 
+#   mutate(empvar = as_factor(recode(kmeans_cluster,
+#                         "1"="0",
+#                         "2"="1"))) 
+
+################################# Regression ########################################
+
+# estimating the female emp variable
+
+
+
+# building the empowerment variable
+
+
+## reg funtion
+df_childrenLong <- df_global %>% 
+  dplyr::select(Zone,KIDBORD,stunting,IDHSHID,wasting,underweight,FatalityTotal,KIDBIRTHYR,Difage,Difeduc,
+                KIDSEX,IDHSPID,kidtwin_rec,kidfirstborn,KIDTWIN,numberEventTotal,KIDBIRTHMO,EDYRTOTAL,HUSEDYRS,MotherAge,
+                YEAR,DHSID,URBAN,religion_rec,EDUCLVL,MotherAgesqr,AGEFRSTMAR, husjob_rec,HHEADSEXHH,HHMEMTOTAL,HHKIDLT5,
+                marstat_rec,husedyr_rec,WEALTHQ,empIndex_2,empIndex_3,ETHNICITYNG,huswrkAgri,womwrkAgri,HUSAGE,
+                Fatality_post,numberEventpost,empMarbef18,HUSEDYRS,KIDCURAGE,numberEventpostGlob,
+                numberEventpostBHR,RESIDENT,stateNameCorrected,Fatality_post,numberEventTotalBHR,numberEventWomen,empfirstbirthbef18,
+                numberEventpost5,numberEventpost20,numberEventpost30,numberEventpost40,numberEventpost50,numberEventpostGlobBHR,
+                empDecbighh,empWkearnsmore, empDecbighh, empDecfamvisit, empDecfemearn,empMarbef18, empDechusearn, 
+                empDecfemhcare, empfemownhouse, empfemownland, empIndex_1,HWHAZWHO, HWWHZWHO, HWWAZWHO,
+                
+                IDHSHID, IDHSPID, DECBIGHH, DECFAMVISIT, DECFEMEARN,WKEARNSMORE,
+                DECFAMVISIT,DECFEMEARN,DECHUSEARN,DECFEMHCARE,FEMOWNHOUSE, FEMOWNLAND,
+                DECFEMHCARE, HHKIDLT5, husjob_rec, wkcurrjob_rec, EDYRTOTAL, HUSEDYRS, 
+                Difage, HHMEMTOTAL, sex_ratio, femownland_rec, femownhouse_rec, huswrkAgri, 
+                womwrkAgri, YEAR, DHSID,stateNameCorrected,CLUSTERNO, marstat_rec) %>% 
+  drop_na() %>% 
+  mutate(LognumberEventpostBHR = log(numberEventpostBHR + 1),
+         LognumberFatpost = log(Fatality_post + 1)) %>% 
+  dplyr::mutate(Zone=as_factor(ifelse(stateNameCorrected %in% stateNameExposed,1,0)),
+                indicator = 0,
+                indicator=ifelse(empDechusearn==1,indicator+1,indicator),
+                indicator=ifelse(empDecfemhcare==1,indicator+1,indicator),
+                indicator=ifelse(empDecfamvisit==1,indicator+1,indicator),
+                indicator=as_factor(ifelse(indicator >= 2,1,0))
+  ) %>% 
+  filter(stateNameCorrected %in% new_state) %>% 
+  mutate(wasting=as.numeric(as.character(wasting)),
+         stunting=as.numeric(as.character(stunting)),
+         underweight=as.numeric(as.character(underweight))) 
+
+
+
+
+
+df_childrenLong <- df_childrenLong %>% 
+  left_join(df_curr %>% 
+              select(-c(decbighh_rec, decfamvisit_rec, decfemearn_rec, decfemhcare_rec, wkearnsmore_rec, 
+                        dechusearn_rec,Difage,sex_ratio, sqr_sex_ratio, sqr_Difage, 
+                        prod_sexR_DifAge,HUSEDYRS,EDYRTOTAL,huswrkAgri,womwrkAgri)), 
+            by=c("IDHSHID"="IDHSHID", 
+                 "DHSID" = "DHSID",
+                "IDHSPID" = "IDHSPID"))
+
+# %>% 
+#   select(-c(decbighh_rec, 
+#             decfamvisit_rec, decfemearn_rec, decfemhcare_rec, wkearnsmore_rec, 
+#             dechusearn_rec,Difage,sex_ratio, sqr_sex_ratio, sqr_Difage, 
+#             prod_sexR_DifAge,HUSEDYRS,EDYRTOTAL,huswrkAgri,womwrkAgri, dechusearn_rec)
+
+df_siblingLong <- df_childrenLong %>% 
+  group_by(IDHSPID) %>%
+  dplyr::mutate(n = n()) %>% 
+  ungroup() %>% 
+  filter(n > 1) 
+
+temp_df_1 <- df_childrenLong %>% 
+  dplyr::group_by(quantile_1) %>% 
+  summarize(mean_HWHAZWHO=mean(HWHAZWHO, na.rm=TRUE),
+            mean_HWWHZWHO=mean(HWWHZWHO, na.rm=TRUE),
+            mean_HWWAZWHO=mean(HWWAZWHO, na.rm=TRUE)) %>%
+  drop_na() %>% 
+  ungroup() %>% 
+  mutate(name="reggio's emp. indicator") %>% 
+  rename(quantile = quantile_1)
+
+temp_df_2 <- df_childrenLong %>% 
+  group_by(quantile_2) %>% 
+  summarize(mean_HWHAZWHO=mean(HWHAZWHO, na.rm=TRUE),
+            mean_HWWHZWHO=mean(HWWHZWHO, na.rm=TRUE),
+            mean_HWWAZWHO=mean(HWWAZWHO, na.rm=TRUE)) %>%
+  drop_na() %>% 
+  ungroup()%>% 
+  mutate(name="multidimentional emp. indicator") %>% 
+           rename(quantile = quantile_2)
+
+temp_df <- 
+  bind_rows(temp_df_1, temp_df_2)
+  
+temp_df <- pivot_longer(temp_df, names_to = "mean", 
+                        names_prefix = "mean_", cols = 2:4) %>% 
+  mutate(mean = recode(mean,
+         "HWWHZWHO" = "WHZ" ,
+         "HWHAZWHO"= "HAZ",
+         "HWWAZWHO" = "WAZ"))
+
+temp_df$mean <- temp_df$mean %>% 
+  fct_inorder()
+
+
+ggplot(temp_df) +
+  aes(x = quantile, y = value, colour = mean, group = mean) +
+  geom_line(linewidth=1) +
+  geom_point()+
+  geom_hline(yintercept = -200, linetype="dashed")+
+  scale_color_manual(values=c("#CCCCCC","#989898","#333333"))+
+  scale_x_continuous(breaks = c(0,2,4,6,8,10)) +
+  facet_wrap(~name) +
+  labs(
+    x="emp. indicator deciles",
+    y="z-score",
+    color = "z-score type",
+    caption = "Height-for-Age Z-score (HAZ), Weight-for-Height Z-score (WHZ), Weight-for-Age Z-score (WAZ)."
+  )+
+  theme_light(base_size = 8)+
+  theme(legend.position = 'bottom',text = element_text(size=8), 
+        legend.direction = "horizontal")+
+  theme_minimal()
+  ggsave("reg_tables/TotalEvent/conflict_post/default/multidim_childind.jpeg",
+         width = 18, height = 14, units = "cm")
+
+
+################################################################################
+############ Regression ########################################################
+################################################################################
+
+lstoutcomes <- c("underweight","wasting","stunting")
+lstoutcomes <-c("HWHAZWHO", "HWWHZWHO", "HWWAZWHO")
+lst_index=c("emp_index_1","emp_index_2")
+
+  mainResults <- map_dfr(lstoutcomes, function(depvar){    
+    tempResults3 <- map_dfr(lst_index, function(empvar) {
+      bind_rows(
+        getEstimateGlobalemp(depvar,empvar,expvar,
+                             df_childrenLong,
+                             df_siblingLong) %>% 
+          mutate(depvar=depvar)
+      )})
+  })
+  
+  
+  mainResults <- mainResults %>% 
+    mutate(
+      name = recode(
+        name,
+        baseline = "(a) Baseline",
+        sibling = "(b) On sibling"),
+      #empvar=as.character(empvar),Aut. maj. hh purch.
+      empvar=recode(empvar,
+                    emp_index_1="reggio's emp. indicator",
+                    emp_index_2="multidimentional emp. indicator"
+                    # empMarbef18 = "married aft. \n 18",
+                    # empDecbighh = "aut. maj. \n hh purch.",
+                    # empDecfemearn ="aut. own \n earn.",
+                    # empDifage ="dif. in spous. \n age < 10 yrs",
+                    # empWkearnsmore="earn. more \n than husb.",
+                    # empDecfamvisit= "aut. on \n visit. relat.",
+                    # empDechusearn= "aut. on \n husb. earn.",
+                    # empfemownhouse = "hou. ownsh.",
+                    # empfemownland = "land ownsh.",
+                    # #empfirstbirthbef18="first birth \n aft. 18",
+                    # empIndex_2 = "more educ. \n than husb.",
+      ),
+      
+      estimate = recode(
+        estimate,
+        No = "with low bargaining ",
+        Yes = "with high bargaining "
+      ),
+      depvar = recode(depvar,
+                      "HWWHZWHO" = "WHZ" ,
+                      "HWHAZWHO"= "HAZ",
+                      "HWWAZWHO" = "WAZ"),
+      
+      typeEffect="overall"
+    )
+  
+  
+  mainResults$empvar <- mainResults$empvar %>% 
+    fct_inorder()
+  
+  mainResults$depvar <- mainResults$depvar %>% 
+    fct_inorder()
+  
+  mainResults %>% 
+    ggplot(aes(x = empvar, y = pe, color = estimate, ymin = `CI2.5`, ymax = `CI97.5`)) +
+    geom_point(position = position_dodge(.5)) +
+    geom_linerange(position = position_dodge(.5)) +
+    geom_linerange(aes(ymin = CI5, ymax = CI95), lwd = 1, position = position_dodge(.5)) +
+    geom_hline(yintercept = 0, lty = "dotted") +
+    facet_grid(depvar~name) +
+    scale_color_manual(values = c("with high bargaining " = "grey69", "with low bargaining " = "black")) +
+    labs(
+      x = "proxies of bargaining ",
+      y = "effect of one armed conflict on the Prob",
+      #subtitle = paste0("proxies of bargaining  : ",first(df$empvar), sep=""),
+      color = "women type",
+      caption = sprintf(paste0("N = %s children, %s siblings.", sep=" "), first(mainResults$N), last(mainResults$N))
+    ) + 
+    theme_light(base_size = 8)+
+    theme(legend.position = 'bottom',text = element_text(size=8), legend.direction = "horizontal")
+  ggsave("reg_tables/TotalEvent/conflict_post/default/globalpost_emp_index_numeric.jpeg", width = 18, height = 14, units = "cm")
+  
+
+
+
+df_childrenLong <- df_childrenLong %>% 
+  group_by(IDHSHID, IDHSPID) %>% 
+  mutate(nbr_stunting = sum(stunting==1),
+         nbr_wasting = sum(wasting==1),
+         nbr_underweight = sum(underweight==1)) %>% 
+  ungroup() %>% 
+  mutate(
+    nbr_stunting = as.factor(nbr_stunting),
+    nbr_wasting = as.factor(nbr_wasting),
+    nbr_underweight = as.factor(nbr_underweight))%>% 
+  select(IDHSHID, IDHSPID, quantile, nbr_stunting, nbr_wasting, nbr_underweight) %>% 
+  drop_na() 
+  
+df_childrenLong %>% 
+  distinct(IDHSHID, IDHSPID, .keep_all = TRUE) %>% 
+  ggplot() +
+  aes(x = quantile, fill = nbr_wasting) +
+  geom_bar(position = "dodge") +
+  scale_fill_brewer(palette = "Greys", direction = 1) +
+  labs(x = "emp_Index", fill = "Nbr wasted children") +
+  theme_minimal() 
+
+df_childrenLong %>%  
+  distinct(IDHSHID, IDHSPID, .keep_all = TRUE) %>% 
+  ggplot() +
+  aes(x = quantile, fill = nbr_stunting) +
+  geom_bar(position = "dodge") +
+  scale_fill_brewer(palette = "Greys", direction = 1) +
+  labs(x = "emp_Index", fill = "Nbr stunted children") +
+  theme_minimal() 
+
+df_childrenLong %>%  
+  distinct(IDHSHID, IDHSPID, .keep_all = TRUE) %>% 
+  ggplot() +
+  aes(x = quantile, fill = nbr_underweight) +
+  geom_bar(position = "dodge") +
+  scale_fill_brewer(palette = "Greys", direction = 1) +
+  labs(x = "emp_Index", fill = "Nbr underweighted children") +
+  theme_minimal() 
+
+lstoutcomes <- c("underweight","wasting","stunting")
+#expvar="numberEventpostBHR"
+
+#empvar="emp_index"
+
+mainResults <- map_dfr(lstoutcomes, function(depvar){    
+  tempResults3 <- bind_rows(
+    getEstimate_mca(depvar,empvar="emp_index",expvar="numberEventpostBHR",df_childrenLong,df_siblingLong) %>% 
+        mutate(depvar=depvar)
+    )
+})
+
+
+mainResults <- mainResults %>% 
+  mutate(
+    name = recode(
+      name,
+      baseline = "(a) Baseline",
+      sibling = "(b) On sibling"),
+    #empvar=as.character(empvar),Aut. maj. hh purch.
+    # empvar=recode(emp_index,
+    #               empMarbef18 = "married aft. \n 18",
+    #               empDecbighh = "aut. maj. \n hh purch.",
+    #               empDecfemearn ="aut. own \n earn.",
+    #               empDifage ="dif. in spous. \n age < 10 yrs",
+    #               #empfirstbirthbef18="first birth \n aft. 18",
+    #               empIndex_2 = "more educ. \n than husb."
+    # ),
+    estimate = recode(
+      estimate,
+      No = "with low bargaining ",
+      Yes = "with high bargaining "
+    ),
+    typeEffect="overall"
+  )
+
+
+mainResults$emp_index <- mainResults$emp_index %>% 
+  fct_inorder()
+
+mainResults$depvar <- mainResults$depvar %>% 
+  fct_inorder()
+
+# mainResults %>% 
+#   ggplot(aes(x = empvar, y = pe, color = estimate, ymin = `CI2.5`, ymax = `CI97.5`)) +
+#   geom_point(position = position_dodge(.5)) +
+#   geom_linerange(position = position_dodge(.5)) +
+#   geom_linerange(aes(ymin = CI5, ymax = CI95), lwd = 1, position = position_dodge(.5)) +
+#   geom_hline(yintercept = 0, lty = "dotted") +
+#   #facet_grid(depvar~name) +
+#   scale_color_manual(values = c("with high bargaining " = "grey69", "with low bargaining " = "black")) +
+#   labs(
+#     x = "proxies of bargaining",
+#     y = "effect of one armed conflict on the Prob",
+#     #subtitle = paste0("proxies of bargaining  : ",first(df$empvar), sep=""),
+#     color = "women type",
+#     caption = sprintf(paste0("N = %s children, %s siblings.", sep=" "), first(mainResults$N), last(mainResults$N))
+#   ) + 
+#   theme_light(base_size = 8)+
+#   theme(legend.position = 'bottom',text = element_text(size=8), legend.direction = "horizontal")
+# #ggsave("reg_tables/TotalEvent/conflict_post/default/globalpost.pdf", width = 18, height = 14, units = "cm")
+# #})
+
+
+mainResults %>% 
+  ggplot(aes(x = depvar, y = pe, color = estimate, ymin = `CI2.5`, ymax = `CI97.5`)) +
+  geom_point(position = position_dodge(.5)) +
+  geom_linerange(position = position_dodge(.5)) +
+  geom_linerange(aes(ymin = CI5, ymax = CI95), lwd = 1, position = position_dodge(.5)) +
+  geom_hline(yintercept = 0, lty = "dotted") +
+  facet_wrap(~name) +
+  scale_color_manual(values = c("with high bargaining " = "grey69", "with low bargaining " = "black")) +
+  labs(
+    x = "malnutrition outcomes",
+    y = "effect of one armed conflict on the Prob",
+   # title="Estimated on the siblings sample",
+    #subtitle = "proxies of bargaining: married aft. 18",
+    color = "women type",
+    caption = sprintf(paste0("N = %s children, %s siblings.", sep=" "), first(mainResults$N), last(mainResults$N))
+  ) + 
+  theme_light(base_size = 8)+
+  theme(legend.position = 'bottom',text = element_text(size=8), legend.direction = "horizontal")
+#ggsave("reg_tables/TotalEvent/conflict_post/default/globalpost_test.jpeg", width = 9, height = 7, units = "cm")
+#})
+
+
+#####################################################################################
+# Testing, first creating the df
+# stat descriptive
+df_curr %>%  
+  select(decbighh_rec) %>% 
+  filter(!(decbighh_rec=="Missing")) %>% 
+  group_by(decbighh_rec) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(perc = `n` / sum(`n`)) %>% 
+  arrange(perc) %>%
+  mutate(labels = scales::percent(perc)) %>% 
+  ggplot(aes(x = decbighh_rec, y = perc, fill= decbighh_rec)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label=labels), vjust=-0.3, size=3.5) +
+  labs(fill="", x="decision group", y="proportion", caption = "decision on big household purchases")+
+  scale_fill_grey() + 
+  theme_light(base_size = 8)+
+  theme(legend.position = "none",text = element_text(size=8))
+
+df_curr %>%  
+  select(decdailypur_rec) %>% 
+  filter(!(decdailypur_rec=="Missing")) %>% 
+  group_by(decdailypur_rec) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(perc = `n` / sum(`n`)) %>% 
+  arrange(perc) %>%
+  mutate(labels = scales::percent(perc)) %>% 
+  ggplot(aes(x = decdailypur_rec, y = perc, fill= decdailypur_rec)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label=labels), vjust=-0.3, size=3.5) +
+  labs(fill="", x="decision group", y="proportion", caption = "decision on daily purchases")+
+  scale_fill_grey() + 
+  theme_light(base_size = 8)+
+  theme(legend.position = "none",text = element_text(size=8))
+
+df_curr %>%  
+  select(decfamvisit_rec) %>% 
+  filter(!(decfamvisit_rec=="Missing")) %>% 
+  group_by(decfamvisit_rec) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(perc = `n` / sum(`n`)) %>% 
+  arrange(perc) %>%
+  mutate(labels = scales::percent(perc)) %>% 
+  ggplot(aes(x = decfamvisit_rec, y = perc, fill= decfamvisit_rec)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label=labels), vjust=-0.3, size=3.5) +
+  labs(fill="", x="decision group", y="proportion", caption = "decision on female visit to relative")+
+  scale_fill_grey() + 
+  theme_light(base_size = 8)+
+  theme(legend.position = "none",text = element_text(size=8))
+
+df_curr %>%  
+  select(decfemearn_rec) %>% 
+  filter(!(decfemearn_rec=="Missing")) %>% 
+  group_by(decfemearn_rec) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(perc = `n` / sum(`n`)) %>% 
+  arrange(perc) %>%
+  mutate(labels = scales::percent(perc)) %>% 
+  ggplot(aes(x = decfemearn_rec, y = perc, fill= decfemearn_rec)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label=labels), vjust=-0.3, size=3.5) +
+  labs(fill="", x="decision group", y="proportion", caption = "decision on female earnings")+
+  scale_fill_grey() + 
+  theme_light(base_size = 8)+
+  theme(legend.position = "none",text = element_text(size=8))
+
+df_curr %>%  
+  select(decfemhcare_rec) %>% 
+  filter(!(decfemhcare_rec=="Missing")) %>% 
+  group_by(decfemhcare_rec) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(perc = `n` / sum(`n`)) %>% 
+  arrange(perc) %>%
+  mutate(labels = scales::percent(perc)) %>% 
+  ggplot(aes(x = decfemhcare_rec, y = perc, fill= decfemhcare_rec)) +
+  geom_bar(stat="identity") +
+  geom_text(aes(label=labels), vjust=-0.3, size=3.5) +
+  labs(fill="", x="decision group", y="proportion", caption = "decision on female care")+
+  scale_fill_grey() + 
+  theme_light(base_size = 8)+
+  theme(legend.position = "none",text = element_text(size=8))
+
+# Additionnal cleaning
+# df_curr <- df_curr %>% 
+# mutate(
+#   decbighh_rec = as_factor(recode(decbighh_rec, 
+#                                   "Woman alone"="2",
+#                                   "Woman and husband jointly"="1",
+#                                   "Husband alone"="0",
+#                                   .default = NA_character_)),
+#   
+#   decdailypur_rec = as_factor(recode(decdailypur_rec, 
+#                                      "Woman alone"="2",
+#                                      "Woman and husband jointly"="1",
+#                                      "Husband alone"="0",
+#                                      .default = NA_character_)),
+#   
+#   decfamvisit_rec = as_factor(recode(decfamvisit_rec, 
+#                                      "Woman alone"="2",
+#                                      "Woman and husband jointly"="1",
+#                                      "Husband alone"="0",
+#                                      .default = NA_character_)),
+#   
+#   decfemearn_rec = as_factor(recode(decfemearn_rec, 
+#                                     "Woman alone"="2",
+#                                     "Woman and husband jointly"="1",
+#                                     "Husband alone"="0",
+#                                     .default = NA_character_)),
+#   
+#   decfemhcare_rec = as_factor(recode(decfemhcare_rec, 
+#                                      "Woman alone"="2",
+#                                      "Woman and husband jointly"="1",
+#                                      "Husband alone"="0",
+#                                      .default = NA_character_))) %>% 
+#   drop_na() 
+# 
