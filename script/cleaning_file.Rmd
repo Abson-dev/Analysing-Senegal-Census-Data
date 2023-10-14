@@ -14,11 +14,12 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error=FALSE
 
 ### Preambule: 
 
-```{r Package needed}
+```{r Package needed, echo = FALSE}
 
 ## Importing library
 ### List of required packages
-required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf","sp")
+required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf",
+                       "flextable","sp", "factoextra", "FactoMineR")
 
 # Check if packages are installed
 missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
@@ -52,14 +53,15 @@ head(sp_rgph_2013, 10L)
 ```{r}
 # Read and check for duplicated rows in 2002 datasets
 
+# Read and check for duplicated rows in the "deces_2002" dataset
 deces_2002 <- read_sav(paste0(here::here(),"/data/Données/1. RGPH 2002/Requete PDBA2k2 Deces.sav"))
 deces_2002 %>% janitor::get_dupes() 
 
-
+# Read and check for duplicated rows in the "individus_2002" dataset
 individus_2002 <- haven::read_sav(paste0(here::here(),"/data/Données/1. RGPH 2002/Requete PDBA2k2 Individus.v2.sav"))
 individus_2002 %>% janitor::get_dupes() 
 
-
+# Read and check for duplicated rows in the "menage_2002" dataset
 menage_2002 <- haven::read_sav(paste0(here::here(),"/data/Données/1. RGPH 2002/Requete PDBA2k2 menage.sav"))
 menage_2002 %>% janitor::get_dupes() 
 ```
@@ -68,25 +70,60 @@ menage_2002 %>% janitor::get_dupes()
 ```{r}
 
 # Read and check for duplicated rows in 2013 datasets
+
+# Read and check for duplicated rows in the "deces_2013" dataset
 deces_2013 <- read_sav(paste0(here::here(),"/data/Données/4. RGPH 2013/Requete PDBA2k13 Deces_Guediawaye.sav"))
 deces_2013 %>% janitor::get_dupes() 
 
-
+# Read and check for duplicated rows in the "individus_2013" dataset
 individus_2013 <- haven::read_sav(paste0(here::here(),"/data/Données/4. RGPH 2013/Requete PDBA2k13 Indidivus GUEDIAWAYE.sav"))
 individus_2013 %>% janitor::get_dupes() 
 
-
+# Read and check for duplicated rows in the "menage_2013" dataset
 menage_2013 <- haven::read_sav(paste0(here::here(),"/data/Données/4. RGPH 2013/Requete PDBA2k13 menage.sav"))
 menage_2013 %>% janitor::get_dupes() 
 ```
 
 
 ```{r}
+# Unlabelling the variables in the RGPH datasets
+# Transform all "haven_labelled" variables to factor variables
 
-# 2013
-lst_dr_sp <- sp_rgph_2013 %>% as.data.frame() %>% select(COD_DR2012) %>% pull()  
+# For 2002
+## Unlabel the variables in the "individus_2002" dataset
+individus_2002 <- 
+  individus_2002 %>% 
+  labelled::unlabelled() 
 
-lst_dr_menage <- menage_2013 %>% select(IDDR) %>% pull() 
+## Unlabel the variables in the "menage_2002" dataset
+menage_2002 <- 
+  menage_2002 %>% 
+  labelled::unlabelled() 
+
+# For 2013  
+## Unlabel the variables in the "individus_2013" dataset
+individus_2013 <- 
+  individus_2013 %>% 
+  labelled::unlabelled()  
+
+# #Unlabel the variables in the "menage_2013" dataset
+menage_2013 <- 
+  menage_2013 %>% 
+  labelled::unlabelled() 
+
+# Creating a variable "RGPH" to identify each survey 
+
+# For 2002
+## Add a new column "RGPH" with the value "2002" to the "individus_2002" dataset
+individus_2002 <- 
+  individus_2002 %>% 
+  mutate(RGPH = "2002")
+
+# For 2013
+## Add a new column "RGPH" with the value "2013" to the "individus_2013" dataset
+individus_2013 <- 
+  individus_2013 %>% 
+  mutate(RGPH = "2013")
 
 ```
 
@@ -97,23 +134,405 @@ lst_dr_menage <- menage_2013 %>% select(IDDR) %>% pull()
 # Select the CM and compute it average age
 individus_2013 %>% 
   
-  # Transform all "haven_labelled" to factor variable
-  #labelled::unlabelled() %>% 
+  select(B04, B06, B08, RGPH) %>%
   
   ##  Select Household head informations
-  filter(B04==1) %>% 
+  filter(B04=="Chef de ménage") %>% # Household head (B04 == 1) 
   
-  # Grouping by sexe
-  group_by(B06) %>% 
+  rename(
+    sexe_cm = B06,
+    lien_cm = B04,
+    age_cm = B08,
+    ) %>% 
+  
+  
+  bind_rows(
+    
+    individus_2002 %>% 
+                 
+      select(QB03, QB04, QB06, RGPH) %>%
+    
+    ##  Select Household head informations
+    filter(QB03=="Chef de menage") %>% # Household head (B04 == 1) 
+    
+    rename(
+      sexe_cm = QB04,
+      lien_cm = QB03,
+      age_cm = QB06,
+      )
+    ) %>% 
+  
+  # Grouping by sexe (B06)
+  group_by(RGPH, sexe_cm) %>% 
   
   # Computing number of HH and average age
-  summarise("Nombre d'individus" = n(), 
-            "Age moyen" = mean(B08, na.rm = TRUE))
+  summarise( "Sexe du chef de ménage"= sexe_cm,
+            "Nombre d'individus" = n(), 
+            "Age moyen" = round(mean(age_cm, na.rm = TRUE), digits = 2)
+            ) %>% 
+  # Remove the group structure
+  ungroup() %>% 
+  
+  # Selecting the needed columns
+  select(-c(sexe_cm)) %>% 
+  
+  distinct() %>% 
+  flextable::regulartable()
+```
+
+```{r}
+# Select the CM (Chef de ménage) and compute the average age
+
+# Select relevant columns (B04, B06, B08, RGPH) from the "individus_2013" dataset
+individus_2013 %>% 
+  select(B04, B06, B08, RGPH) %>%
+
+  # Filter to select only records where "B04" (Chef de ménage) equals 1
+  # This is done to identify the household head
+  filter(B04=="Chef de ménage") %>% # Household head (B04 == 1) 
+
+  # Rename columns for clarity
+  rename(
+    sexe_cm = B06,        # Renamed B06 to "sexe_cm"
+    lien_cm = B04,        # Renamed B04 to "lien_cm"
+    age_cm = B08,         # Renamed B08 to "age_cm"
+  ) %>% 
+
+  # Combine this filtered data with a similar operation on the "individus_2002" dataset
+  bind_rows(
+    individus_2002 %>% 
+      select(QB03, QB04, QB06, RGPH) %>%
+    
+    # Filter to select only records where "QB03" (Chef de ménage) equals "Chef de menage"
+    filter(QB03=="Chef de menage") %>% # Household head (QB03 == "Chef de menage") 
+      
+    # Rename columns for consistency
+    rename(
+      sexe_cm = QB04,        # Renamed QB04 to "sexe_cm"
+      lien_cm = QB03,        # Renamed QB03 to "lien_cm"
+      age_cm = QB06,         # Renamed QB06 to "age_cm"
+    ) %>%
+    
+    # Replace "Feminin" with "Féminin" in the "sexe_cm" column
+    mutate(sexe_cm = ifelse(sexe_cm=="Feminin", "Féminin", "Masculin"))
+  ) %>% 
+
+  # Remove the "lien_cm" (link to household head) column
+  select(-lien_cm) %>% 
+  
+  # Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    label = list(sexe_cm ~ "Sexe du chef de ménage",
+                 age_cm ~ "Age du chef de ménage (en année)"),
+    statistic = list(all_continuous() ~ "{mean}", all_categorical() ~ "{p}"),
+    digits = everything() ~ c(0,0),
+    missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Caractéristique du Chef de ménage entre les deux recensements") %>%
+  
+  # Add difference statistics to the table
+  add_difference() %>% 
+  
+  # Add overall statistics to the table
+  add_overall() %>%
+  
+  # Add a count of the observations
+  add_n()
 ```
 
 
 
 ### -	Calcul multivarié pour des indices de pauvreté (bien des ménages, Niveau d’instruction, accès aux services (bien d’aisance, eau, etc.)
+
+
+```{r}
+
+# Transform values in the "QB15" column of the "individus_2002" dataset
+# The transformation categorizes educational levels into descriptive labels
+
+individus_2002 <- individus_2002 %>% 
+  mutate(QB15 = case_when(
+    QB15 == 0 ~ "aucune",      # If QB15 is 0, set it to "aucune"
+    QB15 == 1 ~ "prescolaire", # If QB15 is 1, set it to "prescolaire"
+    QB15 %in% seq(2,7,1) ~ "elementaire", # If QB15 is 2 to 7, set it to "elementaire"
+    QB15 %in% seq(8,11,1) ~ "moyen", # If QB15 is 8 to 11, set it to "moyen"
+    QB15 %in% seq(12,14,1) ~ "secondaire", # If QB15 is 12 to 14, set it to "secondaire"
+    QB15 %in% seq(15,19,1) ~ "superieur", # If QB15 is 15 to 19, set it to "superieur"
+    TRUE ~ as.character(QB15) # If none, keep the old value
+    ) %>% 
+  structure(label = Hmisc::label(individus_2002$QB15))) # Apply labels to the QB15 column
+
+
+# Transform values in the "B32" column of the "individus_2013" dataset
+# The transformation categorizes educational levels from codes into descriptive labels
+
+individus_2013 <- individus_2013 %>% 
+  
+  mutate(B32 = case_when(
+    
+    B32 %in% c("Petite section","Moyenne section", "Grnde section") ~ "prescolaire", # If B32 is in pre-school levels, set it to "prescolaire"
+    
+    B32 %in% c("Cours d'initiation (CI)", "Cours préparatoire (CP)", 
+    "Cours élémentaire 1ère année (CE1)", "Cours élémentaire 2ème année (CE2)",
+    "Cours moyen 1ère année (CM1)", "Cours moyen 2ème année (CM2)") ~ "elementaire", # If B32 corresponds to elementary levels, set it to "elementaire"
+    
+    B32 %in% c("Sixième (6ième)", "Cinquième (5ième)", "Quatrième (4ième)", "Troisième (3ième)") ~ "moyen", # If B32 corresponds to middle school levels, set it to "moyen"
+    
+    B32 %in% c("Seconde", "Première", "Terminale") ~ "secondaire", # If B32 corresponds to high school levels, set it to "secondaire"
+    
+    B32 %in% c("1ère année", "2ème année", "Licence/3ième année", "Maitrise/4ième année", "DEA/5ième année", "6ième année", "7ième année", "8ième année et +") ~ "superieur", # If B32 corresponds to higher education levels, set it to "superieur"
+    TRUE ~ as.character(B32) %>% 
+  structure(label = Hmisc::label(individus_2013$B32)))) # Apply labels to the B32 column
+```
+
+
+```{r}
+
+# Renaming variables so that they can have the same name in the two
+# datasets
+
+# Renaming variables so that they can have the same name in the two datasets
+
+## For the RGPH 2002
+menage_2002 <- menage_2002 %>% 
+  
+  # Mutate and rename variables in the "menage_2002" dataset
+  mutate(
+    
+    nb_indiv = E01 %>% structure(label=Hmisc::label(menage_2002$Nb_indiv)),
+    id_dr = DR %>% structure(label=Hmisc::label(menage_2002$DR)),
+    
+    type_log = E01 %>% structure(label=Hmisc::label(menage_2002$E01)),
+    nbr_piece_occup = E02 %>% structure(label=Hmisc::label(menage_2002$E02)),
+    stat_occupation = E03 %>% structure(label=Hmisc::label(menage_2002$E03)),
+    type_aisance = E04 %>% structure(label=Hmisc::label(menage_2002$E04)),
+    approv_eau = E05 %>% structure(label=Hmisc::label(menage_2002$E05)),
+    eclairage = E06 %>% structure(label=Hmisc::label(menage_2002$E06)),
+    combustible_cuisine = E07 %>% structure(label=Hmisc::label(menage_2002$E07)),
+    
+    nature_mur = E08 %>% structure(label=Hmisc::label(menage_2002$E08)),
+    nature_toit = E09 %>% structure(label=Hmisc::label(menage_2002$E09)),
+    nature_sol = E10 %>% structure(label=Hmisc::label(menage_2002$E10)),
+    radio = E11B %>% structure(label=Hmisc::label(menage_2002$E11B)),
+    televiseur = E11C %>% structure(label=Hmisc::label(menage_2002$E11C)),
+    video = E11D %>% structure(label=Hmisc::label(menage_2002$E11D)),
+    refri_conge = E11E %>% structure(label=Hmisc::label(menage_2002$E11E)),
+    
+    telephone = E11F %>% structure(label=Hmisc::label(menage_2002$E11F)),
+    rechaud_cuis = E11G %>% structure(label=Hmisc::label(menage_2002$E11G)),
+    foyer_ameli = E11H %>% structure(label=Hmisc::label(menage_2002$E11H)),
+    climatisateur = E11I %>% structure(label=Hmisc::label(menage_2002$E11I)),
+    machine_coudre = E11J %>% structure(label=Hmisc::label(menage_2002$E11J)),
+    aucun_11K = E11K %>% structure(label=Hmisc::label(menage_2002$E11K)),
+    voiture = E12B %>% structure(label=Hmisc::label(menage_2002$E12B)),
+    
+    mobylette = E12C %>% structure(label=Hmisc::label(menage_2002$E12C)),
+    bicyclette = E12E %>% structure(label=Hmisc::label(menage_2002$E12E)),
+    caleche_charette = E12F %>% structure(label=Hmisc::label(menage_2002$E12F)),
+    pirogue = E12G %>% structure(label=Hmisc::label(menage_2002$E12G)),
+    aucun_G12 = E12G %>% structure(label=Hmisc::label(menage_2002$E12G)),
+    houe_charrue = E13B %>% structure(label=Hmisc::label(menage_2002$E13B)),
+    caleche_char = E13C %>% structure(label=Hmisc::label(menage_2002$E13C)),
+    
+    animaux_traite = E13D %>% structure(label=Hmisc::label(menage_2002$E13D)),
+    tracteur = E13E %>% structure(label=Hmisc::label(menage_2002$E13E)),
+    voiture_cam = E13F %>% structure(label=Hmisc::label(menage_2002$E13F)),
+    mobylette_bicycl = E13G %>%     structure(label=Hmisc::label(menage_2002$E13G)),
+    refriger_congelat = E13I %>% structure(label=Hmisc::label(menage_2002$E13I)),
+    machine_coudre = E13J %>% structure(label=Hmisc::label(menage_2002$E13J)),
+    materiel_musique = E13K %>% structure(label=Hmisc::label(menage_2002$E13K)),
+    
+    chaise_bache = E13L %>% structure(label=Hmisc::label(menage_2002$E13L)),
+    telephone_tele = E13M %>% structure(label=Hmisc::label(menage_2002$E13M)),
+    photocopieuse = E13N %>% structure(label=Hmisc::label(menage_2002$E13N)),
+    ordinateur = E13O %>% structure(label=Hmisc::label(menage_2002$E13O)),
+    moulin = E13P %>% structure(label=Hmisc::label(menage_2002$E13P)),
+    appareil_photo = E13Q %>% structure(label=Hmisc::label(menage_2002$E13Q)),
+    terrain_bat = E13R %>% structure(label=Hmisc::label(menage_2002$E13R)),
+    
+    aucun_produc = E13S %>% structure(label=Hmisc::label(menage_2002$E13S)),
+    evacut_ordures = E14 %>% structure(label=Hmisc::label(menage_2002$E14)),
+    repas_saute = E15 %>% structure(label=Hmisc::label(menage_2002$E15)),
+    soins_medicaux = E16 %>% structure(label=Hmisc::label(menage_2002$E16))
+  )
+
+
+# Mutate and rename variables in the "menage_2013" dataset
+menage_2013 <- menage_2013 %>% 
+  
+  mutate(
+    id_dr = IDDR %>% structure(label=Hmisc::label(menage_2013$IDDR)),
+    nb_indiv = Nbre_indiv %>% structure(label=Hmisc::label(menage_2013$Nbre_indiv)),
+    type_log = E01 %>% structure(label=Hmisc::label(menage_2013$E01)),
+    nbr_piece_occup = E02 %>% structure(label=Hmisc::label(menage_2013$E02)),
+    stat_occupation = E03 %>% structure(label=Hmisc::label(menage_2013$E03)),
+    type_aisance = E08 %>% structure(label=Hmisc::label(menage_2013$E08)),
+    approv_eau = E09 %>% structure(label=Hmisc::label(menage_2013$E09)),
+    eclairage = E11 %>% structure(label=Hmisc::label(menage_2013$E11)),
+    combustible_cuisine = E12 %>% structure(label=Hmisc::label(menage_2013$E12)),
+    
+    nature_mur = E05 %>% structure(label=Hmisc::label(menage_2013$E05)),
+    nature_toit = E06 %>% structure(label=Hmisc::label(menage_2013$E06)),
+    nature_sol = E07 %>% structure(label=Hmisc::label(menage_2013$E07)),
+    radio = E13_1 %>% structure(label=Hmisc::label(menage_2013$E13_1)),
+    televiseur = E13_2 %>% structure(label=Hmisc::label(menage_2013$E13_2)),
+    video = E13_3 %>% structure(label=Hmisc::label(menage_2013$E13_3)),
+    refri_conge = E13_4 %>% structure(label=Hmisc::label(menage_2013$E13_4)),
+    
+    telephone = E13_6 %>% structure(label=Hmisc::label(menage_2013$E13_6)),
+    rechaud_cuis = E13_18 %>% structure(label=Hmisc::label(menage_2013$E13_18)),
+    foyer_ameli = E13_7 %>% structure(label=Hmisc::label(menage_2013$E13_7)),
+    climatisateur = E13_8 %>% structure(label=Hmisc::label(menage_2013$E13_8)),
+    machine_coudre = E13_9 %>% structure(label=Hmisc::label(menage_2013$E13_9)),
+    
+    voiture = E15_5 %>% structure(label=Hmisc::label(menage_2013$E15_5)),
+    mobylette = E15_6 %>% structure(label=Hmisc::label(menage_2013$E15_6)),
+    bicyclette = E14_3 %>% structure(label=Hmisc::label(menage_2013$E14_3)),
+    caleche_charette = E14_4 %>% structure(label=Hmisc::label(menage_2013$E14_4)),
+    pirogue = E15_7 %>% structure(label=Hmisc::label(menage_2013$E15_7)),
+    houe_charrue = E15_1 %>% structure(label=Hmisc::label(menage_2013$E15_1)),
+    caleche_char = E15_2 %>% structure(label=Hmisc::label(menage_2013$E15_2)),
+    
+    animaux_traite = E15_3 %>% structure(label=Hmisc::label(menage_2013$E15_3)),
+    tracteur = E15_4 %>% structure(label=Hmisc::label(menage_2013$E15_4)),
+    voiture_cam = E15_5 %>% structure(label=Hmisc::label(menage_2013$E15_5)),
+    mobylette_bicycl = E15_6 %>% structure(label=Hmisc::label(menage_2013$E15_6)),
+    refriger_congelat = E15_8 %>% structure(label=Hmisc::label(menage_2013$E15_8)),
+    machine_coudre = E15_9 %>% structure(label=Hmisc::label(menage_2013$E15_9)),
+    materiel_musique = E15_10 %>% structure(label=Hmisc::label(menage_2013$E15_10)),
+    
+    chaise_bache = E15_11 %>% structure(label=Hmisc::label(menage_2013$E15_11)),
+    telephone_tele = E15_12 %>% structure(label=Hmisc::label(menage_2013$E15_12)),
+    photocopieuse = E15_13 %>% structure(label=Hmisc::label(menage_2013$E15_13)),
+    ordinateur = E15_14 %>% structure(label=Hmisc::label(menage_2013$E15_14)),
+    moulin = E15_15 %>% structure(label=Hmisc::label(menage_2013$E15_15)),
+    appareil_photo = E15_16 %>% structure(label=Hmisc::label(menage_2013$E15_16)),
+    terrain_bat = E15_17 %>% structure(label=Hmisc::label(menage_2013$E15_17)),
+    
+    evacut_ordures = E16 %>% structure(label=Hmisc::label(menage_2013$E16)),
+    repas_saute = E18 %>% structure(label=Hmisc::label(menage_2013$E18)),
+    soins_medicaux = E20 %>% structure(label=Hmisc::label(menage_2013$E20))
+    
+    )
+
+
+
+## In the following we merge the "menage_2002" with the individual dataset
+menage_2002 <- menage_2002 %>% 
+  left_join(
+    
+    individus_2002 %>% 
+      
+      # Filtering to get only individuals marked as "Chef de menage" in QB03
+      filter(QB03=="Chef de menage") %>% 
+      
+      # Renaming the QB15 column to "niveau_instruction_cm"
+      rename(niveau_instruction_cm = QB15) %>% 
+      
+      # Selecting specific columns from the filtered dataset
+      select(ID_MENAGE, DR, niveau_instruction_cm),
+      
+      # Merging by matching columns in both datasets
+      by = c("ID_MENAGE" = "ID_MENAGE", "id_dr" = "DR")
+    
+  )
+
+
+## In the following we merge the "menage_2013" with the individual dataset
+menage_2013 <- menage_2013 %>% 
+  left_join(
+    
+    individus_2013 %>% 
+      
+      # Filtering to get only individuals marked as "Chef de menage" in B04
+      filter(B04=="Chef de ménage") %>% 
+      
+      # Renaming the B32 column to "niveau_instruction_cm"
+      rename(niveau_instruction_cm = B32) %>% 
+      
+      # Selecting specific columns from the filtered dataset
+      select(ID_MENAGE, IDDR, niveau_instruction_cm),
+      
+      # Merging by matching columns in both datasets
+      by = c("ID_MENAGE" = "ID_MENAGE", "id_dr" = "IDDR")
+    
+  )
+
+
+```
+
+
+
+```{r}
+# 
+# menage_2002 <- menage_2002 %>% 
+#   select(id_dr, ID_MENAGE, 71:118)
+# 
+# var_tmp<-names(df)
+# df <-df %>% dplyr::mutate_at(var_tmp, ~as.numeric(recode(., "Yes"=1, "No"=0, .default = NaN)))
+# 
+# menage_2013 %>% 
+#     mutate_if(across(.cols = everything(), 
+#            ~ ifelse(. == "Oui", 1, ifelse(. == "Non"| .=="pas de malade", 0, .))))
+# 
+# menage_2013 %>% 
+#     mutate(across(.cols = where(is.factor), ~ recode(., "Oui"=1, "Non"=0, "pas de malade"= 0, .))) %>% View()
+# 
+# menage_2013 <- menage_2013 %>% 
+#   select(id_dr, ID_MENAGE, 71:118)
+```
+
+
+
+```{r}
+ 
+# the PCA
+res.mca <- df_curr %>% 
+  select(decbighh_rec, 
+         decfemhcare_rec,decfamvisit_rec, 
+         dechusearn_rec, wkearnsmore_rec, decfemearn_rec) %>% 
+  FactoMineR::MCA(ncp = 5, graph = TRUE, method="Burt", na.method = "Average")
+
+# Eigen values
+
+eig.val <- get_eigenvalue(res.mca)
+fviz_screeplot(res.mca, addlabels = TRUE, ylim = c(0, 80))
+
+# Correlation between variables and Principal dimensions
+fviz_mca_var(res.mca, col.var = "contrib", 
+             repel = TRUE, # Avoid text overlapping (slow)
+             choice = c("var.cat"),
+             ggtheme = theme_minimal()) +
+  scale_color_gradient2(low = "white", mid = "grey",
+                        high = "black", midpoint = 2)
+ggsave("reg_tables/TotalEvent/conflict_post/default/variable_graphique.jpeg")
+
+# fviz_mca_ind(res.mca, 
+#              label = "none", # hide individual labels
+#              habillage = "decbighh_rec", # color by groups 
+#             # palette = c("#00AFBB", "#E7B800","#8fd175"),
+#              addEllipses = TRUE, ellipse.type = "confidence",
+#              ggtheme = theme_minimal()) 
+
+# fviz_mca_biplot(res.mca, 
+#                  repel = TRUE, # Avoid text overlapping (slow if many point)
+#                  ggtheme = theme_minimal())
+
+var <- get_mca_var(res.mca)
+var
+round(var$coord, 2)
+
+
+
+# Get the individual coordinates (loadings) for each observation
+individual_coordinates <- res.mca$ind$coord
+
+# affect the first dimension of the dataframe
+df_curr$burt_mat <- individual_coordinates[,1]
+```
 
 
 ### -	Calcul indice sur la dynamique de la population (croissance démographique au niveau des DR)
