@@ -99,10 +99,14 @@ indicateur_menage_2013 <- menage_2013 %>%
 indicateur_menage_2002 <- sp_rgph_2002 %>% 
   left_join(indicateur_menage_2002, by="id_dr") %>% 
   select(names(indicateur_menage_2002), geometry) %>% 
-  filter(!is.na(sexe_cm)) %>% 
-  mutate(sexe_cm= recode(sexe_cm, 
-                         "1"="Homme",
-                         "2"="Femme"))
+  filter(!is.na(sexe_cm)) 
+# %>% 
+#   mutate(sexe_cm= recode(sexe_cm, 
+#                          "1"="Homme",
+#                          "2"="Femme"))
+
+# indicateur_menage_2002$sexe_cm <- car::recode(indicateur_menage_2002$sexe_cm, "1 = Homme; 2=Femme")
+
 
 # indicateur_menage_2013 <- sp_rgph_2013 %>% 
 #   left_join(indicateur_menage_2013, by="id_dr") 
@@ -123,11 +127,12 @@ indicateur_menage_2013 <- sp_rgph_2013 %>%
   rename(id_dr=COD_DR2012) %>% 
   left_join(indicateur_menage_2013, by="id_dr") %>% 
   select(names(indicateur_menage_2013), geometry) %>% 
-  filter(!is.na(sexe_cm)) %>% 
-  mutate(sexe_cm= recode(sexe_cm, 
-                         "1"="Homme",
-                         "2"="Femme"))
-
+  filter(!is.na(sexe_cm)) 
+# %>%
+#   mutate(sexe_cm= recode(sexe_cm,
+#                          "1"="Homme",
+#                          "2"="Femme"))
+# indicateur_menage_2013$sexe_cm <- dplyr::recode(indicateur_menage_2013$sexe_cm, "1"="Homme","2"="Femme")
 # indicateur_menage_2013 <- sp_rgph_2013 %>% 
 #   left_join(indicateur_menage_2013, by="id_dr") 
 
@@ -145,6 +150,18 @@ g_2013 <- ggplot(indicateur_menage_2013, aes(fill = age_moyen)) +
 gridExtra::grid.arrange(g_2002,g_2013, nrow=2, top="Age moyen du CM par DR")
 
 
+```
+
+```{r}
+ggplot(indicateur_menage_2013, aes(fill = age_moyen)) + 
+          geom_sf() + 
+          scale_fill_viridis_c() + 
+          theme_void() + 
+          facet_wrap(~sexe_cm, ncol = 2) +
+          labs(fill = "",
+               title = "",
+               subtitle = "",
+               caption = "2013 Senegal Census")
 ```
 
 
