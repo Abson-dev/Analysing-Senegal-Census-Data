@@ -25,7 +25,7 @@ rm(list=ls())
 ## Importing library
 ### List of required packages
 required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf",
-                       "flextable","sp", "factoextra", "FactoMineR","gtsummary")
+                       "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot")
 
 # Check if packages are installed
 missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
@@ -63,6 +63,10 @@ head(sp_rgph_2013, 10L)
 deces_2002 <- read_sav(paste0(here::here(),"/data/1. RGPH 2002/Requete PDBA2k2 Deces.sav"))
 deces_2002 %>% janitor::get_dupes() 
 
+# Read and check for duplicated rows in the "deces_complement" dataset
+deces_2002_complement <- read_sav(paste0(here::here(),"/data/1. RGPH 2002/PDBA_rgph2002_Deces Complement Pikine.sav"))
+deces_2002_complement %>% janitor::get_dupes() 
+
 # Read and check for duplicated rows in the "individus_2002" dataset
 individus_2002 <- haven::read_sav(paste0(here::here(),"/data/1. RGPH 2002/Requete PDBA2k2 Individus.v2.sav"))
 individus_2002 %>% janitor::get_dupes() 
@@ -71,6 +75,32 @@ individus_2002 %>% janitor::get_dupes()
 menage_2002 <- haven::read_sav(paste0(here::here(),"/data/1. RGPH 2002/Requete PDBA2k2 menage.sav"))
 menage_2002 %>% janitor::get_dupes()
 menage_2002 %>% janitor::get_dupes(ID_MENAGE)
+
+# Read and check for duplicated rows in the "menage_2002_complement" dataset
+menage_2002_complement <- read_sav(paste0(here::here(),"/data/1. RGPH 2002/PDBA_rgph2002_menage_complement.sav"))
+menage_2002_complement %>% janitor::get_dupes() 
+
+# Read and check for duplicated rows in the "individus_2002_complement_pikine" dataset
+individus_2002_complement_pikine <- read_sav(paste0(here::here(),"/data/1. RGPH 2002/PDBA_rgph2002_Individus Complement Pikine.sav"))
+individus_2002_complement_pikine %>% janitor::get_dupes() 
+
+# Joining with the 2002 dataset for deceased individuals
+deces_2002 <- deces_2002_complement %>% 
+  mutate(ID_MENAGE = paste0(QA01, QA02, QA03, QA04, QA05, QA06, "0", QA07, QA072_CLE, QA08, QA09, QA10),
+         DR = paste0(QA01, QA02, QA03, QA04, QA05, QA06, "0", QA07, QA072_CLE)) %>%
+  plyr::rbind.fill(deces_2002)
+
+# Joining with the 2002 dataset for individual data
+individus_2002 <- individus_2002_complement_pikine %>% 
+  mutate(ID_MENAGE = paste0(QA01, QA02, QA03, QA04, QA05, QA06, "0", QA07, QA072_CLE, QA08, QA09, QA10),
+         DR = paste0(QA01, QA02, QA03, QA04, QA05, QA06, "0", QA07, QA072_CLE)) %>%
+  plyr::rbind.fill(individus_2002)
+
+# Joining with the 2002 dataset for household data
+menage_2002 <- menage_2002_complement %>% 
+  mutate(ID_MENAGE = paste0(QA01, QA02, QA03, QA04, QA05, QA06, "0", QA07, QA072_CLE, QA08, QA09, QA10),
+         DR = paste0(QA01, QA02, QA03, QA04, QA05, QA06, "0", QA07, QA072_CLE)) %>%
+  plyr::rbind.fill(menage_2002)
 ```
 
 
@@ -99,25 +129,25 @@ menage_2013 %>% janitor::get_dupes(ID_MENAGE)
 
 # For 2002
 ## Unlabel the variables in the "individus_2002" dataset
-individus_2002 <- 
-  individus_2002 %>% 
-  labelled::unlabelled() 
-
-## Unlabel the variables in the "menage_2002" dataset
-menage_2002 <- 
-  menage_2002 %>% 
-  labelled::unlabelled() 
-
-# For 2013  
-## Unlabel the variables in the "individus_2013" dataset
-individus_2013 <- 
-  individus_2013 %>% 
-  labelled::unlabelled()  
-
-# #Unlabel the variables in the "menage_2013" dataset
-menage_2013 <- 
-  menage_2013 %>% 
-  labelled::unlabelled() 
+# individus_2002 <- 
+#   individus_2002 %>% 
+#   labelled::unlabelled() 
+# 
+# ## Unlabel the variables in the "menage_2002" dataset
+# menage_2002 <- 
+#   menage_2002 %>% 
+#   labelled::unlabelled() 
+# 
+# # For 2013  
+# ## Unlabel the variables in the "individus_2013" dataset
+# individus_2013 <- 
+#   individus_2013 %>% 
+#   labelled::unlabelled()  
+# 
+# # #Unlabel the variables in the "menage_2013" dataset
+# menage_2013 <- 
+#   menage_2013 %>% 
+#   labelled::unlabelled() 
 
 
 ```
@@ -394,12 +424,18 @@ menage_2002 <- menage_2002 %>%
       
       # Renaming the QB15 column to "niveau_instruction_cm"
       mutate(niveau_instruction_cm = QB15 %>% structure(label=Hmisc::label(individus_2002$QB15))) %>% 
-      
+  
+    rename(
+      sexe_cm = QB04,        # Renamed QB04 to "sexe_cm"
+      age_cm = QB06,         # Renamed QB06 to "age_cm"
+    ) %>% 
       # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, DR, niveau_instruction_cm),
+      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm),
       
       # Merging by matching columns in both datasets
-      by = c("ID_MENAGE" = "ID_MENAGE", "id_dr" = "DR")
+      by = c("ID_MENAGE" = "ID_MENAGE", 
+             "num_men"="num_men",
+             "id_dr" = "DR")
     
   )
 
@@ -416,8 +452,13 @@ menage_2013 <- menage_2013 %>%
       # Renaming the B32 column to "niveau_instruction_cm"
       mutate(niveau_instruction_cm = B32 %>% structure(label=Hmisc::label(individus_2013$B32))) %>% 
       
+       # Rename columns for clarity
+  rename(
+    sexe_cm = B06,        # Renamed B06 to "sexe_cm"
+    age_cm = B08,         # Renamed B08 to "age_cm"
+  ) %>% 
       # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, IDDR, niveau_instruction_cm),
+      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm),
       
       # Merging by matching columns in both datasets
       by = c("ID_MENAGE" = "ID_MENAGE", "id_dr" = "IDDR")
@@ -476,47 +517,92 @@ deces_2013 <- deces_2013 %>%
 # This code selects the "id_dr," "ID_MENAGE," and columns 77 to the last column in "menage_2013"
 # It then performs a left join with "deces_2013" based on the "ID_MENAGE" key
 
+# Selecting specific columns from the 'menage_2013' dataset
 menage_2013 <- menage_2013 %>% 
-  select(id_dr, ID_MENAGE, 77:ncol(menage_2013)) %>% 
-  left_join(deces_2013,
-            by = "ID_MENAGE") %>% 
-  mutate(RGPH = "2013" %>% structure(label = "RGPH"))
+  select(id_dr, ID_MENAGE, 77:ncol(menage_2013)) %>%
+  
+# Performing a left join with the 'deces_2013' dataset based on 'ID_MENAGE'
+  left_join(deces_2013, by = "ID_MENAGE") %>%
+  
+# Adding a new column 'RGPH' with the value "2013" and setting a label
+  mutate(RGPH = "2013" %>% structure(label = "RGPH"),
+  
+# Adding a label to the 'nbr_deces' column
+         nbr_deces = nbr_deces %>% structure(label = "Nombre de décès dans le ménage au cours des 12 derniers mois"))
 
 # For the RGPH 2002 dataset, select specific columns and merge with "deces_2013" data
 # This code selects the "id_dr," "ID_MENAGE," and columns 71 to the last column in "menage_2002"
 # It then performs a left join with "deces_2013" based on the "ID_MENAGE" key
 
+# Selecting specific columns from the 'menage_2002' dataset
 menage_2002 <- menage_2002 %>% 
-  select(id_dr, ID_MENAGE, 71:ncol(menage_2002)) %>% 
-  left_join(deces_2002,
-            by = "ID_MENAGE")%>% 
-  mutate(RGPH = "2002" %>% structure(label = "RGPH"))
+  select(id_dr, ID_MENAGE, num_men, 71:ncol(menage_2002)) %>%
+  
+# Performing a left join with the 'deces_2002' dataset based on 'ID_MENAGE'
+  left_join(deces_2002, by = "ID_MENAGE") %>%
+  
+# Adding a new column 'RGPH' with the value "2002" and setting a label
+  mutate(RGPH = "2002" %>% structure(label = "RGPH"),
+  
+# Adding a new column 'ID_MENAGE_corrige' by checking if 'num_men' is missing and using 'ID_MENAGE' if so, then setting a label
+         ID_MENAGE_corrige = ifelse(is.na(num_men), ID_MENAGE, num_men) %>% structure(label = "ID MENAGE")) %>%
+  
+# Selecting and removing specific columns
+  select(-c(ID_MENAGE, num_men)) %>%
+  
+# Renaming the 'ID_MENAGE_corrige' column to 'ID_MENAGE'
+  rename(ID_MENAGE = ID_MENAGE_corrige) %>%
+  
+# Adding a new column 'nbr_deces' by checking if it's missing and setting it to 0, with a label
+  mutate(nbr_deces = ifelse(is.na(nbr_deces), 0, nbr_deces) %>% structure(label = "Nombre de décès dans le ménage au cours des 12 derniers mois"))
 ```
 
+
 ```{r}
-# Combine the "menage_2013" and "menage_2002" datasets into a single dataset
+# Filtering the 'menage_2013' dataset to exclude specific values in the 'id_dr' column
+menage_2013 <- menage_2013 %>% 
+  filter(!(id_dr %in% c("014301140124", "014301140125")))
+
+# Mutating the 'sp_rgph_2002' dataset to create a new 'id_dr' column based on conditions
+sp_rgph_2002 <- sp_rgph_2002 %>% 
+  mutate(id_dr = ifelse(NUMDEPT=="3", 
+                      paste0(NUM_REG, NUMDEPT, NUM_ARRDT, "18", NUM_CA, IDDR, "O"), 
+                      paste0("0", NUM_REG, NUMDEPT, NUM_ARRDT, "8", NUM_CA, IDDR, "O")))
+
+```
+
+
+
+
+```{r}
+# Exporting the "menage_2013" and "menage_2002" datasets
 # This code uses the "plyr::rbind.fill" function to stack the two datasets on top of each other, 
-# creating a unified dataset named "sn_census."
 
-sn_census <- menage_2013 %>% 
-  plyr::rbind.fill(menage_2002)
+# 
+# sn_census <- menage_2013 %>% 
+#   plyr::rbind.fill(menage_2002)
 
+# For the "menage_2002"
 # Saving in SPSS format
-haven::write_sav(sn_census,paste0(here::here(), "/output/output_data/sn_census.sav"))
+haven::write_sav(menage_2002,paste0(here::here(), "/output/output_data/menage_2002.sav"))
 
 # Saving in R format
-save(sn_census,file=paste0(here::here(), "/output/output_data/sn_census.RData"))
+save(menage_2002,file=paste0(here::here(), "/output/output_data/menage_2002.RData"))
+
+# For the "menage_2013"
+# Saving in SPSS format
+haven::write_sav(menage_2013,paste0(here::here(), "/output/output_data/menage_2013.sav"))
+
+# Saving in R format
+save(menage_2013,file=paste0(here::here(), "/output/output_data/menage_2013.RData"))
+
+
+# For the "sp_rgph_2002"
+# Saving in the sf format
+sf::st_write(obj=sp_rgph_2002, paste0(here::here(), "/output/output_data/EAs_2002_new.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) # we change the id _dr
 ```
-
-
-
 
 ```{r}
+## Removing all objects
 rm(list=ls())
 ```
-
-
-### -	Calcul indice sur la dynamique de la population (croissance démographique au niveau des DR)
-
-
-
