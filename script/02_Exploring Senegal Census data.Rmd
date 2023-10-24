@@ -100,7 +100,9 @@ indicateur_menage_2002 <- sp_rgph_2002 %>%
   left_join(indicateur_menage_2002, by="id_dr") %>% 
   select(names(indicateur_menage_2002), geometry) %>% 
   filter(!is.na(sexe_cm)) %>% 
-  mutate(sexe_cm= recode(sexe_cm, 
+  mutate(
+    sexe_cm=as.numeric(sexe_cm),
+    sexe_cm = recode(sexe_cm, 
                          "1"="Homme",
                          "2"="Femme"))
 
@@ -124,7 +126,9 @@ indicateur_menage_2013 <- sp_rgph_2013 %>%
   left_join(indicateur_menage_2013, by="id_dr") %>% 
   select(names(indicateur_menage_2013), geometry) %>% 
   filter(!is.na(sexe_cm)) %>% 
-  mutate(sexe_cm= recode(sexe_cm, 
+  mutate(
+    sexe_cm=as.numeric(sexe_cm),
+    sexe_cm= recode(sexe_cm, 
                          "1"="Homme",
                          "2"="Femme"))
 

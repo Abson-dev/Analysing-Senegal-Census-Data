@@ -474,17 +474,19 @@ menage_2013 <- menage_2013 %>%
 # This code modifies the "soins_medicaux" variable, replacing "2" with "0" if present
 
 menage_2013 <- menage_2013 %>%
-  mutate(soins_medicaux = 
-           dplyr::recode(soins_medicaux,
-                  "2" = 0
+  mutate(
+            soins_medicaux = as.numeric(soins_medicaux),
+            soins_medicaux = 
+                dplyr::recode(soins_medicaux,
+                    "2" = 0
                   )) 
 
 # For the RGPH 2002 dataset, recode the "soins_medicaux" variable
 # This code modifies the "soins_medicaux" variable, replacing "2" with "0", "3" with NA, and "9" with NA
 
 menage_2002 <- menage_2002 %>%
-  mutate(soins_medicaux = 
-           dplyr::recode(soins_medicaux,
+  mutate(soins_medicaux = as.numeric(soins_medicaux),
+           soins_medicaux = dplyr::recode(soins_medicaux,
                   "2" = 0,
                   "3" = NULL, 
                   "9" = NULL
