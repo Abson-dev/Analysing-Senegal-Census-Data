@@ -1,0 +1,5 @@
++ Calcul indice sur la dynamique de la population (croissance démographique au niveau des DR) : la base pour faire le calcul des taux de croissance par DR ça sera les données de 2002. On vas aggrége les données de 2013 pour obtenir la même base que les données de 2002 (Il y'a 433 dr et en 2013 il y'a 267 en 2002)
+
++ Niveau d'instruction du CM. Il y'a 18591 CM qui ont aucun niveau d'instruction en 2002. Ce nombre est de 18974 en 2013 (NA et aucun).
+
++ Calcul multivarié pour des indices de pauvreté (bien des ménages, Niveau d’instruction, accès aux services (bien d’aisance, eau, etc.), comment faire ?
