@@ -1,7 +1,7 @@
 ---
 title: "Wrangling Senegal Census data with tidyverse tools"
 author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
-date: "2023-10-12"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -282,6 +282,80 @@ individus_2013 <- individus_2013 %>%
 
 ```{r}
 
+# For the 2002 individus data  
+
+individus_2002 <- 
+  individus_2002 %>% 
+  left_join(
+# Group the 'individus_2002' dataframe by the 'ID_MENAGE' column
+individus_2002 %>%
+  group_by(ID_MENAGE) %>%
+  
+# Calculate the sum of individuals with 'elementaire' education within each household
+  summarise(nbr_educ_primaire = sum(QB15 == "elementaire", na.rm = TRUE),
+  
+# Calculate the sum of individuals with 'moyen' education within each household
+            nbr_educ_moyen = sum(QB15 == "moyen", na.rm = TRUE),
+            
+# Calculate the sum of individuals with 'secondaire' education within each household
+            nbr_educ_secondaire = sum(QB15 == "secondaire", na.rm = TRUE),
+            
+# Calculate the sum of individuals with 'superieur' education within each household
+            nbr_educ_superieur = sum(QB15 == "superieur", na.rm = TRUE)
+  ) %>%
+  
+# Remove the grouping to get a flat summary data frame
+  ungroup() %>%
+  
+# Calculate a binary variable 'school_attendance' for each household.
+# If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
+# otherwise, it means no one is attending school (1).
+  mutate(school_attendance = 
+           ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>%
+  select(ID_MENAGE, school_attendance),
+
+  by=c("ID_MENAGE"="ID_MENAGE")
+)
+  
+# For the 2013 individus data  
+
+individus_2013 <- 
+  individus_2013 %>% 
+  left_join(
+# Group the 'individus_2013' dataframe by the 'ID_MENAGE' column
+individus_2013 %>%
+  group_by(ID_MENAGE) %>%
+  
+# Calculate the sum of individuals with 'elementaire' education within each household
+  summarise(nbr_educ_primaire = sum(B32 == "elementaire", na.rm = TRUE),
+  
+# Calculate the sum of individuals with 'moyen' education within each household
+            nbr_educ_moyen = sum(B32 == "moyen", na.rm = TRUE),
+            
+# Calculate the sum of individuals with 'secondaire' education within each household
+            nbr_educ_secondaire = sum(B32 == "secondaire", na.rm = TRUE),
+            
+# Calculate the sum of individuals with 'superieur' education within each household
+            nbr_educ_superieur = sum(B32 == "superieur", na.rm = TRUE)
+  ) %>%
+  
+# Remove the grouping to get a flat summary data frame
+  ungroup() %>%
+  
+# Calculate a binary variable 'school_attendance' for each household.
+# If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
+# otherwise, it means no one is attending school (1).
+  mutate(school_attendance = 
+           ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>%
+  select(ID_MENAGE, school_attendance),
+
+  by=c("ID_MENAGE"="ID_MENAGE")
+)
+```
+
+
+```{r}
+
 # Renaming variables so that they can have the same name in the two
 # datasets
 
@@ -430,7 +504,7 @@ menage_2002 <- menage_2002 %>%
       age_cm = QB06,         # Renamed QB06 to "age_cm"
     ) %>% 
       # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm),
+      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance),
       
       # Merging by matching columns in both datasets
       by = c("ID_MENAGE" = "ID_MENAGE", 
@@ -458,7 +532,7 @@ menage_2013 <- menage_2013 %>%
     age_cm = B08,         # Renamed B08 to "age_cm"
   ) %>% 
       # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm),
+      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance),
       
       # Merging by matching columns in both datasets
       by = c("ID_MENAGE" = "ID_MENAGE", "id_dr" = "IDDR")
@@ -521,13 +595,26 @@ deces_2002 <- deces_2002 %>%
     est_decedee = ifelse(is.na(C03) & is.na(C04) & is.na(C05) & is.na(GROUPE_AGE_DECES), 0, 1) %>% structure(label = "y-a-t-il eu décès dans le ménage au cours des douze derniers mois?")
   ) %>% 
   group_by(ID_MENAGE) %>% 
-  summarise(nbr_deces = sum(est_decedee, na.rm = TRUE))
+  summarise(
+    
+    # Count the number of death in the household
+    nbr_deces = sum(est_decedee, na.rm = TRUE),
+    
+    # Count the number of death in the household below the age of 18
+    nbr_deces_under_five = sum(est_decedee==1 & C04 <=18,
+                                       na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  # Create a variable for an under 18 death in the household
+  mutate(deces_under_five = ifelse(nbr_deces_under_five > 0, 1, 0))
 
 # For the RGPH 2013 dataset, calculate the number of deaths in each household
 # This code groups the data by household and calculates the number of deaths in each household
 deces_2013 <- deces_2013 %>% 
   group_by(ID_MENAGE) %>% 
-  summarise(nbr_deces = sum(C01, na.rm = TRUE))
+  summarise(nbr_deces = sum(C01, na.rm = TRUE)
+    
+    # Count the number of death in the household below the age of 18
+  )
 
 ```
 

@@ -17,3 +17,7 @@ Data analysis on R:
 
 -	Develop R scripts with QGIS for spatial analysis (based on the method used by Kyle Walker of US Census. Documentation available [here](https://walker-data.com/ ) but also other relevant methods (spatial regression, spatial autocorrelation, LISA, GWR)
 -	Output the results as a map with graphical options (Histogram) according to certain comparison models, as in the example below
+
+
+
+# In the 2013 Census data there is not age of death in the deces_2013

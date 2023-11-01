@@ -1,7 +1,7 @@
 ---
 title: "Exploring Senegal Census data with visualization"
 author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
-date: "2023-10-12"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
@@ -24,8 +24,7 @@ rm(list=ls())
 
 ## Importing library
 ### List of required packages
-required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf",
-                       "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot")
+required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf", "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot", "fastDummies")
 
 # Check if packages are installed
 missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
@@ -65,12 +64,6 @@ menage_2002 %>% janitor::get_dupes()
 menage_2013 <- haven::read_sav(paste0(here::here(),"/output/output_data/menage_2013.sav"))
 menage_2013 %>% janitor::get_dupes() 
 ```
-
-
-```{r}
-
-```
-
 
 
 ```{r}
@@ -185,3 +178,11 @@ menage_2002 <- sp_rgph_2002 %>%
 menage_2013 <- sp_rgph_2013 %>% 
   left_join(menage_2013, by="id_dr")
 ```
+
+
+### Calcul multivarié pour des indices de pauvreté (bien des ménages, Niveau d’instruction, accès aux services (bien d’aisance, eau, etc.)
+
+```{r}
+
+```
+
