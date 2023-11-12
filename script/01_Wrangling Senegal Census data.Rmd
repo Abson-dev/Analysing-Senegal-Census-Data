@@ -240,7 +240,7 @@ individus_2013 %>%
 
 ### -	Calcul multivarié pour des indices de pauvreté (bien des ménages, Niveau d’instruction, accès aux services (bien d’aisance, eau, etc.)
 
-
+Nettoyage de la variable education
 ```{r}
 
 # Transform values in the "QB15" column of the "individus_2002" dataset
@@ -279,6 +279,8 @@ individus_2013 <- individus_2013 %>%
   structure(label = Hmisc::label(individus_2013$B32)))) # Apply labels to the B32 column
 ```
 
+Education
+SDG 4: Quality of Education (Year of Schooling)
 
 ```{r}
 
@@ -310,9 +312,9 @@ individus_2002 %>%
 # Calculate a binary variable 'school_attendance' for each household.
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
-  mutate(school_attendance = 
+  mutate(years_schooling_dim = 
            ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>%
-  select(ID_MENAGE, school_attendance),
+  select(ID_MENAGE, years_schooling_dim),
 
   by=c("ID_MENAGE"="ID_MENAGE")
 )
@@ -345,14 +347,75 @@ individus_2013 %>%
 # Calculate a binary variable 'school_attendance' for each household.
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
-  mutate(school_attendance = 
+  mutate(years_schooling_dim = 
            ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>%
-  select(ID_MENAGE, school_attendance),
+  select(ID_MENAGE, years_schooling_dim),
 
   by=c("ID_MENAGE"="ID_MENAGE")
 )
 ```
 
+SDG 4: School Attendance (Year of Schooling)
+
+```{r}
+
+# Processing for the year 2002
+individus_2002 <- 
+  individus_2002 %>% 
+  left_join(
+    # Joining the data with summarized statistics per household
+    individus_2002 %>%
+    group_by(ID_MENAGE) %>%
+    summarise(
+      # Calculating the number of children (lien_cm=="children" and age < 13) with no school attendance 
+      
+      nbr_school_attendance = sum(QB15 == "aucune" & age5 > 3 & QB03 == 3, na.rm = TRUE),
+      
+      #The total number of children in the household
+      nbr_children_hh = sum(QB03 == 3)
+    ) %>%
+    ungroup() %>%
+      
+    # Computing a dimension for school attendance in the household
+    mutate(
+      school_attendance_dim = ifelse(nbr_school_attendance == nbr_children_hh, 1, 0)
+    ) %>%
+      
+    # Selecting relevant columns for the join
+    select(ID_MENAGE, school_attendance_dim),
+    by = c("ID_MENAGE"="ID_MENAGE")
+  )
+
+# Processing for the year 2013
+individus_2013 <- 
+  individus_2013 %>% 
+  left_join(
+    # Joining the data with summarized statistics per household
+    individus_2013 %>%
+    group_by(ID_MENAGE) %>%
+    summarise(
+      
+      # Calculating the number of children (lien_cm=="children" and age < 13) with no school attendance  (NA for B32)
+      nbr_school_attendance = sum(is.na(B32) & B08 > 13 & B04 == 3, na.rm = TRUE),
+      
+      # Computing a dimension for school attendance in the household
+      nbr_children_hh = sum(B04 == 3)
+    ) %>%
+    ungroup() %>%
+      
+    # Computing a dimension for school attendance in the household
+    mutate(
+      school_attendance_dim = ifelse(nbr_school_attendance == nbr_children_hh, 1, 0)
+    ) %>%
+      
+    # Selecting relevant columns for the join
+    select(ID_MENAGE, school_attendance_dim),
+    by = c("ID_MENAGE"="ID_MENAGE")
+  )
+```
+
+
+Standard of Livinf
 
 ```{r}
 
@@ -398,7 +461,8 @@ menage_2002 <- menage_2002 %>%
     bicyclette = E12E %>% structure(label=Hmisc::label(menage_2002$E12E)),
     caleche_charette = E12F %>% structure(label=Hmisc::label(menage_2002$E12F)),
     pirogue = E12G %>% structure(label=Hmisc::label(menage_2002$E12G)),
-    #aucun_G12 = E12G %>% structure(label=Hmisc::label(menage_2002$E12G)),
+    
+    
     houe_charrue = E13B %>% structure(label=Hmisc::label(menage_2002$E13B)),
     caleche_char = E13C %>% structure(label=Hmisc::label(menage_2002$E13C)),
     
@@ -487,6 +551,56 @@ menage_2013 <- menage_2013 %>%
 
 
 
+```
+
+Données source: 
+
+* Pour les sanitaires: [link](https://www.who.int/data/gho/data/indicators/indicator-details/GHO/population-using-improved-sanitation-facilities-(-))
+
+* Pour l'eau:
+[link](https://data.unicef.org/topic/water-and-sanitation/drinking-water/)
+
+```{r}
+
+# For RGPH 2002
+menage_2002 <- menage_2002 %>% 
+  # Creating a dimension for cooking fuel, checking if it's wood or charcoal
+  # Bois=1 and Charbon = 3
+  mutate(cooking_fuel_dim = ifelse(combustible_cuisine == 2 | combustible_cuisine == 3, 1, 0), 
+         
+  # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
+  # Edicule public==4, Dans la nature==4, Autre==6
+         sanitation_dim = ifelse(type_aisance %in% seq(4, 6), 1, 0),
+         
+  # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
+  # Puits interieur = 1, Puits exterieur = 2, cours d'eau = 7 et autre = 8
+         drinking_water_dim = ifelse(approv_eau %in% c(1, 2, 7, 8), 1, 0),
+         
+  # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
+  # Lampe tempête = 6, Bougie = 7, Bois=8, Autre= 9,
+         electricity_dim = ifelse(eclairage %in% c(6, 7, 8, 9), 1, 0),
+         
+  # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
+        # For nature_mur, 3 is "Banco", 4 is "Paille/tige" and 5 is 'autre".
+         # For nature_sol, 3 is 'Argile/banco", 4 is Sable and 5 is "autre".
+         # For nature_toit, 4 is "Chaume" and 5 is "autre"
+         housing_dim = ifelse(nature_mur %in% c(3, 4, 5) & nature_sol %in% c(3, 4, 5) & nature_toit %in% c(4, 5), 1, 0),
+         
+  # Creating a dimension for household assets, checking if various assets are absent in the household
+  
+         assets_dim = ifelse(radio == 0 & televiseur == 0 & telephone == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
+                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0)
+  )
+
+
+
+# For RGPH 2013
+
+```
+
+
+```{r}
+
 ## In the following we merge the "menage_2002" with the individual dataset
 menage_2002 <- menage_2002 %>% 
   left_join(
@@ -504,7 +618,7 @@ menage_2002 <- menage_2002 %>%
       age_cm = QB06,         # Renamed QB06 to "age_cm"
     ) %>% 
       # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance),
+      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim),
       
       # Merging by matching columns in both datasets
       by = c("ID_MENAGE" = "ID_MENAGE", 
@@ -532,7 +646,7 @@ menage_2013 <- menage_2013 %>%
     age_cm = B08,         # Renamed B08 to "age_cm"
   ) %>% 
       # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance),
+      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim),
       
       # Merging by matching columns in both datasets
       by = c("ID_MENAGE" = "ID_MENAGE", "id_dr" = "IDDR")
@@ -541,6 +655,7 @@ menage_2013 <- menage_2013 %>%
 
 
 ```
+
 
 ```{r}
 
@@ -605,7 +720,8 @@ deces_2002 <- deces_2002 %>%
                                        na.rm = TRUE)) %>% 
   ungroup() %>% 
   # Create a variable for an under 18 death in the household
-  mutate(deces_under_five = ifelse(nbr_deces_under_five > 0, 1, 0))
+  mutate(deces_under_five = as.factor(ifelse(nbr_deces_under_five > 0, 1, 0) %>%
+           structure(label = "Y a-t-il eu un décès d'un enfant de moins de cinq ans dans le ménage ?")))
 
 # For the RGPH 2013 dataset, calculate the number of deaths in each household
 # This code groups the data by household and calculates the number of deaths in each household

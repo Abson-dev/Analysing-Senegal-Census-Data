@@ -73,7 +73,6 @@ menage_2002 <- menage_2002 %>%
 menage_2002 <- menage_2002 %>% 
   fastDummies::dummy_cols(select_columns = lst_Standard_of_living)
 
-
 ```
 
 
@@ -102,3 +101,4 @@ menage_2002 <- menage_2002 %>%
   ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN)))
 ```
 
+L'âge du décès n'est pas mentionné dans le recensement de 2013, nous ne pouvons donc pas calculer le nombre de décès pour les personnes de moins de 18 ans.
