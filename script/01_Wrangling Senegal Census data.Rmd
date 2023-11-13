@@ -415,7 +415,7 @@ individus_2013 <-
 ```
 
 
-Standard of Livinf
+Standard of Living
 
 ```{r}
 
@@ -565,36 +565,66 @@ Données source:
 # For RGPH 2002
 menage_2002 <- menage_2002 %>% 
   # Creating a dimension for cooking fuel, checking if it's wood or charcoal
-  # Bois=1 and Charbon = 3
-  mutate(cooking_fuel_dim = ifelse(combustible_cuisine == 2 | combustible_cuisine == 3, 1, 0), 
+  # Bois=1, Charbon = 2 and Autre=5
+  mutate(cooking_fuel_dim = ifelse(combustible_cuisine == 1 | combustible_cuisine == 2| combustible_cuisine == 5, 1, 0) %>% structure(label = "Standard of living: cooking fuel"), 
          
   # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
   # Edicule public==4, Dans la nature==4, Autre==6
-         sanitation_dim = ifelse(type_aisance %in% seq(4, 6), 1, 0),
+         sanitation_dim = ifelse(type_aisance %in% seq(4, 6), 1, 0)%>% structure(label = "Standard of living: sanitation"),
          
   # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
   # Puits interieur = 1, Puits exterieur = 2, cours d'eau = 7 et autre = 8
-         drinking_water_dim = ifelse(approv_eau %in% c(1, 2, 7, 8), 1, 0),
+         drinking_water_dim = ifelse(approv_eau %in% c(1, 2, 7, 8), 1, 0)%>% structure(label = "Standard of living: drinking water"),
          
   # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
   # Lampe tempête = 6, Bougie = 7, Bois=8, Autre= 9,
-         electricity_dim = ifelse(eclairage %in% c(6, 7, 8, 9), 1, 0),
+         electricity_dim = ifelse(eclairage %in% c(6, 7, 8, 9), 1, 0)%>% structure(label = "Standard of living: electricity"),
          
   # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
         # For nature_mur, 3 is "Banco", 4 is "Paille/tige" and 5 is 'autre".
          # For nature_sol, 3 is 'Argile/banco", 4 is Sable and 5 is "autre".
          # For nature_toit, 4 is "Chaume" and 5 is "autre"
-         housing_dim = ifelse(nature_mur %in% c(3, 4, 5) & nature_sol %in% c(3, 4, 5) & nature_toit %in% c(4, 5), 1, 0),
+         housing_dim = ifelse(nature_mur %in% c(3, 4, 5) & nature_sol %in% c(3, 4, 5) & nature_toit %in% c(4, 5), 1, 0)%>% structure(label = "Standard of living: housing"),
          
   # Creating a dimension for household assets, checking if various assets are absent in the household
   
          assets_dim = ifelse(radio == 0 & televiseur == 0 & telephone == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
-                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0)
+                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0) %>% structure(label = "Standard of living: assets")
   )
 
 
 
 # For RGPH 2013
+menage_2013 <- menage_2013 %>% 
+  # Creating a dimension for cooking fuel, checking if it's wood or charcoal
+  # Bois=1, Charbon = 2, Bouse de vache=5 and Autre=8
+  mutate(cooking_fuel_dim = ifelse(combustible_cuisine %in% c(1,2,5,8), 1, 0)%>% structure(label = "Standard of living: cooking fuel"), 
+         
+  # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
+  # Non couverte =22, Edicule public==31, Dans la nature==41, Autre==88
+         sanitation_dim = ifelse(type_aisance %in% c(22, 31, 41, 88), 1, 0)%>% structure(label = "Standard of living: sanitation"),
+         
+  # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
+  # Puits non protégés = 6, Eau de pluie = 9, Source, cour d'eau = 10 and autre = 98
+         drinking_water_dim = ifelse(approv_eau %in% c(6, 9, 10, 98), 1, 0)%>% structure(label = "Standard of living: drinking water"),
+         
+  # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
+  # Lampe à pétrole artisanale=5, Lampe tempête = 6, Bougie = 7, Bois=8, Lampe rechargeable= 9, Autre=98
+         electricity_dim = ifelse(eclairage %in% c(5, 6, 7, 8, 9, 98), 1, 0)%>% structure(label = "Standard of living: electricity"),
+         
+  # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
+        # For nature_mur, 5 is Bois, 6 is "Banco", 7 is "Banco+ enduit ciment",  8 is 'Paille/Tige" and 9 is "Autre".
+         # For nature_sol, 3 is 'Argile/banco", 4 is Sable and 7 is "Bois ciré" and 8 is "autre".
+         # For nature_toit, 0 is "Autre" and 4 is "Chaume/paille"
+         housing_dim = ifelse(nature_mur %in% c(5, 6, 7, 8, 9) & nature_sol %in% c(3, 4, 7, 8) & nature_toit %in% c(0, 4), 1, 0)%>% structure(label = "Standard of living: housing"),
+         
+  # Creating a dimension for household assets, checking if various assets are absent in the household
+  
+         assets_dim = ifelse(radio == 0 & televiseur == 0 & telephone == 0 & telephone_tele == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
+                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0)%>% structure(label = "Standard of living: assets")
+  )
+
+
 
 ```
 
@@ -618,7 +648,7 @@ menage_2002 <- menage_2002 %>%
       age_cm = QB06,         # Renamed QB06 to "age_cm"
     ) %>% 
       # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim),
+      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim, years_schooling_dim),
       
       # Merging by matching columns in both datasets
       by = c("ID_MENAGE" = "ID_MENAGE", 
@@ -646,7 +676,7 @@ menage_2013 <- menage_2013 %>%
     age_cm = B08,         # Renamed B08 to "age_cm"
   ) %>% 
       # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim),
+      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim, years_schooling_dim),
       
       # Merging by matching columns in both datasets
       by = c("ID_MENAGE" = "ID_MENAGE", "id_dr" = "IDDR")
@@ -685,7 +715,7 @@ menage_2002 <- menage_2002 %>%
 #            recode(soins_medicaux,
 #                   "2" = 0
 #                   )) 
-menage_2013$soins_medicaux <- car::recode(menage_2013$soins_medicaux, "2 = 0")
+# menage_2013$soins_medicaux <- car::recode(menage_2013$soins_medicaux, "2" = 0)
 # For the RGPH 2002 dataset, recode the "soins_medicaux" variable
 # This code modifies the "soins_medicaux" variable, replacing "2" with "0", "3" with NA, and "9" with NA
 
@@ -697,7 +727,7 @@ menage_2013$soins_medicaux <- car::recode(menage_2013$soins_medicaux, "2 = 0")
 #                   "9" = NULL
 #                   ))
 
-menage_2002$soins_medicaux <- car::recode(menage_2002$soins_medicaux, "2 = 0; 3=NA; 9=NA")
+# menage_2002$soins_medicaux <- car::recode(menage_2002$soins_medicaux, "2" = 0, "3"=NA, "9"=NA)
 
 ```
 
@@ -720,7 +750,7 @@ deces_2002 <- deces_2002 %>%
                                        na.rm = TRUE)) %>% 
   ungroup() %>% 
   # Create a variable for an under 18 death in the household
-  mutate(deces_under_five = as.factor(ifelse(nbr_deces_under_five > 0, 1, 0) %>%
+  mutate(deces_under_five_dim = as.factor(ifelse(nbr_deces_under_five > 0, 1, 0) %>%
            structure(label = "Y a-t-il eu un décès d'un enfant de moins de cinq ans dans le ménage ?")))
 
 # For the RGPH 2013 dataset, calculate the number of deaths in each household
@@ -822,7 +852,7 @@ save(menage_2013,file=paste0(here::here(), "/output/output_data/menage_2013.RDat
 
 # For the "sp_rgph_2002"
 # Saving in the sf format
-sf::st_write(obj=sp_rgph_2002, paste0(here::here(), "/output/output_data/EAs_2002_new.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) # we change the id _dr
+sf::st_write(obj=sp_rgph_2002, paste0(here::here(), "/output/output_data/EAs_2002_new.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) # we change the id_dr
 ```
 
 ```{r}

@@ -55,50 +55,92 @@ menage_2013 %>% janitor::get_dupes()
 
 ![mpi](./img/MPI.png)
 
-### Creating the dummies variables for each dimension of the MPI
+<!-- ### Creating the dummies variables for each dimension of the MPI -->
 
+<!-- ```{r} -->
+<!-- # Define lists of variables for different dimensions of the MPI -->
+<!-- lst_health <- c("repas_saute","soins_medicaux","deces_under_five") -->
+<!-- lst_education <- c("niveau_instruction_cm") -->
+<!-- lst_Standard_of_living <- c("stat_occupation","type_aisance","approv_eau","eclairage","combustible_cuisine", "nature_mur","nature_toit",  "nature_sol","radio","televiseur","video","refri_conge","telephone","rechaud_cuis","foyer_ameli","climatisateur","machine_coudre","voiture","mobylette","bicyclette","caleche_charette", "pirogue","houe_charrue", "caleche_char","animaux_traite","tracteur","voiture_cam", "mobylette_bicycl","refriger_congelat","materiel_musique","chaise_bache","telephone_tele","photocopieuse","ordinateur","moulin", "appareil_photo","terrain_bat","evacut_ordures","evacut_eaux_usees") -->
+
+<!-- # Create dummy variables for each element in the lists and add them to the 'menage_2002' dataframe -->
+<!-- menage_2002 <- menage_2002 %>%  -->
+<!--   fastDummies::dummy_cols(select_columns = lst_health) -->
+
+<!-- menage_2002 <- menage_2002 %>%  -->
+<!--   fastDummies::dummy_cols(select_columns = lst_education) -->
+
+<!-- menage_2002 <- menage_2002 %>%  -->
+<!--   fastDummies::dummy_cols(select_columns = lst_Standard_of_living) -->
+
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+
+<!-- # Convert the dummy variables to numeric values, recoding "1" as 0 and "0" as 1 (binary transformation) -->
+<!-- menage_2002 <- menage_2002 %>%  -->
+<!--   dplyr::mutate_at( -->
+<!--     menage_2002 %>%  -->
+<!--     select(contains(paste0(lst_health, "_"))) %>%  -->
+<!--     names(),  -->
+<!--   ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN))) -->
+
+<!-- menage_2002 <- menage_2002 %>%  -->
+<!--   dplyr::mutate_at( -->
+<!--     menage_2002 %>%  -->
+<!--     select(contains(paste0(lst_education, "_"))) %>%  -->
+<!--     names(),  -->
+<!--   ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN))) -->
+
+<!-- menage_2002 <- menage_2002 %>%  -->
+<!--   dplyr::mutate_at( -->
+<!--     menage_2002 %>%  -->
+<!--     select(contains(paste0(lst_Standard_of_living, "_"))) %>%  -->
+<!--     names(),  -->
+<!--   ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN))) -->
+<!-- ``` -->
+
+### Computing the MPI using the dimension
 ```{r}
-# Define lists of variables for different dimensions of the MPI
-lst_health <- c("repas_saute","soins_medicaux","deces_under_five")
-lst_education <- c("niveau_instruction_cm")
-lst_Standard_of_living <- c("stat_occupation","type_aisance","approv_eau","eclairage","combustible_cuisine", "nature_mur","nature_toit",  "nature_sol","radio","televiseur","video","refri_conge","telephone","rechaud_cuis","foyer_ameli","climatisateur","machine_coudre","voiture","mobylette","bicyclette","caleche_charette", "pirogue","houe_charrue", "caleche_char","animaux_traite","tracteur","voiture_cam", "mobylette_bicycl","refriger_congelat","materiel_musique","chaise_bache","telephone_tele","photocopieuse","ordinateur","moulin", "appareil_photo","terrain_bat","evacut_ordures","evacut_eaux_usees")
 
-# Create dummy variables for each element in the lists and add them to the 'menage_2002' dataframe
+# For RGPH 2002
+
+# Update the 'menage_2002' dataframe using the pipe operator '%>%'
 menage_2002 <- menage_2002 %>% 
-  fastDummies::dummy_cols(select_columns = lst_health)
- 
-menage_2002 <- menage_2002 %>% 
-  fastDummies::dummy_cols(select_columns = lst_education)
+  
+  # Add a new column 'MPI' to the dataframe
+  mutate(
+    MPI = (deces_under_five_dim/3) +  # Divide 'deces_under_five_dim' by 3
+          (years_schooling_dim/6) +    # Divide 'years_schooling_dim' by 6
+          (school_attendance_dim/6) +  # Divide 'school_attendance_dim' by 6
+          (cooking_fuel_dim/18) +      # Divide 'cooking_fuel_dim' by 18
+          (sanitation_dim/18) +        # Divide 'sanitation_dim' by 18
+          (drinking_water_dim/18) +   # Divide 'drinking_water_dim' by 18
+          (electricity_dim/18) +       # Divide 'electricity_dim' by 18
+          (housing_dim/18) +           # Divide 'housing_dim' by 18
+          (assets_dim/18) %>%          # Divide 'assets_dim' by 18
+          structure(label = "Multidimensional Poverty Index (MPI)"))
 
-menage_2002 <- menage_2002 %>% 
-  fastDummies::dummy_cols(select_columns = lst_Standard_of_living)
 
-```
+# For RGPH 2013
 
+# Update the 'menage_2013' dataframe using the pipe operator '%>%'
+menage_2013 <- menage_2013 %>% 
+  
+  # Add a new column 'MPI' to the dataframe
+  mutate(
+    MPI = #(deces_under_five_dim/3) +  # Divide 'deces_under_five_dim' by 3
+          (years_schooling_dim/6) +    # Divide 'years_schooling_dim' by 6
+          (school_attendance_dim/6) +  # Divide 'school_attendance_dim' by 6
+          (cooking_fuel_dim/18) +      # Divide 'cooking_fuel_dim' by 18
+          (sanitation_dim/18) +        # Divide 'sanitation_dim' by 18
+          (drinking_water_dim/18) +   # Divide 'drinking_water_dim' by 18
+          (electricity_dim/18) +       # Divide 'electricity_dim' by 18
+          (housing_dim/18) +           # Divide 'housing_dim' by 18
+          (assets_dim/18) %>%          # Divide 'assets_dim' by 18
+          structure(label = "Multidimensional Poverty Index (MPI)")    )
 
-```{r}
-
-# Convert the dummy variables to numeric values, recoding "1" as 0 and "0" as 1 (binary transformation)
-menage_2002 <- menage_2002 %>% 
-  dplyr::mutate_at(
-    menage_2002 %>% 
-    select(contains(paste0(lst_health, "_"))) %>% 
-    names(), 
-  ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN)))
-
-menage_2002 <- menage_2002 %>% 
-  dplyr::mutate_at(
-    menage_2002 %>% 
-    select(contains(paste0(lst_education, "_"))) %>% 
-    names(), 
-  ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN)))
-
-menage_2002 <- menage_2002 %>% 
-  dplyr::mutate_at(
-    menage_2002 %>% 
-    select(contains(paste0(lst_Standard_of_living, "_"))) %>% 
-    names(), 
-  ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN)))
 ```
 
 L'âge du décès n'est pas mentionné dans le recensement de 2013, nous ne pouvons donc pas calculer le nombre de décès pour les personnes de moins de 18 ans.
