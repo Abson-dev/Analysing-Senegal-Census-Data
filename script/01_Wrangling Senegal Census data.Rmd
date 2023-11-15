@@ -750,8 +750,8 @@ deces_2002 <- deces_2002 %>%
                                        na.rm = TRUE)) %>% 
   ungroup() %>% 
   # Create a variable for an under 18 death in the household
-  mutate(deces_under_five_dim = as.factor(ifelse(nbr_deces_under_five > 0, 1, 0) %>%
-           structure(label = "Y a-t-il eu un décès d'un enfant de moins de cinq ans dans le ménage ?")))
+  mutate(deces_under_five_dim = as.factor(ifelse(nbr_deces_under_five > 0, 1, ifelse(is.na(nbr_deces_under_five), 0, 0)) %>%
+                                            structure(label = "Y a-t-il eu un décès d'un enfant de moins de cinq ans dans le ménage ?"))) 
 
 # For the RGPH 2013 dataset, calculate the number of deaths in each household
 # This code groups the data by household and calculates the number of deaths in each household
@@ -807,7 +807,14 @@ menage_2002 <- menage_2002 %>%
   rename(ID_MENAGE = ID_MENAGE_corrige) %>%
   
 # Adding a new column 'nbr_deces' by checking if it's missing and setting it to 0, with a label
-  mutate(nbr_deces = ifelse(is.na(nbr_deces), 0, nbr_deces) %>% structure(label = "Nombre de décès dans le ménage au cours des 12 derniers mois"))
+  mutate(nbr_deces = ifelse(is.na(nbr_deces), 0, nbr_deces) %>% structure(label = "Nombre de décès dans le ménage au cours des 12 derniers mois"),
+         
+         # Replace Na by 0
+         
+         nbr_deces_under_five = as.factor(ifelse(is.na(nbr_deces_under_five), 0, nbr_deces_under_five)),
+         
+         deces_under_five_dim = as.factor(ifelse(is.na(deces_under_five_dim), 0, deces_under_five_dim)))
+
 ```
 
 
@@ -824,6 +831,33 @@ sp_rgph_2002 <- sp_rgph_2002 %>%
 
 ```
 
+
+```{r}
+# Replace 'NA' with 0 (for the nbr deces )
+
+## For RGPH 2013
+menage_2013 <- menage_2013 %>%
+  
+  #replace all NA values with zero
+  mutate_if(is.numeric , replace_na, replace = 0)
+
+## For RGPH 2002
+menage_2002 <- menage_2002 %>%
+  
+  #replace all NA values with zero
+  mutate_if(is.numeric , replace_na, replace = 0)
+
+
+# Ranking variables
+
+## For RGPH 2013
+menage_2013 <- menage_2013 %>%
+ select(id_dr, ID_MENAGE, RGPH, everything())
+
+## For RGPH 2002
+menage_2002 <- menage_2002 %>%
+ select(id_dr, ID_MENAGE, RGPH, everything())
+```
 
 
 
@@ -853,6 +887,8 @@ save(menage_2013,file=paste0(here::here(), "/output/output_data/menage_2013.RDat
 # For the "sp_rgph_2002"
 # Saving in the sf format
 sf::st_write(obj=sp_rgph_2002, paste0(here::here(), "/output/output_data/EAs_2002_new.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) # we change the id_dr
+
+
 ```
 
 ```{r}

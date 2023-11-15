@@ -111,7 +111,11 @@ menage_2002 <- menage_2002 %>%
   
   # Add a new column 'MPI' to the dataframe
   mutate(
-    MPI = (deces_under_five_dim/3) +  # Divide 'deces_under_five_dim' by 3
+    
+    # I use 1/3 as weight for the 'deces_under_five_dim' because the nutrition dimension is not available in the 2002 dataset. 
+    
+
+    MPI_index = (deces_under_five_dim/3) +  # Divide 'deces_under_five_dim' by 3
           (years_schooling_dim/6) +    # Divide 'years_schooling_dim' by 6
           (school_attendance_dim/6) +  # Divide 'school_attendance_dim' by 6
           (cooking_fuel_dim/18) +      # Divide 'cooking_fuel_dim' by 18
@@ -129,18 +133,66 @@ menage_2002 <- menage_2002 %>%
 menage_2013 <- menage_2013 %>% 
   
   # Add a new column 'MPI' to the dataframe
+  # In the 2013 dataset, information for the health dimension are not available, so I will reallocate the weight uniformly across each dimension.
+  
   mutate(
-    MPI = #(deces_under_five_dim/3) +  # Divide 'deces_under_five_dim' by 3
-          (years_schooling_dim/6) +    # Divide 'years_schooling_dim' by 6
-          (school_attendance_dim/6) +  # Divide 'school_attendance_dim' by 6
-          (cooking_fuel_dim/18) +      # Divide 'cooking_fuel_dim' by 18
-          (sanitation_dim/18) +        # Divide 'sanitation_dim' by 18
-          (drinking_water_dim/18) +   # Divide 'drinking_water_dim' by 18
-          (electricity_dim/18) +       # Divide 'electricity_dim' by 18
-          (housing_dim/18) +           # Divide 'housing_dim' by 18
-          (assets_dim/18) %>%          # Divide 'assets_dim' by 18
-          structure(label = "Multidimensional Poverty Index (MPI)")    )
+
+    MPI_index = (years_schooling_dim/4) +    # Divide 'years_schooling_dim' by 6
+          (school_attendance_dim/4) +  # Divide 'school_attendance_dim' by 6
+          (cooking_fuel_dim/12) +      # Divide 'cooking_fuel_dim' by 18
+          (sanitation_dim/12) +        # Divide 'sanitation_dim' by 18
+          (drinking_water_dim/12) +   # Divide 'drinking_water_dim' by 18
+          (electricity_dim/12) +       # Divide 'electricity_dim' by 18
+          (housing_dim/12) +           # Divide 'housing_dim' by 18
+          (assets_dim/12) %>%          # Divide 'assets_dim' by 18
+          structure(label = "Multidimensional Poverty Index (MPI)"))
+
+
 
 ```
 
 L'âge du décès n'est pas mentionné dans le recensement de 2013, nous ne pouvons donc pas calculer le nombre de décès pour les personnes de moins de 18 ans.
+
+```{r}
+
+# We can then compute the number of poor 
+
+## For the RGPH 2002
+menage_2002 <- menage_2002 %>%
+  mutate(MPI_poor = as.factor(ifelse(MPI_index > 1/3, 1, 0)))
+
+## For the RGPH 2013
+menage_2013 <- menage_2013 %>%
+  mutate(MPI_poor = as.factor(ifelse(MPI_index > 1/3, 1, 0)))
+
+
+menage_2002 %>% 
+  # Selecting relevant variables
+  select(RGPH, MPI_poor) %>% 
+  
+  plyr::rbind.fill(
+    
+    # Selecting relevant variables
+    menage_2013 %>% 
+                     select(RGPH, MPI_poor)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    label = list(MPI_poor ~ "Pauvre (Oui = 1, Non = 0)"),
+    type = c(MPI_poor~"dichotomous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%)"
+                     ),
+    digits = everything() ~ c(0,0),
+    missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Pauvreté multidimensionnelle entre les deux recensements") %>%
+  
+  # Add difference statistics to the table
+  add_difference() %>% 
+  bold_labels() 
+```
+
