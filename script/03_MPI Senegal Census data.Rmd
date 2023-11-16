@@ -25,7 +25,7 @@ rm(list=ls())
 
 ## Importing library
 ### List of required packages
-required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf", "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot", "fastDummies")
+required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf", "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot", "fastDummies","ggthemes")
 
 # Check if packages are installed
 missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
@@ -45,61 +45,60 @@ lapply(required_packages, library, character.only = TRUE)
 ```{r}
 
 # Read and check for duplicated rows in the "menage_2002" dataset
-menage_2002 <- haven::read_sav(paste0(here::here(),"/output/output_data/menage_2002.sav"))
+menage_2002 <- base::readRDS(paste0(here::here(),"/output/output_data/menage_2002.rds"))
 menage_2002 %>% janitor::get_dupes() 
 
 # Read and check for duplicated rows in the "menage_2013" dataset
-menage_2013 <- haven::read_sav(paste0(here::here(),"/output/output_data/menage_2013.sav"))
+menage_2013 <- base::readRDS(paste0(here::here(),"/output/output_data/menage_2013.rds"))
 menage_2013 %>% janitor::get_dupes() 
+
+# Read shapefile data for 2002 and 2013
+sp_rgph_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/EAs_2002_new.shp"))
+sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/data/SHAPEFILE/EAs_2013.shp"))
+
+
+# Importing the crosswalk
+crosswalk_table_dr <- readxl::read_excel(paste0(here::here(),"/data/TABLE_CORRESPONDANCE_SPATIALE_DR.xls"))
+```
+```{r}
+# Convert to character the variables that are needed to compute the MPI
+
+# For RGPH 2002
+
+# Update the 'menage_2002' dataframe using the pipe operator '%>%'
+menage_2002 <- menage_2002 %>% 
+  
+  # Add a new column 'MPI' to the dataframe
+  mutate(
+      deces_under_five_dim = as.numeric(as.character(deces_under_five_dim)),
+      years_schooling_dim = as.numeric(as.character(years_schooling_dim)),
+      school_attendance_dim = as.numeric(as.character(school_attendance_dim)), 
+      cooking_fuel_dim = as.numeric(as.character(cooking_fuel_dim)),       
+      sanitation_dim = as.numeric(as.character(sanitation_dim)),   
+      drinking_water_dim = as.numeric(as.character(drinking_water_dim)),
+      electricity_dim = as.numeric(as.character(electricity_dim)),
+      housing_dim = as.numeric(as.character(housing_dim)),
+      assets_dim = as.numeric(as.character(assets_dim)))
+
+
+# For RGPH 2013
+
+menage_2013 <- menage_2013 %>% 
+  
+  mutate(
+    years_schooling_dim = as.numeric(as.character(years_schooling_dim)),
+    school_attendance_dim = as.numeric(as.character(school_attendance_dim)), 
+    cooking_fuel_dim = as.numeric(as.character(cooking_fuel_dim)),       
+    sanitation_dim = as.numeric(as.character(sanitation_dim)),   
+    drinking_water_dim = as.numeric(as.character(drinking_water_dim)),
+    electricity_dim = as.numeric(as.character(electricity_dim)),
+    housing_dim = as.numeric(as.character(housing_dim)),
+    assets_dim = as.numeric(as.character(assets_dim)))
+
+
+
 ```
 
-![mpi](./img/MPI.png)
-
-<!-- ### Creating the dummies variables for each dimension of the MPI -->
-
-<!-- ```{r} -->
-<!-- # Define lists of variables for different dimensions of the MPI -->
-<!-- lst_health <- c("repas_saute","soins_medicaux","deces_under_five") -->
-<!-- lst_education <- c("niveau_instruction_cm") -->
-<!-- lst_Standard_of_living <- c("stat_occupation","type_aisance","approv_eau","eclairage","combustible_cuisine", "nature_mur","nature_toit",  "nature_sol","radio","televiseur","video","refri_conge","telephone","rechaud_cuis","foyer_ameli","climatisateur","machine_coudre","voiture","mobylette","bicyclette","caleche_charette", "pirogue","houe_charrue", "caleche_char","animaux_traite","tracteur","voiture_cam", "mobylette_bicycl","refriger_congelat","materiel_musique","chaise_bache","telephone_tele","photocopieuse","ordinateur","moulin", "appareil_photo","terrain_bat","evacut_ordures","evacut_eaux_usees") -->
-
-<!-- # Create dummy variables for each element in the lists and add them to the 'menage_2002' dataframe -->
-<!-- menage_2002 <- menage_2002 %>%  -->
-<!--   fastDummies::dummy_cols(select_columns = lst_health) -->
-
-<!-- menage_2002 <- menage_2002 %>%  -->
-<!--   fastDummies::dummy_cols(select_columns = lst_education) -->
-
-<!-- menage_2002 <- menage_2002 %>%  -->
-<!--   fastDummies::dummy_cols(select_columns = lst_Standard_of_living) -->
-
-<!-- ``` -->
-
-
-<!-- ```{r} -->
-
-<!-- # Convert the dummy variables to numeric values, recoding "1" as 0 and "0" as 1 (binary transformation) -->
-<!-- menage_2002 <- menage_2002 %>%  -->
-<!--   dplyr::mutate_at( -->
-<!--     menage_2002 %>%  -->
-<!--     select(contains(paste0(lst_health, "_"))) %>%  -->
-<!--     names(),  -->
-<!--   ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN))) -->
-
-<!-- menage_2002 <- menage_2002 %>%  -->
-<!--   dplyr::mutate_at( -->
-<!--     menage_2002 %>%  -->
-<!--     select(contains(paste0(lst_education, "_"))) %>%  -->
-<!--     names(),  -->
-<!--   ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN))) -->
-
-<!-- menage_2002 <- menage_2002 %>%  -->
-<!--   dplyr::mutate_at( -->
-<!--     menage_2002 %>%  -->
-<!--     select(contains(paste0(lst_Standard_of_living, "_"))) %>%  -->
-<!--     names(),  -->
-<!--   ~as.numeric(recode(., "1" = 0, "0" = 1, .default = NaN))) -->
-<!-- ``` -->
 
 ### Computing the MPI using the dimension
 ```{r}
@@ -109,7 +108,7 @@ menage_2013 %>% janitor::get_dupes()
 # Update the 'menage_2002' dataframe using the pipe operator '%>%'
 menage_2002 <- menage_2002 %>% 
   
-  # Add a new column 'MPI' to the dataframe
+  # Add a new column 'MPI_index' to the dataframe
   mutate(
     
     # I use 1/3 as weight for the 'deces_under_five_dim' because the nutrition dimension is not available in the 2002 dataset. 
@@ -132,7 +131,7 @@ menage_2002 <- menage_2002 %>%
 # Update the 'menage_2013' dataframe using the pipe operator '%>%'
 menage_2013 <- menage_2013 %>% 
   
-  # Add a new column 'MPI' to the dataframe
+  # Add a new column 'MPI_index' to the dataframe
   # In the 2013 dataset, information for the health dimension are not available, so I will reallocate the weight uniformly across each dimension.
   
   mutate(
@@ -163,7 +162,7 @@ menage_2002 <- menage_2002 %>%
 
 ## For the RGPH 2013
 menage_2013 <- menage_2013 %>%
-  mutate(MPI_poor = as.factor(ifelse(MPI_index > 1/3, 1, 0)))
+  mutate(MPI_poor = as.factor(ifelse(MPI_index > 1/2, 1, 0)))
 
 
 menage_2002 %>% 
@@ -194,5 +193,115 @@ menage_2002 %>%
   # Add difference statistics to the table
   add_difference() %>% 
   bold_labels() 
+```
+
+```{r}
+# The RGPH 2002
+# Grouping menage_2002 data by id_dr and summarizing relevant information
+menage_2002 <- menage_2002 %>% 
+  group_by(id_dr) %>% 
+  summarise(nbr_menage = n(),  # Counting the number of households in each id_dr group
+            nbr_poor = sum(MPI_poor == 1, na.rm = TRUE)) %>%  # Counting the number of poor households in each id_dr group
+
+  # Ungrouping the data to avoid unintended side effects in subsequent operations
+  ungroup() %>%
+  
+  # Calculating the proportion of poor households and adding the results as a new column
+  mutate(prop_poor = nbr_poor / nbr_menage,
+                  
+         # The information on the survey
+         RGPH = 2002) %>%
+  
+  # Joining with the sp_rgph_2002 data frame based on the id_dr column
+  left_join(sp_rgph_2002, by = "id_dr")
+
+# The RGPH 2013
+# Grouping menage_2013 data by id_dr and summarizing relevant information
+menage_2013 <- menage_2013 %>% 
+  group_by(id_dr) %>% 
+  summarise(nbr_menage = n(),  # Counting the number of households in each id_dr group
+            nbr_poor = sum(MPI_poor == 1, na.rm = TRUE)) %>%  # Counting the number of poor households in each id_dr group
+
+  # Ungrouping the data to avoid unintended side effects in subsequent operations
+  ungroup() %>%
+  
+  # Calculating the proportion of poor households and adding the results as a new column
+  mutate(prop_poor = nbr_poor / nbr_menage,
+         
+         # The information on the survey
+         RGPH = 2013) %>%
+  
+  # Joining with the sp_rgph_2013 data frame based on the id_dr column
+  left_join(
+    sp_rgph_2013 %>% 
+  rename(id_dr=COD_DR2012), by = "id_dr")
+
+
+```
+
+
+
+```{r}
+
+
+# Binding the datasets and creating an sf object plot
+MPI_data <- menage_2002 %>%
+  plyr::rbind.fill(menage_2013) %>% 
+  mutate(id_dr = id_dr %>% structure(label = "DR identifier"),
+         prop_poor = prop_poor  %>% structure(label = "Proportion of poor in the DR"),
+         nbr_poor = nbr_poor %>% structure(label = "Number of poor in the DR"),
+         nbr_menage = nbr_menage %>% structure(label = "Number of household in the DR"),
+         RGPH = RGPH %>% structure(label = "RGPH year"),
+         Shape_Area = Shape_Area %>% structure(label = "Shape Area"),
+         Shape_Leng = Shape_Leng %>% structure(label = "Shape Length"),
+         
+         REGION = REGION %>% structure(label = "Region"), 
+         DEPT = DEPT %>% structure(label = "Department"),
+         NOM_ARRDT = NOM_ARRDT %>% structure(label = "Name district"), 
+         NOM_CA = NOM_CA %>% structure(label = "Name CA")) %>% 
+  st_as_sf()
+
+# Creating a ggplot object, mapping the fill color to the proportion of poor households
+MPI_data %>% 
+    
+      ggplot(aes(fill = prop_poor)) + 
+      
+      # Adding spatial features to the plot
+      geom_sf() +
+      
+      # Customizing the color scale for the fill
+      scale_fill_continuous(type = "gradient", low = "white", high = "#1E1E1E", 
+                             name = 'Proportion', breaks = 0.15 * 0:4, 
+                             labels = c("0", "15", "30", "45", "60")) +
+       
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8)) +
+      
+      # Adding plot titles and captions
+      labs(
+        title = "Taux de ménages pauvres au Sénégal par année et district (en %)",
+        caption = "Données : RGPH, Indicateur: Indice Multidimensionnel de Pauvreté (IMP).")
+    ggsave(paste0(here::here(),"/output/output_img/taux_pauvres_rgph.pdf"), width = 8, height = 5)
+
+```
+
+
+```{r}
+
+# Selecting the relevant variables
+MPI_data <- MPI_data %>% 
+  select(id_dr, REGION, DEPT, RGPH, NOM_ARRDT, NOM_CA, nbr_menage, nbr_poor, prop_poor,Shape_Leng, Shape_Area, geometry)
+
+# Saving the merged dataset in the sf format
+sf::st_write(obj= MPI_data, paste0(here::here(), "/output/output_data/MPI_data.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
 ```
 

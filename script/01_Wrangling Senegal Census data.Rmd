@@ -122,36 +122,6 @@ menage_2013 %>% janitor::get_dupes()
 menage_2013 %>% janitor::get_dupes(ID_MENAGE)
 ```
 
-
-```{r eval=FALSE, include=FALSE}
-# Unlabelling the variables in the RGPH datasets
-# Transform all "haven_labelled" variables to factor variables
-
-# For 2002
-## Unlabel the variables in the "individus_2002" dataset
-# individus_2002 <- 
-#   individus_2002 %>% 
-#   labelled::unlabelled() 
-# 
-# ## Unlabel the variables in the "menage_2002" dataset
-# menage_2002 <- 
-#   menage_2002 %>% 
-#   labelled::unlabelled() 
-# 
-# # For 2013  
-# ## Unlabel the variables in the "individus_2013" dataset
-# individus_2013 <- 
-#   individus_2013 %>% 
-#   labelled::unlabelled()  
-# 
-# # #Unlabel the variables in the "menage_2013" dataset
-# menage_2013 <- 
-#   menage_2013 %>% 
-#   labelled::unlabelled() 
-
-
-```
-
 ```{r}
 # Creating a variable "RGPH" to identify each survey 
 
@@ -202,15 +172,14 @@ individus_2013 %>%
       sexe_cm = QB04,        # Renamed QB04 to "sexe_cm"
       lien_cm = QB03,        # Renamed QB03 to "lien_cm"
       age_cm = QB06,         # Renamed QB06 to "age_cm"
-    ) #%>%
+    ) 
     
-    # Replace "Feminin" with "Féminin" in the "sexe_cm" column
-    #mutate(sexe_cm = ifelse(sexe_cm=="Feminin", "Féminin", "Masculin"))
   ) %>% 
 
   # Remove the "lien_cm" (link to household head) column
   select(-lien_cm) %>% 
   mutate( sexe_cm = ifelse(sexe_cm ==2, 0, 1)) %>% 
+  
   # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
     by = RGPH,  # Group by "RGPH" column
@@ -227,13 +196,7 @@ individus_2013 %>%
   modify_header(label ~ "Caractéristique du Chef de ménage entre les deux recensements") %>%
   
   # Add difference statistics to the table
-  add_difference() #%>% 
-  
-  # Add overall statistics to the table
-  #add_overall() %>%
-  
-  # Add a count of the observations
-  #add_n()
+  add_difference() 
 ```
 
 
@@ -247,13 +210,21 @@ Nettoyage de la variable education
 # The transformation categorizes educational levels into descriptive labels
 
 individus_2002 <- individus_2002 %>% 
+  
   mutate(QB15 = case_when(
+    
     QB15 == 0 ~ "aucune",      # If QB15 is 0, set it to "aucune"
+    
     QB15 == 1 ~ "prescolaire", # If QB15 is 1, set it to "prescolaire"
+    
     QB15 %in% seq(2,7,1) ~ "elementaire", # If QB15 is 2 to 7, set it to "elementaire"
+    
     QB15 %in% seq(8,11,1) ~ "moyen", # If QB15 is 8 to 11, set it to "moyen"
+    
     QB15 %in% seq(12,14,1) ~ "secondaire", # If QB15 is 12 to 14, set it to "secondaire"
+    
     QB15 %in% seq(15,19,1) ~ "superieur", # If QB15 is 15 to 19, set it to "superieur"
+    
     TRUE ~ as.character(QB15) # If none, keep the old value
     ) %>% 
   structure(label = Hmisc::label(individus_2002$QB15))) # Apply labels to the QB15 column
@@ -313,7 +284,7 @@ individus_2002 %>%
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
   mutate(years_schooling_dim = 
-           ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>%
+           as.factor(ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>% structure(label = "Education: years of schooling")) %>%
   select(ID_MENAGE, years_schooling_dim),
 
   by=c("ID_MENAGE"="ID_MENAGE")
@@ -348,7 +319,7 @@ individus_2013 %>%
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
   mutate(years_schooling_dim = 
-           ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>%
+           as.factor(ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>% structure(label = "Education: years of schooling")) %>%
   select(ID_MENAGE, years_schooling_dim),
 
   by=c("ID_MENAGE"="ID_MENAGE")
@@ -378,7 +349,7 @@ individus_2002 <-
       
     # Computing a dimension for school attendance in the household
     mutate(
-      school_attendance_dim = ifelse(nbr_school_attendance == nbr_children_hh, 1, 0)
+      school_attendance_dim = as.factor(ifelse(nbr_school_attendance == nbr_children_hh, 1, 0))%>% structure(label = "Education: school attendance")
     ) %>%
       
     # Selecting relevant columns for the join
@@ -405,7 +376,7 @@ individus_2013 <-
       
     # Computing a dimension for school attendance in the household
     mutate(
-      school_attendance_dim = ifelse(nbr_school_attendance == nbr_children_hh, 1, 0)
+      school_attendance_dim = as.factor(ifelse(nbr_school_attendance == nbr_children_hh, 1, 0)) %>% structure(label = "Education: school attendance")
     ) %>%
       
     # Selecting relevant columns for the join
@@ -433,60 +404,79 @@ menage_2002 <- menage_2002 %>%
     nb_indiv = E01 %>% structure(label=Hmisc::label(menage_2002$Nb_indiv)),
     id_dr = DR %>% structure(label=Hmisc::label(menage_2002$DR)),
     
-    type_log = E01 %>% structure(label=Hmisc::label(menage_2002$E01)),
-    nbr_piece_occup = E02 %>% structure(label=Hmisc::label(menage_2002$E02)),
-    stat_occupation = E03 %>% structure(label=Hmisc::label(menage_2002$E03)),
-    type_aisance = E04 %>% structure(label=Hmisc::label(menage_2002$E04)),
-    approv_eau = E05 %>% structure(label=Hmisc::label(menage_2002$E05)),
-    eclairage = E06 %>% structure(label=Hmisc::label(menage_2002$E06)),
-    combustible_cuisine = E07 %>% structure(label=Hmisc::label(menage_2002$E07)),
+    type_log = as.factor(E01) %>% structure(label=Hmisc::label(menage_2002$E01)),
     
-    nature_mur = E08 %>% structure(label=Hmisc::label(menage_2002$E08)),
-    nature_toit = E09 %>% structure(label=Hmisc::label(menage_2002$E09)),
-    nature_sol = E10 %>% structure(label=Hmisc::label(menage_2002$E10)),
-    radio = E11B %>% structure(label=Hmisc::label(menage_2002$E11B)),
-    televiseur = E11C %>% structure(label=Hmisc::label(menage_2002$E11C)),
-    video = E11D %>% structure(label=Hmisc::label(menage_2002$E11D)),
-    refri_conge = E11E %>% structure(label=Hmisc::label(menage_2002$E11E)),
+    nbr_piece_occup = as.factor(E02) %>% structure(label=Hmisc::label(menage_2002$E02)),
     
-    telephone = E11F %>% structure(label=Hmisc::label(menage_2002$E11F)),
-    rechaud_cuis = E11G %>% structure(label=Hmisc::label(menage_2002$E11G)),
-    foyer_ameli = E11H %>% structure(label=Hmisc::label(menage_2002$E11H)),
-    climatisateur = E11I %>% structure(label=Hmisc::label(menage_2002$E11I)),
-    machine_coudre = E11J %>% structure(label=Hmisc::label(menage_2002$E11J)),
+    stat_occupation = as.factor(E03) %>% structure(label=Hmisc::label(menage_2002$E03)),
+    
+    type_aisance = as.factor(E04) %>% structure(label=Hmisc::label(menage_2002$E04)),
+    
+    approv_eau = as.factor(E05) %>% structure(label=Hmisc::label(menage_2002$E05)),
+    
+    eclairage = as.factor(E06) %>% structure(label=Hmisc::label(menage_2002$E06)),
+    
+    combustible_cuisine = as.factor(E07) %>% structure(label=Hmisc::label(menage_2002$E07)),
+    
+    nature_mur = as.factor(E08) %>% structure(label=Hmisc::label(menage_2002$E08)),
+    nature_toit = as.factor(E09) %>% structure(label=Hmisc::label(menage_2002$E09)),
+    nature_sol = as.factor(E10) %>% structure(label=Hmisc::label(menage_2002$E10)),
+    radio = as.factor(E11B) %>% structure(label=Hmisc::label(menage_2002$E11B)),
+    televiseur = as.factor(E11C) %>% structure(label=Hmisc::label(menage_2002$E11C)),
+    video = as.factor(E11D) %>% structure(label=Hmisc::label(menage_2002$E11D)),
+    refri_conge = as.factor(E11E) %>% structure(label=Hmisc::label(menage_2002$E11E)),
+    
+    telephone = as.factor(E11F) %>% structure(label=Hmisc::label(menage_2002$E11F)),
+    rechaud_cuis = as.factor(E11G) %>% structure(label=Hmisc::label(menage_2002$E11G)),
+    foyer_ameli = as.factor(E11H) %>% structure(label=Hmisc::label(menage_2002$E11H)),
+    climatisateur = as.factor(E11I) %>% structure(label=Hmisc::label(menage_2002$E11I)),
+    machine_coudre = as.factor(E11J) %>% structure(label=Hmisc::label(menage_2002$E11J)),
     #aucun_11K = E11K %>% structure(label=Hmisc::label(menage_2002$E11K)),
-    voiture = E12B %>% structure(label=Hmisc::label(menage_2002$E12B)),
+    voiture = as.factor(E12B) %>% structure(label=Hmisc::label(menage_2002$E12B)),
     
-    mobylette = E12C %>% structure(label=Hmisc::label(menage_2002$E12C)),
-    bicyclette = E12E %>% structure(label=Hmisc::label(menage_2002$E12E)),
-    caleche_charette = E12F %>% structure(label=Hmisc::label(menage_2002$E12F)),
-    pirogue = E12G %>% structure(label=Hmisc::label(menage_2002$E12G)),
+    mobylette = as.factor(E12C) %>% structure(label=Hmisc::label(menage_2002$E12C)),
+    bicyclette = as.factor(E12E) %>% structure(label=Hmisc::label(menage_2002$E12E)),
+    
+    caleche_charette = as.factor(E12F) %>% structure(label=Hmisc::label(menage_2002$E12F)),
+    
+    pirogue = as.factor(E12G) %>% structure(label=Hmisc::label(menage_2002$E12G)),
     
     
-    houe_charrue = E13B %>% structure(label=Hmisc::label(menage_2002$E13B)),
-    caleche_char = E13C %>% structure(label=Hmisc::label(menage_2002$E13C)),
+    houe_charrue = as.factor(E13B) %>% structure(label=Hmisc::label(menage_2002$E13B)),
     
-    animaux_traite = E13D %>% structure(label=Hmisc::label(menage_2002$E13D)),
-    tracteur = E13E %>% structure(label=Hmisc::label(menage_2002$E13E)),
-    voiture_cam = E13F %>% structure(label=Hmisc::label(menage_2002$E13F)),
-    mobylette_bicycl = E13G %>%     structure(label=Hmisc::label(menage_2002$E13G)),
-    refriger_congelat = E13I %>% structure(label=Hmisc::label(menage_2002$E13I)),
-    machine_coudre = E13J %>% structure(label=Hmisc::label(menage_2002$E13J)),
-    materiel_musique = E13K %>% structure(label=Hmisc::label(menage_2002$E13K)),
+    caleche_char = as.factor(E13C) %>% structure(label=Hmisc::label(menage_2002$E13C)),
     
-    chaise_bache = E13L %>% structure(label=Hmisc::label(menage_2002$E13L)),
-    telephone_tele = E13M %>% structure(label=Hmisc::label(menage_2002$E13M)),
-    photocopieuse = E13N %>% structure(label=Hmisc::label(menage_2002$E13N)),
-    ordinateur = E13O %>% structure(label=Hmisc::label(menage_2002$E13O)),
-    moulin = E13P %>% structure(label=Hmisc::label(menage_2002$E13P)),
-    appareil_photo = E13Q %>% structure(label=Hmisc::label(menage_2002$E13Q)),
-    terrain_bat = E13R %>% structure(label=Hmisc::label(menage_2002$E13R)),
+    animaux_traite = as.factor(E13D) %>% structure(label=Hmisc::label(menage_2002$E13D)),
+                               
+    tracteur = as.factor(E13E) %>% structure(label=Hmisc::label(menage_2002$E13E)),
+    voiture_cam = as.factor(E13F) %>% structure(label=Hmisc::label(menage_2002$E13F)),
+    mobylette_bicycl = as.factor(E13G) %>% structure(label=Hmisc::label(menage_2002$E13G)),
+    
+    refriger_congelat = as.factor(E13I) %>% structure(label=Hmisc::label(menage_2002$E13I)),
+    
+    machine_coudre = as.factor(E13J) %>% structure(label=Hmisc::label(menage_2002$E13J)),
+    
+    materiel_musique = as.factor(E13K) %>% structure(label=Hmisc::label(menage_2002$E13K)),
+    
+    chaise_bache = as.factor(E13L) %>% structure(label=Hmisc::label(menage_2002$E13L)),
+    
+    telephone_tele = as.factor(E13M) %>% structure(label=Hmisc::label(menage_2002$E13M)),
+    
+    photocopieuse = as.factor(E13N) %>% structure(label=Hmisc::label(menage_2002$E13N)),
+    
+    ordinateur = as.factor(E13O) %>% structure(label=Hmisc::label(menage_2002$E13O)),
+    moulin = as.factor(E13P) %>% structure(label=Hmisc::label(menage_2002$E13P)),
+    appareil_photo = as.factor(E13Q) %>% structure(label=Hmisc::label(menage_2002$E13Q)),
+    
+    terrain_bat = as.factor(E13R) %>% structure(label=Hmisc::label(menage_2002$E13R)),
     
     #aucun_produc = E13S %>% structure(label=Hmisc::label(menage_2002$E13S)),
-    evacut_ordures = E14 %>% structure(label=Hmisc::label(menage_2002$E14)),
-    evacut_eaux_usees = E15 %>% structure(label=Hmisc::label(menage_2002$E15)),
-    repas_saute = E16 %>% structure(label=Hmisc::label(menage_2002$E16)),
-    soins_medicaux = E17 %>% structure(label=Hmisc::label(menage_2002$E17))
+    evacut_ordures = as.factor(E14) %>% structure(label=Hmisc::label(menage_2002$E14)),
+    
+    evacut_eaux_usees = as.factor(E15) %>% structure(label=Hmisc::label(menage_2002$E15)),
+    
+    repas_saute = as.factor(E16) %>% structure(label=Hmisc::label(menage_2002$E16)),
+    soins_medicaux = as.factor(E17) %>% structure(label=Hmisc::label(menage_2002$E17))
   )
 
 
@@ -496,56 +486,78 @@ menage_2013 <- menage_2013 %>%
   mutate(
     id_dr = IDDR %>% structure(label=Hmisc::label(menage_2013$IDDR)),
     nb_indiv = Nbre_indiv %>% structure(label=Hmisc::label(menage_2013$Nbre_indiv)),
-    type_log = E01 %>% structure(label=Hmisc::label(menage_2013$E01)),
-    nbr_piece_occup = E02 %>% structure(label=Hmisc::label(menage_2013$E02)),
-    stat_occupation = E03 %>% structure(label=Hmisc::label(menage_2013$E03)),
-    type_aisance = E08 %>% structure(label=Hmisc::label(menage_2013$E08)),
-    approv_eau = E09 %>% structure(label=Hmisc::label(menage_2013$E09)),
-    eclairage = E11 %>% structure(label=Hmisc::label(menage_2013$E11)),
-    combustible_cuisine = E12 %>% structure(label=Hmisc::label(menage_2013$E12)),
     
-    nature_mur = E05 %>% structure(label=Hmisc::label(menage_2013$E05)),
-    nature_toit = E06 %>% structure(label=Hmisc::label(menage_2013$E06)),
-    nature_sol = E07 %>% structure(label=Hmisc::label(menage_2013$E07)),
-    radio = E13_1 %>% structure(label=Hmisc::label(menage_2013$E13_1)),
-    televiseur = E13_2 %>% structure(label=Hmisc::label(menage_2013$E13_2)),
-    video = E13_3 %>% structure(label=Hmisc::label(menage_2013$E13_3)),
-    refri_conge = E13_4 %>% structure(label=Hmisc::label(menage_2013$E13_4)),
+    type_log = as.factor(E01) %>% structure(label=Hmisc::label(menage_2013$E01)),
+    nbr_piece_occup = as.factor(E02) %>% structure(label=Hmisc::label(menage_2013$E02)),
     
-    telephone = E13_6 %>% structure(label=Hmisc::label(menage_2013$E13_6)),
-    rechaud_cuis = E13_18 %>% structure(label=Hmisc::label(menage_2013$E13_18)),
-    foyer_ameli = E13_7 %>% structure(label=Hmisc::label(menage_2013$E13_7)),
-    climatisateur = E13_8 %>% structure(label=Hmisc::label(menage_2013$E13_8)),
-    machine_coudre = E13_9 %>% structure(label=Hmisc::label(menage_2013$E13_9)),
+    stat_occupation = as.factor(E03) %>% structure(label=Hmisc::label(menage_2013$E03)),
     
-    voiture = E15_5 %>% structure(label=Hmisc::label(menage_2013$E15_5)),
-    mobylette = E15_6 %>% structure(label=Hmisc::label(menage_2013$E15_6)),
-    bicyclette = E14_3 %>% structure(label=Hmisc::label(menage_2013$E14_3)),
-    caleche_charette = E14_4 %>% structure(label=Hmisc::label(menage_2013$E14_4)),
-    pirogue = E15_7 %>% structure(label=Hmisc::label(menage_2013$E15_7)),
-    houe_charrue = E15_1 %>% structure(label=Hmisc::label(menage_2013$E15_1)),
-    caleche_char = E15_2 %>% structure(label=Hmisc::label(menage_2013$E15_2)),
+    type_aisance = as.factor(E08) %>% structure(label=Hmisc::label(menage_2013$E08)),
+    approv_eau = as.factor(E09) %>% structure(label=Hmisc::label(menage_2013$E09)),
+    eclairage = as.factor(E11) %>% structure(label=Hmisc::label(menage_2013$E11)),
+    combustible_cuisine = as.factor(E12) %>% structure(label=Hmisc::label(menage_2013$E12)),
     
-    animaux_traite = E15_3 %>% structure(label=Hmisc::label(menage_2013$E15_3)),
-    tracteur = E15_4 %>% structure(label=Hmisc::label(menage_2013$E15_4)),
-    voiture_cam = E15_5 %>% structure(label=Hmisc::label(menage_2013$E15_5)),
-    mobylette_bicycl = E15_6 %>% structure(label=Hmisc::label(menage_2013$E15_6)),
-    refriger_congelat = E15_8 %>% structure(label=Hmisc::label(menage_2013$E15_8)),
-    machine_coudre = E15_9 %>% structure(label=Hmisc::label(menage_2013$E15_9)),
-    materiel_musique = E15_10 %>% structure(label=Hmisc::label(menage_2013$E15_10)),
+    nature_mur = as.factor(E05) %>% structure(label=Hmisc::label(menage_2013$E05)),
+    nature_toit = as.factor(E06) %>% structure(label=Hmisc::label(menage_2013$E06)),
+    nature_sol = as.factor(E07) %>% structure(label=Hmisc::label(menage_2013$E07)),
+    radio = as.factor(E13_1) %>% structure(label=Hmisc::label(menage_2013$E13_1)),
+    televiseur = as.factor(E13_2) %>% structure(label=Hmisc::label(menage_2013$E13_2)),
     
-    chaise_bache = E15_11 %>% structure(label=Hmisc::label(menage_2013$E15_11)),
-    telephone_tele = E15_12 %>% structure(label=Hmisc::label(menage_2013$E15_12)),
-    photocopieuse = E15_13 %>% structure(label=Hmisc::label(menage_2013$E15_13)),
-    ordinateur = E15_14 %>% structure(label=Hmisc::label(menage_2013$E15_14)),
-    moulin = E15_15 %>% structure(label=Hmisc::label(menage_2013$E15_15)),
-    appareil_photo = E15_16 %>% structure(label=Hmisc::label(menage_2013$E15_16)),
-    terrain_bat = E15_17 %>% structure(label=Hmisc::label(menage_2013$E15_17)),
+    video = as.factor(E13_3) %>% structure(label=Hmisc::label(menage_2013$E13_3)),
+    refri_conge = as.factor(E13_4) %>% structure(label=Hmisc::label(menage_2013$E13_4)),
     
-    evacut_ordures = E16 %>% structure(label=Hmisc::label(menage_2013$E16)),
-    evacut_eaux_usees = E17 %>% structure(label=Hmisc::label(menage_2013$E17)),
-    repas_saute = E18 %>% structure(label=Hmisc::label(menage_2013$E18)),
-    soins_medicaux = E20 %>% structure(label=Hmisc::label(menage_2013$E20))
+    telephone = as.factor(E13_6) %>% structure(label=Hmisc::label(menage_2013$E13_6)),
+    rechaud_cuis = as.factor(E13_18) %>% structure(label=Hmisc::label(menage_2013$E13_18)),
+    
+    foyer_ameli = as.factor(E13_7) %>% structure(label=Hmisc::label(menage_2013$E13_7)),
+    
+    climatisateur = as.factor(E13_8) %>% structure(label=Hmisc::label(menage_2013$E13_8)),
+    
+    machine_coudre = as.factor(E13_9) %>% structure(label=Hmisc::label(menage_2013$E13_9)),
+    
+    voiture = as.factor(E15_5) %>% structure(label=Hmisc::label(menage_2013$E15_5)),
+    mobylette = as.factor(E15_6) %>% structure(label=Hmisc::label(menage_2013$E15_6)),
+    bicyclette = as.factor(E14_3) %>% structure(label=Hmisc::label(menage_2013$E14_3)),
+    
+    caleche_charette = as.factor(E14_4) %>% structure(label=Hmisc::label(menage_2013$E14_4)),
+    
+    pirogue = as.factor(E15_7) %>% structure(label=Hmisc::label(menage_2013$E15_7)),
+    houe_charrue = as.factor(E15_1) %>% structure(label=Hmisc::label(menage_2013$E15_1)),
+    
+    caleche_char = as.factor(E15_2) %>% structure(label=Hmisc::label(menage_2013$E15_2)),
+    
+    animaux_traite = as.factor(E15_3) %>% structure(label=Hmisc::label(menage_2013$E15_3)),
+    
+    tracteur = as.factor(E15_4) %>% structure(label=Hmisc::label(menage_2013$E15_4)),
+    voiture_cam = as.factor(E15_5) %>% structure(label=Hmisc::label(menage_2013$E15_5)),
+    
+    mobylette_bicycl = as.factor(E15_6) %>% structure(label=Hmisc::label(menage_2013$E15_6)),
+    
+    refriger_congelat = as.factor(E15_8) %>% structure(label=Hmisc::label(menage_2013$E15_8)),
+    
+    machine_coudre = as.factor(E15_9) %>% structure(label=Hmisc::label(menage_2013$E15_9)),
+    
+    materiel_musique = as.factor(E15_10) %>% structure(label=Hmisc::label(menage_2013$E15_10)),
+    
+    chaise_bache = as.factor(E15_11) %>% structure(label=Hmisc::label(menage_2013$E15_11)),
+    
+    telephone_tele = as.factor(E15_12) %>% structure(label=Hmisc::label(menage_2013$E15_12)),
+    
+    photocopieuse = as.factor(E15_13) %>% structure(label=Hmisc::label(menage_2013$E15_13)),
+    
+    ordinateur = as.factor(E15_14) %>% structure(label=Hmisc::label(menage_2013$E15_14)),
+    
+    moulin = as.factor(E15_15) %>% structure(label=Hmisc::label(menage_2013$E15_15)),
+    appareil_photo = as.factor(E15_16) %>% structure(label=Hmisc::label(menage_2013$E15_16)),
+    
+    terrain_bat = as.factor(E15_17) %>% structure(label=Hmisc::label(menage_2013$E15_17)),
+    
+    evacut_ordures = as.factor(E16) %>% structure(label=Hmisc::label(menage_2013$E16)),
+    
+    evacut_eaux_usees = as.factor(E17) %>% structure(label=Hmisc::label(menage_2013$E17)),
+    
+    repas_saute = as.factor(E18) %>% structure(label=Hmisc::label(menage_2013$E18)),
+    soins_medicaux = as.factor(E20) %>% structure(label=Hmisc::label(menage_2013$E20))
     
     )
 
@@ -566,30 +578,30 @@ Données source:
 menage_2002 <- menage_2002 %>% 
   # Creating a dimension for cooking fuel, checking if it's wood or charcoal
   # Bois=1, Charbon = 2 and Autre=5
-  mutate(cooking_fuel_dim = ifelse(combustible_cuisine == 1 | combustible_cuisine == 2| combustible_cuisine == 5, 1, 0) %>% structure(label = "Standard of living: cooking fuel"), 
+  mutate(cooking_fuel_dim = as.factor(ifelse(combustible_cuisine == 1 | combustible_cuisine == 2| combustible_cuisine == 5, 1, 0)) %>% structure(label = "Standard of living: cooking fuel"), 
          
   # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
   # Edicule public==4, Dans la nature==4, Autre==6
-         sanitation_dim = ifelse(type_aisance %in% seq(4, 6), 1, 0)%>% structure(label = "Standard of living: sanitation"),
+         sanitation_dim = as.factor(ifelse(type_aisance %in% seq(4, 6), 1, 0)) %>% structure(label = "Standard of living: sanitation"),
          
   # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
   # Puits interieur = 1, Puits exterieur = 2, cours d'eau = 7 et autre = 8
-         drinking_water_dim = ifelse(approv_eau %in% c(1, 2, 7, 8), 1, 0)%>% structure(label = "Standard of living: drinking water"),
+         drinking_water_dim = as.factor(ifelse(approv_eau %in% c(1, 2, 7, 8), 1, 0)) %>% structure(label = "Standard of living: drinking water"),
          
   # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
   # Lampe tempête = 6, Bougie = 7, Bois=8, Autre= 9,
-         electricity_dim = ifelse(eclairage %in% c(6, 7, 8, 9), 1, 0)%>% structure(label = "Standard of living: electricity"),
+         electricity_dim = as.factor(ifelse(eclairage %in% c(6, 7, 8, 9), 1, 0))%>% structure(label = "Standard of living: electricity"),
          
   # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
         # For nature_mur, 3 is "Banco", 4 is "Paille/tige" and 5 is 'autre".
          # For nature_sol, 3 is 'Argile/banco", 4 is Sable and 5 is "autre".
          # For nature_toit, 4 is "Chaume" and 5 is "autre"
-         housing_dim = ifelse(nature_mur %in% c(3, 4, 5) & nature_sol %in% c(3, 4, 5) & nature_toit %in% c(4, 5), 1, 0)%>% structure(label = "Standard of living: housing"),
+         housing_dim = as.factor(ifelse(nature_mur %in% c(3, 4, 5) & nature_sol %in% c(3, 4, 5) & nature_toit %in% c(4, 5), 1, 0))%>% structure(label = "Standard of living: housing"),
          
   # Creating a dimension for household assets, checking if various assets are absent in the household
   
-         assets_dim = ifelse(radio == 0 & televiseur == 0 & telephone == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
-                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0) %>% structure(label = "Standard of living: assets")
+         assets_dim = as.factor(ifelse(radio == 0 & televiseur == 0 & telephone == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
+                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0)) %>% structure(label = "Standard of living: assets")
   )
 
 
@@ -598,30 +610,30 @@ menage_2002 <- menage_2002 %>%
 menage_2013 <- menage_2013 %>% 
   # Creating a dimension for cooking fuel, checking if it's wood or charcoal
   # Bois=1, Charbon = 2, Bouse de vache=5 and Autre=8
-  mutate(cooking_fuel_dim = ifelse(combustible_cuisine %in% c(1,2,5,8), 1, 0)%>% structure(label = "Standard of living: cooking fuel"), 
+  mutate(cooking_fuel_dim = as.factor(ifelse(combustible_cuisine %in% c(1,2,5,8), 1, 0))%>% structure(label = "Standard of living: cooking fuel"), 
          
   # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
   # Non couverte =22, Edicule public==31, Dans la nature==41, Autre==88
-         sanitation_dim = ifelse(type_aisance %in% c(22, 31, 41, 88), 1, 0)%>% structure(label = "Standard of living: sanitation"),
+         sanitation_dim = as.factor(ifelse(type_aisance %in% c(22, 31, 41, 88), 1, 0))%>% structure(label = "Standard of living: sanitation"),
          
   # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
   # Puits non protégés = 6, Eau de pluie = 9, Source, cour d'eau = 10 and autre = 98
-         drinking_water_dim = ifelse(approv_eau %in% c(6, 9, 10, 98), 1, 0)%>% structure(label = "Standard of living: drinking water"),
+         drinking_water_dim = as.factor(ifelse(approv_eau %in% c(6, 9, 10, 98), 1, 0))%>% structure(label = "Standard of living: drinking water"),
          
   # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
   # Lampe à pétrole artisanale=5, Lampe tempête = 6, Bougie = 7, Bois=8, Lampe rechargeable= 9, Autre=98
-         electricity_dim = ifelse(eclairage %in% c(5, 6, 7, 8, 9, 98), 1, 0)%>% structure(label = "Standard of living: electricity"),
+         electricity_dim = as.factor(ifelse(eclairage %in% c(5, 6, 7, 8, 9, 98), 1, 0))%>% structure(label = "Standard of living: electricity"),
          
   # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
         # For nature_mur, 5 is Bois, 6 is "Banco", 7 is "Banco+ enduit ciment",  8 is 'Paille/Tige" and 9 is "Autre".
          # For nature_sol, 3 is 'Argile/banco", 4 is Sable and 7 is "Bois ciré" and 8 is "autre".
          # For nature_toit, 0 is "Autre" and 4 is "Chaume/paille"
-         housing_dim = ifelse(nature_mur %in% c(5, 6, 7, 8, 9) & nature_sol %in% c(3, 4, 7, 8) & nature_toit %in% c(0, 4), 1, 0)%>% structure(label = "Standard of living: housing"),
+         housing_dim = as.factor(ifelse(nature_mur %in% c(5, 6, 7, 8, 9) & nature_sol %in% c(3, 4, 7, 8) & nature_toit %in% c(0, 4), 1, 0))%>% structure(label = "Standard of living: housing"),
          
   # Creating a dimension for household assets, checking if various assets are absent in the household
   
-         assets_dim = ifelse(radio == 0 & televiseur == 0 & telephone == 0 & telephone_tele == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
-                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0)%>% structure(label = "Standard of living: assets")
+         assets_dim = as.factor(ifelse(radio == 0 & televiseur == 0 & telephone == 0 & telephone_tele == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
+                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0))%>% structure(label = "Standard of living: assets")
   )
 
 
@@ -696,38 +708,16 @@ menage_2013 <- menage_2013 %>%
   mutate(
             soins_medicaux = as.numeric(soins_medicaux),
             soins_medicaux = 
-                dplyr::recode(soins_medicaux,
-                    "2" = 0
-                  )) 
+                dplyr::recode(soins_medicaux,"2" = 0),
+            soins_medicaux = as.factor(soins_medicaux) %>% structure(label=Hmisc::label(menage_2002$E17))) 
 
 # For the RGPH 2002 dataset, recode the "soins_medicaux" variable
 # This code modifies the "soins_medicaux" variable, replacing "2" with "0", "3" with NA, and "9" with NA
 
 menage_2002 <- menage_2002 %>%
   mutate(soins_medicaux = as.numeric(soins_medicaux),
-           soins_medicaux = dplyr::recode(soins_medicaux,
-                  "2" = 0,
-                  "3" = NULL, 
-                  "9" = NULL
-                  ))
-# menage_2013 <- menage_2013 %>%
-#   mutate(soins_medicaux = 
-#            recode(soins_medicaux,
-#                   "2" = 0
-#                   )) 
-# menage_2013$soins_medicaux <- car::recode(menage_2013$soins_medicaux, "2" = 0)
-# For the RGPH 2002 dataset, recode the "soins_medicaux" variable
-# This code modifies the "soins_medicaux" variable, replacing "2" with "0", "3" with NA, and "9" with NA
-
-# menage_2002 <- menage_2002 %>%
-#   mutate(soins_medicaux = 
-#            recode(soins_medicaux,
-#                   "2" = 0,
-#                   "3" = NULL, 
-#                   "9" = NULL
-#                   ))
-
-# menage_2002$soins_medicaux <- car::recode(menage_2002$soins_medicaux, "2" = 0, "3"=NA, "9"=NA)
+           soins_medicaux = dplyr::recode(soins_medicaux, "2" = 0, "3" = NULL, "9" = NULL), 
+         soins_medicaux = as.factor(soins_medicaux) %>% structure(label=Hmisc::label(menage_2002$E17)))
 
 ```
 
@@ -751,7 +741,9 @@ deces_2002 <- deces_2002 %>%
   ungroup() %>% 
   # Create a variable for an under 18 death in the household
   mutate(deces_under_five_dim = as.factor(ifelse(nbr_deces_under_five > 0, 1, ifelse(is.na(nbr_deces_under_five), 0, 0)) %>%
-                                            structure(label = "Y a-t-il eu un décès d'un enfant de moins de cinq ans dans le ménage ?"))) 
+                                            structure(label = "Y a-t-il eu un décés d'un enfant de moins de cinq ans dans le ménage ?")),
+         nbr_deces_under_five = nbr_deces_under_five %>%
+                                            structure(label = "Nombre de décés de moins de cinq ans")) 
 
 # For the RGPH 2013 dataset, calculate the number of deaths in each household
 # This code groups the data by household and calculates the number of deaths in each household
@@ -760,7 +752,11 @@ deces_2013 <- deces_2013 %>%
   summarise(nbr_deces = sum(C01, na.rm = TRUE)
     
     # Count the number of death in the household below the age of 18
-  )
+  ) %>% 
+  ungroup() %>% 
+  # Create the variable for the number of death in the household
+  mutate(nbr_deces = as.numeric(nbr_deces) %>%
+           structure(label = "Nombre de décés dans le ménage")) 
 
 ```
 
@@ -811,9 +807,9 @@ menage_2002 <- menage_2002 %>%
          
          # Replace Na by 0
          
-         nbr_deces_under_five = as.factor(ifelse(is.na(nbr_deces_under_five), 0, nbr_deces_under_five)),
+         nbr_deces_under_five = ifelse(is.na(nbr_deces_under_five), 0, nbr_deces_under_five),
          
-         deces_under_five_dim = as.factor(ifelse(is.na(deces_under_five_dim), 0, deces_under_five_dim)))
+         deces_under_five_dim = as.factor(ifelse(is.na(deces_under_five_dim), 0, deces_under_five_dim)) %>% structure(label = "Health: child mortality"))
 
 ```
 
@@ -863,25 +859,20 @@ menage_2002 <- menage_2002 %>%
 
 ```{r}
 # Exporting the "menage_2013" and "menage_2002" datasets
-# This code uses the "plyr::rbind.fill" function to stack the two datasets on top of each other, 
-
-# 
-# sn_census <- menage_2013 %>% 
-#   plyr::rbind.fill(menage_2002)
 
 # For the "menage_2002"
 # Saving in SPSS format
 haven::write_sav(menage_2002,paste0(here::here(), "/output/output_data/menage_2002.sav"))
 
 # Saving in R format
-save(menage_2002,file=paste0(here::here(), "/output/output_data/menage_2002.RData"))
+saveRDS(menage_2002,file=paste0(here::here(), "/output/output_data/menage_2002.rds"))
 
 # For the "menage_2013"
 # Saving in SPSS format
 haven::write_sav(menage_2013,paste0(here::here(), "/output/output_data/menage_2013.sav"))
 
 # Saving in R format
-save(menage_2013,file=paste0(here::here(), "/output/output_data/menage_2013.RData"))
+saveRDS(menage_2013,file=paste0(here::here(), "/output/output_data/menage_2013.rds"))
 
 
 # For the "sp_rgph_2002"
