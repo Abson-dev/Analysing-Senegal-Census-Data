@@ -2,7 +2,10 @@
 title: "Exploring Senegal Census data with visualization"
 author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
 date: "`r Sys.Date()`"
-output: html_document
+output:   
+  html_document:
+    toc: true
+    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
@@ -64,37 +67,36 @@ crosswalk_table_dr <- readxl::read_excel(paste0(here::here(),"/data/TABLE_CORRES
 # Convert to character the variables that are needed to compute the MPI
 
 # For RGPH 2002
-
 # Update the 'menage_2002' dataframe using the pipe operator '%>%'
-menage_2002 <- menage_2002 %>% 
-  
+menage_2002 <- menage_2002 %>%  
   # Add a new column 'MPI' to the dataframe
   mutate(
-      deces_under_five_dim = as.numeric(as.character(deces_under_five_dim)),
-      years_schooling_dim = as.numeric(as.character(years_schooling_dim)),
-      school_attendance_dim = as.numeric(as.character(school_attendance_dim)), 
-      cooking_fuel_dim = as.numeric(as.character(cooking_fuel_dim)),       
-      sanitation_dim = as.numeric(as.character(sanitation_dim)),   
-      drinking_water_dim = as.numeric(as.character(drinking_water_dim)),
-      electricity_dim = as.numeric(as.character(electricity_dim)),
-      housing_dim = as.numeric(as.character(housing_dim)),
-      assets_dim = as.numeric(as.character(assets_dim)))
+    deces_under_five_dim = as.numeric(as.character(deces_under_five_dim)),   # Convert 'deces_under_five_dim' to numeric
+    years_schooling_dim = as.numeric(as.character(years_schooling_dim)),     # Convert 'years_schooling_dim' to numeric
+    school_attendance_dim = as.numeric(as.character(school_attendance_dim)), # Convert 'school_attendance_dim' to numeric
+    cooking_fuel_dim = as.numeric(as.character(cooking_fuel_dim)),           # Convert 'cooking_fuel_dim' to numeric       
+    sanitation_dim = as.numeric(as.character(sanitation_dim)),               # Convert 'sanitation_dim' to numeric   
+    drinking_water_dim = as.numeric(as.character(drinking_water_dim)),       # Convert 'drinking_water_dim' to numeric
+    electricity_dim = as.numeric(as.character(electricity_dim)),             # Convert 'electricity_dim' to numeric
+    housing_dim = as.numeric(as.character(housing_dim)),                     # Convert 'housing_dim' to numeric
+    assets_dim = as.numeric(as.character(assets_dim))                         # Convert 'assets_dim' to numeric
+  )
 
 
 # For RGPH 2013
 
-menage_2013 <- menage_2013 %>% 
-  
+# Update the 'menage_2013' dataframe using the pipe operator '%>%'
+menage_2013 <- menage_2013 %>%  
   mutate(
-    years_schooling_dim = as.numeric(as.character(years_schooling_dim)),
-    school_attendance_dim = as.numeric(as.character(school_attendance_dim)), 
-    cooking_fuel_dim = as.numeric(as.character(cooking_fuel_dim)),       
-    sanitation_dim = as.numeric(as.character(sanitation_dim)),   
-    drinking_water_dim = as.numeric(as.character(drinking_water_dim)),
-    electricity_dim = as.numeric(as.character(electricity_dim)),
-    housing_dim = as.numeric(as.character(housing_dim)),
-    assets_dim = as.numeric(as.character(assets_dim)))
-
+    years_schooling_dim = as.numeric(as.character(years_schooling_dim)),     # Convert 'years_schooling_dim' to numeric
+    school_attendance_dim = as.numeric(as.character(school_attendance_dim)), # Convert 'school_attendance_dim' to numeric
+    cooking_fuel_dim = as.numeric(as.character(cooking_fuel_dim)),           # Convert 'cooking_fuel_dim' to numeric       
+    sanitation_dim = as.numeric(as.character(sanitation_dim)),               # Convert 'sanitation_dim' to numeric   
+    drinking_water_dim = as.numeric(as.character(drinking_water_dim)),       # Convert 'drinking_water_dim' to numeric
+    electricity_dim = as.numeric(as.character(electricity_dim)),             # Convert 'electricity_dim' to numeric
+    housing_dim = as.numeric(as.character(housing_dim)),                     # Convert 'housing_dim' to numeric
+    assets_dim = as.numeric(as.character(assets_dim))                         # Convert 'assets_dim' to numeric
+  )
 
 
 ```
@@ -198,7 +200,7 @@ menage_2002 %>%
 ```{r}
 # The RGPH 2002
 # Grouping menage_2002 data by id_dr and summarizing relevant information
-menage_2002 <- menage_2002 %>% 
+plt_df_2002 <- menage_2002 %>% 
   group_by(id_dr) %>% 
   summarise(nbr_menage = n(),  # Counting the number of households in each id_dr group
             nbr_poor = sum(MPI_poor == 1, na.rm = TRUE)) %>%  # Counting the number of poor households in each id_dr group
@@ -217,7 +219,7 @@ menage_2002 <- menage_2002 %>%
 
 # The RGPH 2013
 # Grouping menage_2013 data by id_dr and summarizing relevant information
-menage_2013 <- menage_2013 %>% 
+plt_2013 <- menage_2013 %>% 
   group_by(id_dr) %>% 
   summarise(nbr_menage = n(),  # Counting the number of households in each id_dr group
             nbr_poor = sum(MPI_poor == 1, na.rm = TRUE)) %>%  # Counting the number of poor households in each id_dr group
@@ -245,11 +247,11 @@ menage_2013 <- menage_2013 %>%
 
 
 # Binding the datasets and creating an sf object plot
-MPI_data <- menage_2002 %>%
-  plyr::rbind.fill(menage_2013) %>% 
+MPI_data <- plt_2002 %>%
+  plyr::rbind.fill(plt_2013) %>% 
   mutate(id_dr = id_dr %>% structure(label = "DR identifier"),
          prop_poor = prop_poor  %>% structure(label = "Proportion of poor in the DR"),
-         nbr_poor = nbr_poor %>% structure(label = "Number of poor in the DR"),
+         nbr_poor = nbr_poor %>% structure(label = "Number of poor household in the DR"),
          nbr_menage = nbr_menage %>% structure(label = "Number of household in the DR"),
          RGPH = RGPH %>% structure(label = "RGPH year"),
          Shape_Area = Shape_Area %>% structure(label = "Shape Area"),
@@ -301,7 +303,27 @@ MPI_data %>%
 MPI_data <- MPI_data %>% 
   select(id_dr, REGION, DEPT, RGPH, NOM_ARRDT, NOM_CA, nbr_menage, nbr_poor, prop_poor,Shape_Leng, Shape_Area, geometry)
 
-# Saving the merged dataset in the sf format
+# Saving the merged dataset in the sf format (for the household data)
 sf::st_write(obj= MPI_data, paste0(here::here(), "/output/output_data/MPI_data.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
 ```
 
+
+
+```{r}
+# Exporting the "menage_2013" and "menage_2002" datasets to include the MPI indicator
+
+# For the "menage_2002"
+# Saving in SPSS format
+haven::write_sav(menage_2002,paste0(here::here(), "/output/output_data/menage_2002.sav"))
+
+# Saving in R format
+saveRDS(menage_2002,file=paste0(here::here(), "/output/output_data/menage_2002.rds"))
+
+# For the "menage_2013"
+# Saving in SPSS format
+haven::write_sav(menage_2013,paste0(here::here(), "/output/output_data/menage_2013.sav"))
+
+# Saving in R format
+saveRDS(menage_2013,file=paste0(here::here(), "/output/output_data/menage_2013.rds"))
+
+```
