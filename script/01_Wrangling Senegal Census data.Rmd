@@ -2,8 +2,6 @@
 title: "Wrangling Senegal Census data with tidyverse tools"
 author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
 date: "`r Sys.Date()`"
-params:
-  doc_title: "Senegal census data analysis"
 output:
   html_document:
     toc: true
@@ -143,7 +141,7 @@ menage_2013 %>% janitor::get_dupes(ID_MENAGE)
 
 
 
-## Preparation of data on the two censuses (Wrangling)
+# Preparation of data on the two censuses (Wrangling)
 ```{r}
 # Creating a variable "RGPH" to identify each survey 
 
@@ -161,7 +159,7 @@ individus_2013 <-
 ```
 
 
-### -	Calcul des indices sur les variables composants liés au ménage (Age des chefs de ménage, par sexe entre les deux recensements
+*Calculation of indices on household-related component variables (Age of household heads, by gender between the two censuses)*
 
 ```{r}
 # Select the CM (Chef de ménage) and compute the average age
@@ -223,11 +221,11 @@ individus_2013 %>%
 
 
 
-## Multivariate calculation for poverty indices (MPI).
+# Multivariate calculation for poverty indices (MPI)
 
-### Education dimension
+## Education dimension
 
-#### Cleaning of the "education" variable
+### Cleaning of the "education" variable
 ```{r}
 
 # Transform values in the "QB15" column of the "individus_2002" dataset
@@ -275,7 +273,7 @@ individus_2013 <- individus_2013 %>%
 ```
 
 
-#### Education indicators computation
+### Education indicators computation
 
 *Years of schooling indicator*
 
@@ -412,9 +410,9 @@ individus_2013 <-
 ```
 
 
-### Standard of Living dimension
+## Standard of Living dimension
 
-#### Cleaning of the "Standard of Living" variables
+### Cleaning the "Standard of Living" variables
 ```{r}
 
 # Renaming variables so that they can have the same name in the two
@@ -791,9 +789,9 @@ menage_2002 <- menage_2002 %>%
 
 ```
 
-### Health dimension
+## Health dimension
 
-#### Cleaning of the "Health" variables and indicators computation
+### Cleaning of the "Health" variables and indicators computation
 
 ```{r wrangling deces}
 
@@ -902,13 +900,13 @@ menage_2002 <- menage_2002 %>%
       filter(QB03== 1) %>% #"Chef de menage"
       
       # Creating the "niveau_instruction_cm" variable from QB15 column
-      mutate(niveau_instruction_cm = QB15 %>% structure(label=paste0(Hmisc::label(individus_2002$QB15)), " CM"),
+      mutate(niveau_instruction_cm = QB15 %>% structure(label=paste0(Hmisc::label(individus_2002$QB15), " CM")),
       
              # Creating the "sexe_cm" variable from QB04 column
-          sexe_cm = QB04 %>% structure(label= paste0(Hmisc::label(individus_2002$QB04)), " CM"),
+          sexe_cm = QB04 %>% structure(label= paste0(Hmisc::label(individus_2002$QB04), " CM")),
           
           # Creating the "age_cm" variable from QB06 column
-          age_cm = QB06 %>% structure(label=paste0(Hmisc::label(individus_2002$QB06)), " CM")) %>% 
+          age_cm = QB06 %>% structure(label=paste0(Hmisc::label(individus_2002$QB06), " CM"))) %>% 
   
       # Selecting specific columns from the filtered dataset
       select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim, years_schooling_dim),
@@ -930,13 +928,13 @@ menage_2013 <- menage_2013 %>%
       filter(B04==1) %>% #"Chef de ménage"
       
       # Renaming the B32 column to "niveau_instruction_cm"
-      mutate(niveau_instruction_cm = B32 %>% structure(label=Hmisc::label(individus_2013$B32))) %>% 
+      mutate(niveau_instruction_cm = B32 %>% structure(label=paste0(Hmisc::label(individus_2013$B32)," CM")), 
       
       # Creating the "sexe_cm" variable from B06 column
-          sexe_cm = B06 %>% structure(label= paste0(Hmisc::label(individus_2013$B06)), " CM"),
+          sexe_cm = B06 %>% structure(label= paste0(Hmisc::label(individus_2013$B06), " CM")),
           
           # Creating the "age_cm" variable from QB08 column
-          age_cm = B08 %>% structure(label=paste0(Hmisc::label(individus_2013$B08)), " CM") %>% 
+          age_cm = B08 %>% structure(label=paste0(Hmisc::label(individus_2013$B08), " CM"))) %>% 
       # Selecting specific columns from the filtered dataset
       select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim, years_schooling_dim),
       
@@ -947,7 +945,6 @@ menage_2013 <- menage_2013 %>%
 
 
 ```
-
 
 
 
@@ -993,9 +990,9 @@ menage_2002 <- menage_2002 %>%
  select(id_dr, ID_MENAGE, RGPH, everything())
 ```
 
+# Exporting the datasets
 
-
-```{r}
+```{r, results='hide'}
 # Exporting the "menage_2013" and "menage_2002" datasets
 
 # For the "menage_2002"

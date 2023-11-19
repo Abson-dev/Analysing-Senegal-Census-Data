@@ -11,7 +11,7 @@
 
 <meta name="author" content="IBRAHIM KASSOUM Habibou &amp; HEMA Aboubacar" />
 
-<meta name="date" content="2023-10-12" />
+<meta name="date" content="2023-11-19" />
 
 <title>Wrangling Senegal Census data with tidyverse tools</title>
 
@@ -353,16 +353,62 @@ display: none;
 <h1 class="title toc-ignore">Wrangling Senegal Census data with
 tidyverse tools</h1>
 <h4 class="author">IBRAHIM KASSOUM Habibou &amp; HEMA Aboubacar</h4>
-<h4 class="date">2023-10-12</h4>
+<h4 class="date">2023-11-19</h4>
 
 </div>
 
+<div id="TOC">
+<ul>
+<li><a href="#preambule" id="toc-preambule">Preambule:</a>
+<ul>
+<li><a href="#importing-library" id="toc-importing-library">Importing
+library</a></li>
+<li><a href="#importing-the-datasets-an-checking-for-duplicated-row" id="toc-importing-the-datasets-an-checking-for-duplicated-row">Importing
+the datasets an checking for duplicated row</a>
+<ul>
+<li><a href="#importing-the-shapefile-data" id="toc-importing-the-shapefile-data">Importing the shapefile
+data</a></li>
+<li><a href="#importing-the-census-datasets" id="toc-importing-the-census-datasets">Importing the census
+datasets</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#preparation-of-data-on-the-two-censuses-wrangling" id="toc-preparation-of-data-on-the-two-censuses-wrangling">Preparation
+of data on the two censuses (Wrangling)</a></li>
+<li><a href="#multivariate-calculation-for-poverty-indices-mpi" id="toc-multivariate-calculation-for-poverty-indices-mpi">Multivariate
+calculation for poverty indices (MPI)</a>
+<ul>
+<li><a href="#education-dimension" id="toc-education-dimension">Education dimension</a>
+<ul>
+<li><a href="#cleaning-of-the-education-variable" id="toc-cleaning-of-the-education-variable">Cleaning of the “education”
+variable</a></li>
+<li><a href="#education-indicators-computation" id="toc-education-indicators-computation">Education indicators
+computation</a></li>
+</ul></li>
+<li><a href="#standard-of-living-dimension" id="toc-standard-of-living-dimension">Standard of Living dimension</a>
+<ul>
+<li><a href="#cleaning-the-standard-of-living-variables" id="toc-cleaning-the-standard-of-living-variables">Cleaning the
+“Standard of Living” variables</a></li>
+<li><a href="#standard-of-living-indicators-computation" id="toc-standard-of-living-indicators-computation">Standard of living
+indicators computation</a></li>
+</ul></li>
+<li><a href="#health-dimension" id="toc-health-dimension">Health
+dimension</a>
+<ul>
+<li><a href="#cleaning-of-the-health-variables-and-indicators-computation" id="toc-cleaning-of-the-health-variables-and-indicators-computation">Cleaning
+of the “Health” variables and indicators computation</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#exporting-the-datasets" id="toc-exporting-the-datasets">Exporting the datasets</a></li>
+</ul>
+</div>
 
-<div id="project-sénégal" class="section level2">
-<h2>Project Sénégal</h2>
-<div id="preambule" class="section level3">
-<h3>Preambule:</h3>
-<pre class="r"><code>rm(list=ls())</code></pre>
+<div id="preambule" class="section level1">
+<h1>Preambule:</h1>
+<pre class="r"><code># Clear the current workspace by removing all objects.
+# This is useful to start with a clean slate and avoid potential conflicts or unexpected behavior.
+rm(list=ls())</code></pre>
+<div id="importing-library" class="section level2">
+<h2>Importing library</h2>
 <pre class="r"><code>## Importing library
 ### List of required packages
 required_packages &lt;- c(&quot;tidyverse&quot;,&quot;janitor&quot; ,&quot;readr&quot;,&quot;dplyr&quot;,&quot;haven&quot;,&quot;sf&quot;,
@@ -379,155 +425,72 @@ if (length(missing_packages) &gt; 0) {
 ### Load all packages
 lapply(required_packages, library, character.only = TRUE)</code></pre>
 </div>
-<div id="importing-the-dataset" class="section level3">
-<h3>Importing the dataset</h3>
+<div id="importing-the-datasets-an-checking-for-duplicated-row" class="section level2">
+<h2>Importing the datasets an checking for duplicated row</h2>
+<div id="importing-the-shapefile-data" class="section level3">
+<h3>Importing the shapefile data</h3>
 <pre class="r"><code># Read shapefile data for 2002 and 2013
 sp_rgph_2002 &lt;- sf::read_sf(paste0(here::here(),&quot;/data/SHAPEFILE/EAs_2002.shp&quot;))
 
 sp_rgph_2013 &lt;- sf::read_sf(paste0(here::here(),&quot;/data/SHAPEFILE/EAs_2013.shp&quot;))
 
 # Display the first 10 rows of the 2002 and 2013 shapefiles
-head(sp_rgph_2002, 10L)</code></pre>
-<pre><code>## Simple feature collection with 10 features and 245 fields
-## Geometry type: POLYGON
-## Dimension:     XY
-## Bounding box:  xmin: 239595.4 ymin: 1633867 xmax: 242081.9 ymax: 1635051
-## Projected CRS: WGS 84 / UTM zone 28N
-## # A tibble: 10 × 246
-##    OBJECTID POLYID    AREA PERIMETER X_COORD_ Y_COORD_ CODE_DR NUMDEPT NUM_ARRDT
-##       &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
-##  1        1    845  1.67e6     6696.   239800  1634700 2101062       2         1
-##  2        4    878  1.25e5     1427.   241730  1634300 2101001       2         1
-##  3        5    879  1.23e5     1546.   241400  1634400 2101002       2         1
-##  4        6    880  2.61e4      692.   241330  1634400 2101003       2         1
-##  5        7    881  7.86e4     1400.   241170  1634300 2101004       2         1
-##  6        8    882  1.65e4      587.   241120  1634400 2101005       2         1
-##  7        9    883  2.81e4      683.   241020  1634400 2101006       2         1
-##  8       10    884  3.39e4      725.   240840  1634300 2101007       2         1
-##  9       11    885  2.61e4      781.   240810  1634100 2101009       2         1
-## 10       12    886  7.49e4     1371.   240930  1634200 2101008       2         1
-## # ℹ 237 more variables: NUM_CA &lt;dbl&gt;, DEPT &lt;chr&gt;, NOM_ARRDT &lt;chr&gt;,
-## #   NOM_CA &lt;chr&gt;, SUP_KM2 &lt;dbl&gt;, ACT_OCCU &lt;dbl&gt;, ACT_CHOM &lt;dbl&gt;,
-## #   ACT_ETUD &lt;dbl&gt;, ACT_FOYE &lt;dbl&gt;, ACT_RETR &lt;dbl&gt;, ACT_VIEI &lt;dbl&gt;,
-## #   ACT_MALA &lt;dbl&gt;, ACT_MEND &lt;dbl&gt;, ACT_AUTR &lt;dbl&gt;, NBR_CONC &lt;dbl&gt;,
-## #   NBR_MENA &lt;dbl&gt;, POP_TOT &lt;dbl&gt;, MORT5MOI &lt;dbl&gt;, ECL_ELEC &lt;dbl&gt;,
-## #   ECL_SOLA &lt;dbl&gt;, ECL_GENE &lt;dbl&gt;, ECL_GAZ &lt;dbl&gt;, ECL_PETR &lt;dbl&gt;,
-## #   ECL_TEMP &lt;dbl&gt;, ECL_BOUG &lt;dbl&gt;, ECL_BOIS &lt;dbl&gt;, ECL_AUTR &lt;dbl&gt;, …</code></pre>
-<pre class="r"><code>head(sp_rgph_2013, 10L)</code></pre>
-<pre><code>## Simple feature collection with 10 features and 24 fields
-## Geometry type: POLYGON
-## Dimension:     XY
-## Bounding box:  xmin: 243503.8 ymin: 1634951 xmax: 244568.3 ymax: 1635897
-## Projected CRS: WGS 84 / UTM zone 28N
-## # A tibble: 10 × 25
-##    OBJECTID DR_2012_CO QRT_VLG_HA       DR_2012 REG   DEPT   CAV   CCRCA COD_REG
-##       &lt;dbl&gt; &lt;chr&gt;      &lt;chr&gt;            &lt;chr&gt;   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt; &lt;chr&gt; &lt;chr&gt;  
-##  1        1 25_1/1     TOUBA GUEDIAWAYE 0095    DAKAR GUEDI… GUED… WAKH… 01     
-##  2        2 26_1/1     TOUBA GUEDIAWAYE 0096    DAKAR GUEDI… GUED… WAKH… 01     
-##  3        3 05_1/2     WAKHINANE        0009    DAKAR GUEDI… GUED… WAKH… 01     
-##  4        4 01_1/1     WAKHINANE        0001    DAKAR GUEDI… GUED… WAKH… 01     
-##  5        5 04_2/2     WAKHINANE        0007    DAKAR GUEDI… GUED… WAKH… 01     
-##  6        6 06_2/2     WAKHINANE        0011    DAKAR GUEDI… GUED… WAKH… 01     
-##  7        7 07_1/2     WAKHINANE        0012    DAKAR GUEDI… GUED… WAKH… 01     
-##  8        8 18_2/2     WAKHINANE        0048    DAKAR GUEDI… GUED… WAKH… 01     
-##  9        9 19_1/1     WAKHINANE        0046    DAKAR GUEDI… GUED… WAKH… 01     
-## 10       10 02_2/2     WAKHINANE        0003    DAKAR GUEDI… GUED… WAKH… 01     
-## # ℹ 16 more variables: COD_DEPT &lt;chr&gt;, COD_CAV &lt;chr&gt;, COD_CCRCA &lt;chr&gt;,
-## #   COD_DR2012 &lt;chr&gt;, DR_2002 &lt;chr&gt;, COD_CAV_1 &lt;chr&gt;, COD_DEP1 &lt;chr&gt;,
-## #   CA_CR &lt;chr&gt;, COD_CACR1 &lt;chr&gt;, ARR &lt;chr&gt;, COD_ARR &lt;chr&gt;, COD_CCACR &lt;chr&gt;,
-## #   Shape_Leng &lt;dbl&gt;, Shape_Area &lt;dbl&gt;, IDDR &lt;chr&gt;, geometry &lt;POLYGON [m]&gt;</code></pre>
+head(sp_rgph_2002, 10L)
+head(sp_rgph_2013, 10L)</code></pre>
 </div>
-<div id="importing-the-dataset-an-checking-for-duplicated-row" class="section level3">
-<h3>Importing the dataset an checking for duplicated row</h3>
+<div id="importing-the-census-datasets" class="section level3">
+<h3>Importing the census datasets</h3>
+<p><strong>For the 2002 census data</strong></p>
 <pre class="r"><code># Read and check for duplicated rows in 2002 datasets
 
 # Read and check for duplicated rows in the &quot;deces_2002&quot; dataset
 deces_2002 &lt;- read_sav(paste0(here::here(),&quot;/data/1. RGPH 2002/Requete PDBA2k2 Deces.sav&quot;))
-deces_2002 %&gt;% janitor::get_dupes() </code></pre>
-<pre><code>## # A tibble: 0 × 21
-## # ℹ 21 variables: ID_MENAGE &lt;chr&gt;, QA01 &lt;dbl+lbl&gt;, QA02 &lt;dbl&gt;, QA03 &lt;dbl+lbl&gt;,
-## #   QA04 &lt;dbl&gt;, QA05 &lt;dbl&gt;, QA06 &lt;dbl&gt;, QA07 &lt;dbl&gt;, QA072_CLE &lt;chr+lbl&gt;,
-## #   QA08 &lt;dbl&gt;, QA09 &lt;dbl&gt;, QA10 &lt;dbl&gt;, QA11 &lt;dbl&gt;, C01 &lt;dbl&gt;, C03 &lt;dbl+lbl&gt;,
-## #   C04 &lt;dbl&gt;, C05 &lt;dbl+lbl&gt;, C06 &lt;dbl+lbl&gt;, NUMR &lt;dbl&gt;,
-## #   GROUPE_AGE_DECES &lt;dbl+lbl&gt;, dupe_count &lt;int&gt;</code></pre>
-<pre class="r"><code># Read and check for duplicated rows in the &quot;deces_complement&quot; dataset
+deces_2002 %&gt;% janitor::get_dupes() 
+
+# Read and check for duplicated rows in the &quot;deces_complement&quot; dataset
 deces_2002_complement &lt;- read_sav(paste0(here::here(),&quot;/data/1. RGPH 2002/PDBA_rgph2002_Deces Complement Pikine.sav&quot;))
-deces_2002_complement %&gt;% janitor::get_dupes() </code></pre>
-<pre><code>## # A tibble: 0 × 19
-## # ℹ 19 variables: QA01 &lt;dbl+lbl&gt;, QA02 &lt;dbl&gt;, QA03 &lt;dbl+lbl&gt;, QA04 &lt;dbl&gt;,
-## #   QA05 &lt;dbl&gt;, QA06 &lt;dbl&gt;, QA07 &lt;dbl&gt;, QA072_CLE &lt;chr+lbl&gt;, QA08 &lt;dbl&gt;,
-## #   QA09 &lt;dbl&gt;, QA10 &lt;dbl&gt;, QA11 &lt;dbl&gt;, C01 &lt;dbl&gt;, C03 &lt;dbl+lbl&gt;, C04 &lt;dbl&gt;,
-## #   C05 &lt;dbl+lbl&gt;, C06 &lt;dbl+lbl&gt;, NUMR &lt;dbl&gt;, dupe_count &lt;int&gt;</code></pre>
-<pre class="r"><code># Read and check for duplicated rows in the &quot;individus_2002&quot; dataset
+deces_2002_complement %&gt;% janitor::get_dupes() 
+
+# Read and check for duplicated rows in the &quot;individus_2002&quot; dataset
 individus_2002 &lt;- haven::read_sav(paste0(here::here(),&quot;/data/1. RGPH 2002/Requete PDBA2k2 Individus.v2.sav&quot;))
-individus_2002 %&gt;% janitor::get_dupes() </code></pre>
-<pre><code>## # A tibble: 0 × 74
-## # ℹ 74 variables: ID_MENAGE &lt;chr&gt;, QB01 &lt;dbl&gt;, QA01 &lt;dbl+lbl&gt;, QA02 &lt;dbl&gt;,
-## #   QA04 &lt;dbl&gt;, QA06 &lt;dbl&gt;, QA07 &lt;dbl&gt;, QA072_CLE &lt;chr+lbl&gt;, QA10 &lt;dbl&gt;,
-## #   QA11 &lt;dbl&gt;, QA03 &lt;dbl+lbl&gt;, QA05 &lt;dbl&gt;, QA08 &lt;dbl&gt;, QA09 &lt;dbl&gt;,
-## #   QB03 &lt;dbl+lbl&gt;, QB04 &lt;dbl+lbl&gt;, QB06 &lt;dbl&gt;, QB07R &lt;dbl+lbl&gt;,
-## #   QB08 &lt;dbl+lbl&gt;, QB09R &lt;dbl+lbl&gt;, QB09D &lt;dbl&gt;, QB09A &lt;dbl&gt;, QB09C &lt;dbl&gt;,
-## #   QB10 &lt;dbl+lbl&gt;, QB11A &lt;dbl+lbl&gt;, QB11B &lt;dbl+lbl&gt;, QB14A &lt;dbl+lbl&gt;,
-## #   QB14B &lt;dbl+lbl&gt;, QB14C &lt;dbl+lbl&gt;, QB14D &lt;dbl+lbl&gt;, QB14E &lt;dbl+lbl&gt;, …</code></pre>
-<pre class="r"><code># Read and check for duplicated rows in the &quot;menage_2002&quot; dataset
+individus_2002 %&gt;% janitor::get_dupes() 
+
+# Read and check for duplicated rows in the &quot;menage_2002&quot; dataset
 menage_2002 &lt;- haven::read_sav(paste0(here::here(),&quot;/data/1. RGPH 2002/Requete PDBA2k2 menage.sav&quot;))
-menage_2002 %&gt;% janitor::get_dupes()</code></pre>
-<pre><code>## # A tibble: 0 × 71
-## # ℹ 71 variables: QA01 &lt;dbl+lbl&gt;, QA02 &lt;dbl&gt;, QA04 &lt;dbl&gt;, QA06 &lt;dbl&gt;,
-## #   QA07 &lt;dbl&gt;, QA072_CLE &lt;chr+lbl&gt;, QA10 &lt;dbl&gt;, ID_MENAGE &lt;chr&gt;,
-## #   num_men &lt;chr&gt;, QA11 &lt;dbl&gt;, QA03 &lt;dbl+lbl&gt;, QA05 &lt;dbl&gt;, QA08 &lt;dbl&gt;,
-## #   QA09 &lt;dbl&gt;, DR &lt;chr&gt;, Nb_indiv &lt;dbl&gt;, depart &lt;dbl+lbl&gt;, arrond &lt;dbl+lbl&gt;,
-## #   comarr &lt;dbl+lbl&gt;, E01 &lt;dbl+lbl&gt;, E02 &lt;dbl&gt;, E03 &lt;dbl+lbl&gt;, E04 &lt;dbl+lbl&gt;,
-## #   E05 &lt;dbl+lbl&gt;, E06 &lt;dbl+lbl&gt;, E07 &lt;dbl+lbl&gt;, E08 &lt;dbl+lbl&gt;, E09 &lt;dbl+lbl&gt;,
-## #   E10 &lt;dbl+lbl&gt;, E11B &lt;dbl+lbl&gt;, E11C &lt;dbl+lbl&gt;, E11D &lt;dbl+lbl&gt;, …</code></pre>
-<pre class="r"><code>menage_2002 %&gt;% janitor::get_dupes(ID_MENAGE)</code></pre>
-<pre><code>## # A tibble: 0 × 71
-## # ℹ 71 variables: ID_MENAGE &lt;chr&gt;, dupe_count &lt;int&gt;, QA01 &lt;dbl+lbl&gt;,
-## #   QA02 &lt;dbl&gt;, QA04 &lt;dbl&gt;, QA06 &lt;dbl&gt;, QA07 &lt;dbl&gt;, QA072_CLE &lt;chr+lbl&gt;,
-## #   QA10 &lt;dbl&gt;, num_men &lt;chr&gt;, QA11 &lt;dbl&gt;, QA03 &lt;dbl+lbl&gt;, QA05 &lt;dbl&gt;,
-## #   QA08 &lt;dbl&gt;, QA09 &lt;dbl&gt;, DR &lt;chr&gt;, Nb_indiv &lt;dbl&gt;, depart &lt;dbl+lbl&gt;,
-## #   arrond &lt;dbl+lbl&gt;, comarr &lt;dbl+lbl&gt;, E01 &lt;dbl+lbl&gt;, E02 &lt;dbl&gt;,
-## #   E03 &lt;dbl+lbl&gt;, E04 &lt;dbl+lbl&gt;, E05 &lt;dbl+lbl&gt;, E06 &lt;dbl+lbl&gt;, E07 &lt;dbl+lbl&gt;,
-## #   E08 &lt;dbl+lbl&gt;, E09 &lt;dbl+lbl&gt;, E10 &lt;dbl+lbl&gt;, E11B &lt;dbl+lbl&gt;, …</code></pre>
-<pre class="r"><code># Read and check for duplicated rows in the &quot;menage_2002_complement&quot; dataset
+menage_2002 %&gt;% janitor::get_dupes()
+menage_2002 %&gt;% janitor::get_dupes(ID_MENAGE)
+
+# Read and check for duplicated rows in the &quot;menage_2002_complement&quot; dataset
 menage_2002_complement &lt;- read_sav(paste0(here::here(),&quot;/data/1. RGPH 2002/PDBA_rgph2002_menage_complement.sav&quot;))
-menage_2002_complement %&gt;% janitor::get_dupes() </code></pre>
-<pre><code>## # A tibble: 0 × 62
-## # ℹ 62 variables: QA01 &lt;dbl+lbl&gt;, QA02 &lt;dbl&gt;, QA03 &lt;dbl+lbl&gt;, QA04 &lt;dbl&gt;,
-## #   QA05 &lt;dbl&gt;, QA06 &lt;dbl&gt;, QA07 &lt;dbl&gt;, QA072_CLE &lt;chr+lbl&gt;, QA08 &lt;dbl&gt;,
-## #   QA09 &lt;dbl&gt;, QA10 &lt;dbl&gt;, QA11 &lt;dbl&gt;, E01 &lt;dbl+lbl&gt;, E02 &lt;dbl&gt;,
-## #   E03 &lt;dbl+lbl&gt;, E04 &lt;dbl+lbl&gt;, E05 &lt;dbl+lbl&gt;, E06 &lt;dbl+lbl&gt;, E07 &lt;dbl+lbl&gt;,
-## #   E08 &lt;dbl+lbl&gt;, E09 &lt;dbl+lbl&gt;, E10 &lt;dbl+lbl&gt;, E11B &lt;dbl+lbl&gt;,
-## #   E11C &lt;dbl+lbl&gt;, E11D &lt;dbl+lbl&gt;, E11E &lt;dbl+lbl&gt;, E11F &lt;dbl+lbl&gt;,
-## #   E11G &lt;dbl+lbl&gt;, E11H &lt;dbl+lbl&gt;, E11I &lt;dbl+lbl&gt;, E11J &lt;dbl+lbl&gt;, …</code></pre>
-<pre class="r"><code># Read and check for duplicated rows in the &quot;individus_2002_complement_pikine&quot; dataset
+menage_2002_complement %&gt;% janitor::get_dupes() 
+
+# Read and check for duplicated rows in the &quot;individus_2002_complement_pikine&quot; dataset
 individus_2002_complement_pikine &lt;- read_sav(paste0(here::here(),&quot;/data/1. RGPH 2002/PDBA_rgph2002_Individus Complement Pikine.sav&quot;))
 individus_2002_complement_pikine %&gt;% janitor::get_dupes() </code></pre>
-<pre><code>## # A tibble: 0 × 88
-## # ℹ 88 variables: QA01 &lt;dbl+lbl&gt;, QA02 &lt;dbl&gt;, QA03 &lt;dbl+lbl&gt;, QA04 &lt;dbl&gt;,
-## #   QA05 &lt;dbl&gt;, QA06 &lt;dbl&gt;, QA07 &lt;dbl&gt;, QA072_CLE &lt;chr+lbl&gt;, QA08 &lt;dbl&gt;,
-## #   QA09 &lt;dbl&gt;, QA10 &lt;dbl&gt;, QA11 &lt;dbl&gt;, QB01 &lt;dbl&gt;, QB03 &lt;dbl+lbl&gt;,
-## #   QB04 &lt;dbl+lbl&gt;, QB05 &lt;chr&gt;, QB05S &lt;dbl&gt;, QB05D &lt;dbl&gt;, QB06 &lt;dbl&gt;,
-## #   QB07R &lt;dbl+lbl&gt;, QB07D &lt;dbl&gt;, QB07A &lt;dbl+lbl&gt;, QB07C &lt;dbl&gt;, QB08 &lt;dbl+lbl&gt;,
-## #   QB09R &lt;dbl+lbl&gt;, QB09D &lt;dbl&gt;, QB09A &lt;dbl&gt;, QB09C &lt;dbl&gt;, QB10 &lt;dbl+lbl&gt;,
-## #   QB11A &lt;dbl+lbl&gt;, QB11B &lt;dbl+lbl&gt;, QB12 &lt;dbl+lbl&gt;, QB13A &lt;dbl+lbl&gt;, …</code></pre>
-<pre class="r"><code># Joining with the 2002 dataset for deceased individuals
+<pre class="r"><code># Joining the 2002 dataset with the &quot;deces_2002_complement&quot; for deceased individuals
 deces_2002 &lt;- deces_2002_complement %&gt;% 
+  # Creating unique identifiers for each record in the dataset
   mutate(ID_MENAGE = paste0(QA01, QA02, QA03, QA04, QA05, QA06, &quot;0&quot;, QA07, QA072_CLE, QA08, QA09, QA10),
          DR = paste0(QA01, QA02, QA03, QA04, QA05, QA06, &quot;0&quot;, QA07, QA072_CLE)) %&gt;%
+  # Combining the dataset with the existing &quot;deces_2002&quot; dataset, filling missing values
   plyr::rbind.fill(deces_2002)
 
 # Joining with the 2002 dataset for individual data
 individus_2002 &lt;- individus_2002_complement_pikine %&gt;% 
+  # Creating unique identifiers for each record in the dataset
   mutate(ID_MENAGE = paste0(QA01, QA02, QA03, QA04, QA05, QA06, &quot;0&quot;, QA07, QA072_CLE, QA08, QA09, QA10),
          DR = paste0(QA01, QA02, QA03, QA04, QA05, QA06, &quot;0&quot;, QA07, QA072_CLE)) %&gt;%
+  # Combining the dataset with the existing &quot;individus_2002&quot; dataset
   plyr::rbind.fill(individus_2002)
 
 # Joining with the 2002 dataset for household data
 menage_2002 &lt;- menage_2002_complement %&gt;% 
+  # Creating unique identifiers for each record in the dataset
   mutate(ID_MENAGE = paste0(QA01, QA02, QA03, QA04, QA05, QA06, &quot;0&quot;, QA07, QA072_CLE, QA08, QA09, QA10),
          DR = paste0(QA01, QA02, QA03, QA04, QA05, QA06, &quot;0&quot;, QA07, QA072_CLE)) %&gt;%
+  # Combining the dataset with the existing &quot;menage_2002&quot; dataset
   plyr::rbind.fill(menage_2002)</code></pre>
+<p><strong>For the 2013 census dataset</strong></p>
 <pre class="r"><code># Read and check for duplicated rows in 2013 datasets
 
 # Read and check for duplicated rows in the &quot;deces_2013&quot; dataset
@@ -570,6 +533,11 @@ menage_2013 %&gt;% janitor::get_dupes() </code></pre>
 ## #   E06 &lt;dbl+lbl&gt;, E07 &lt;dbl+lbl&gt;, E08 &lt;dbl+lbl&gt;, E09 &lt;dbl+lbl&gt;, E10 &lt;dbl+lbl&gt;,
 ## #   E11 &lt;dbl+lbl&gt;, E12 &lt;dbl+lbl&gt;, E13_1 &lt;dbl+lbl&gt;, E13_2 &lt;dbl+lbl&gt;,
 ## #   E13_3 &lt;dbl+lbl&gt;, E13_4 &lt;dbl+lbl&gt;, E13_5 &lt;dbl+lbl&gt;, E13_6 &lt;dbl+lbl&gt;, …</code></pre>
+</div>
+</div>
+</div>
+<div id="preparation-of-data-on-the-two-censuses-wrangling" class="section level1">
+<h1>Preparation of data on the two censuses (Wrangling)</h1>
 <pre class="r"><code># Creating a variable &quot;RGPH&quot; to identify each survey 
 
 # For 2002
@@ -583,10 +551,8 @@ individus_2002 &lt;-
 individus_2013 &lt;- 
   individus_2013 %&gt;% 
   mutate(RGPH = &quot;2013&quot;)</code></pre>
-</div>
-<div id="calcul-des-indices-sur-les-variables-composants-liés-au-ménage-age-des-chefs-de-ménage-par-sexe-entre-les-deux-recensements" class="section level3">
-<h3>- Calcul des indices sur les variables composants liés au ménage
-(Age des chefs de ménage, par sexe entre les deux recensements</h3>
+<p><em>Calculation of indices on household-related component variables
+(Age of household heads, by gender between the two censuses)</em></p>
 <pre class="r"><code># Select the CM (Chef de ménage) and compute the average age
 
 # Select relevant columns (B04, B06, B08, RGPH) from the &quot;individus_2013&quot; dataset
@@ -617,15 +583,14 @@ individus_2013 %&gt;%
       sexe_cm = QB04,        # Renamed QB04 to &quot;sexe_cm&quot;
       lien_cm = QB03,        # Renamed QB03 to &quot;lien_cm&quot;
       age_cm = QB06,         # Renamed QB06 to &quot;age_cm&quot;
-    ) #%&gt;%
+    ) 
     
-    # Replace &quot;Feminin&quot; with &quot;Féminin&quot; in the &quot;sexe_cm&quot; column
-    #mutate(sexe_cm = ifelse(sexe_cm==&quot;Feminin&quot;, &quot;Féminin&quot;, &quot;Masculin&quot;))
   ) %&gt;% 
 
   # Remove the &quot;lien_cm&quot; (link to household head) column
   select(-lien_cm) %&gt;% 
   mutate( sexe_cm = ifelse(sexe_cm ==2, 0, 1)) %&gt;% 
+  
   # Generate a summary table using &quot;tbl_summary&quot; for the specified columns
   tbl_summary(
     by = RGPH,  # Group by &quot;RGPH&quot; column
@@ -642,29 +607,21 @@ individus_2013 %&gt;%
   modify_header(label ~ &quot;Caractéristique du Chef de ménage entre les deux recensements&quot;) %&gt;%
   
   # Add difference statistics to the table
-  add_difference() #%&gt;% </code></pre>
-<<<<<<< HEAD
-<div id="suixgkagsc" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#suixgkagsc table {
+  add_difference() </code></pre>
+<div id="hqiywghqhu" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#hqiywghqhu table {
 font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#suixgkagsc thead, #suixgkagsc tbody, #suixgkagsc tfoot, #suixgkagsc tr, #suixgkagsc td, #suixgkagsc th {
+#hqiywghqhu thead, #hqiywghqhu tbody, #hqiywghqhu tfoot, #hqiywghqhu tr, #hqiywghqhu td, #hqiywghqhu th {
 border-style: none;
 }
-#suixgkagsc p {
+#hqiywghqhu p {
 margin: 0;
 padding: 0;
 }
-#suixgkagsc .gt_table {
-=======
-<div id="fjsdehmnua" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>html {
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
-}
-#fjsdehmnua .gt_table {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
@@ -689,30 +646,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_caption {
+#hqiywghqhu .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#suixgkagsc .gt_title {
-=======
-#fjsdehmnua .gt_heading {
-background-color: #FFFFFF;
-text-align: center;
-border-bottom-color: #FFFFFF;
-border-left-style: none;
-border-left-width: 1px;
-border-left-color: #D3D3D3;
-border-right-style: none;
-border-right-width: 1px;
-border-right-color: #D3D3D3;
-}
-#fjsdehmnua .gt_caption {
-padding-top: 4px;
-padding-bottom: 4px;
-}
-#fjsdehmnua .gt_title {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -723,11 +661,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_subtitle {
-=======
-#fjsdehmnua .gt_subtitle {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -738,8 +672,7 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_heading {
+#hqiywghqhu .gt_heading {
 background-color: #FFFFFF;
 text-align: center;
 border-bottom-color: #FFFFFF;
@@ -750,19 +683,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#suixgkagsc .gt_bottom_border {
-=======
-#fjsdehmnua .gt_bottom_border {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_col_headings {
-=======
-#fjsdehmnua .gt_col_headings {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -776,11 +702,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_col_heading {
-=======
-#fjsdehmnua .gt_col_heading {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_col_heading {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -799,11 +721,7 @@ padding-left: 5px;
 padding-right: 5px;
 overflow-x: hidden;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_column_spanner_outer {
-=======
-#fjsdehmnua .gt_column_spanner_outer {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_column_spanner_outer {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -814,23 +732,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_column_spanner_outer:first-child {
+#hqiywghqhu .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#suixgkagsc .gt_column_spanner_outer:last-child {
+#hqiywghqhu .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#suixgkagsc .gt_column_spanner {
-=======
-#fjsdehmnua .gt_column_spanner_outer:first-child {
-padding-left: 0;
-}
-#fjsdehmnua .gt_column_spanner_outer:last-child {
-padding-right: 0;
-}
-#fjsdehmnua .gt_column_spanner {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
@@ -841,14 +749,10 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_spanner_row {
+#hqiywghqhu .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#suixgkagsc .gt_group_heading {
-=======
-#fjsdehmnua .gt_group_heading {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -873,11 +777,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_empty_group_heading {
-=======
-#fjsdehmnua .gt_empty_group_heading {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
 background-color: #FFFFFF;
@@ -891,23 +791,13 @@ border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 vertical-align: middle;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_from_md > :first-child {
+#hqiywghqhu .gt_from_md > :first-child {
 margin-top: 0;
 }
-#suixgkagsc .gt_from_md > :last-child {
+#hqiywghqhu .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#suixgkagsc .gt_row {
-=======
-#fjsdehmnua .gt_from_md > :first-child {
-margin-top: 0;
-}
-#fjsdehmnua .gt_from_md > :last-child {
-margin-bottom: 0;
-}
-#fjsdehmnua .gt_row {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -925,11 +815,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 overflow-x: hidden;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_stub {
-=======
-#fjsdehmnua .gt_stub {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_stub {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -941,11 +827,7 @@ border-right-color: #D3D3D3;
 padding-left: 5px;
 padding-right: 5px;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_stub_row_group {
-=======
-#fjsdehmnua .gt_stub_row_group {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -958,20 +840,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_row_group_first td {
+#hqiywghqhu .gt_row_group_first td {
 border-top-width: 2px;
 }
-#suixgkagsc .gt_row_group_first th {
+#hqiywghqhu .gt_row_group_first th {
 border-top-width: 2px;
 }
-#suixgkagsc .gt_summary_row {
-=======
-#fjsdehmnua .gt_row_group_first td {
-border-top-width: 2px;
-}
-#fjsdehmnua .gt_summary_row {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -980,25 +855,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_first_summary_row {
+#hqiywghqhu .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #D3D3D3;
 }
-#suixgkagsc .gt_first_summary_row.thick {
+#hqiywghqhu .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#suixgkagsc .gt_last_summary_row {
-=======
-#fjsdehmnua .gt_first_summary_row {
-border-top-style: solid;
-border-top-color: #D3D3D3;
-}
-#fjsdehmnua .gt_first_summary_row.thick {
-border-top-width: 2px;
-}
-#fjsdehmnua .gt_last_summary_row {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1007,11 +871,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_grand_summary_row {
-=======
-#fjsdehmnua .gt_grand_summary_row {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_grand_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -1020,11 +880,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_first_grand_summary_row {
-=======
-#fjsdehmnua .gt_first_grand_summary_row {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1033,8 +889,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #D3D3D3;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_last_grand_summary_row_top {
+#hqiywghqhu .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1043,16 +898,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #D3D3D3;
 }
-#suixgkagsc .gt_striped {
+#hqiywghqhu .gt_striped {
 background-color: rgba(128, 128, 128, 0.05);
 }
-#suixgkagsc .gt_table_body {
-=======
-#fjsdehmnua .gt_striped {
-background-color: rgba(128, 128, 128, 0.05);
-}
-#fjsdehmnua .gt_table_body {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_table_body {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -1060,11 +909,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_footnotes {
-=======
-#fjsdehmnua .gt_footnotes {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -1077,152 +922,78 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_footnote {
+#hqiywghqhu .gt_footnote {
 margin: 0px;
-font-size: 90%;
-=======
-#fjsdehmnua .gt_footnote {
-margin: 0px;
-font-size: 90%;
-padding-left: 4px;
-padding-right: 4px;
-padding-left: 5px;
-padding-right: 5px;
-}
-#fjsdehmnua .gt_sourcenotes {
-color: #333333;
-background-color: #FFFFFF;
-border-bottom-style: none;
-border-bottom-width: 2px;
-border-bottom-color: #D3D3D3;
-border-left-style: none;
-border-left-width: 2px;
-border-left-color: #D3D3D3;
-border-right-style: none;
-border-right-width: 2px;
-border-right-color: #D3D3D3;
-}
-#fjsdehmnua .gt_sourcenote {
-font-size: 90%;
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
-padding-top: 4px;
-padding-bottom: 4px;
-padding-left: 5px;
-padding-right: 5px;
-}
-<<<<<<< HEAD
-#suixgkagsc .gt_sourcenotes {
-color: #333333;
-background-color: #FFFFFF;
-border-bottom-style: none;
-border-bottom-width: 2px;
-border-bottom-color: #D3D3D3;
-border-left-style: none;
-border-left-width: 2px;
-border-left-color: #D3D3D3;
-border-right-style: none;
-border-right-width: 2px;
-border-right-color: #D3D3D3;
-}
-#suixgkagsc .gt_sourcenote {
 font-size: 90%;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#suixgkagsc .gt_left {
+#hqiywghqhu .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#hqiywghqhu .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#hqiywghqhu .gt_left {
 text-align: left;
 }
-#suixgkagsc .gt_center {
+#hqiywghqhu .gt_center {
 text-align: center;
 }
-#suixgkagsc .gt_right {
+#hqiywghqhu .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#suixgkagsc .gt_font_normal {
+#hqiywghqhu .gt_font_normal {
 font-weight: normal;
 }
-#suixgkagsc .gt_font_bold {
+#hqiywghqhu .gt_font_bold {
 font-weight: bold;
 }
-#suixgkagsc .gt_font_italic {
+#hqiywghqhu .gt_font_italic {
 font-style: italic;
 }
-#suixgkagsc .gt_super {
+#hqiywghqhu .gt_super {
 font-size: 65%;
 }
-#suixgkagsc .gt_footnote_marks {
-=======
-#fjsdehmnua .gt_left {
-text-align: left;
-}
-#fjsdehmnua .gt_center {
-text-align: center;
-}
-#fjsdehmnua .gt_right {
-text-align: right;
-font-variant-numeric: tabular-nums;
-}
-#fjsdehmnua .gt_font_normal {
-font-weight: normal;
-}
-#fjsdehmnua .gt_font_bold {
-font-weight: bold;
-}
-#fjsdehmnua .gt_font_italic {
-font-style: italic;
-}
-#fjsdehmnua .gt_super {
-font-size: 65%;
-}
-#fjsdehmnua .gt_footnote_marks {
-font-style: italic;
-font-weight: normal;
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-<<<<<<< HEAD
-#suixgkagsc .gt_asterisk {
+#hqiywghqhu .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#suixgkagsc .gt_indent_1 {
+#hqiywghqhu .gt_indent_1 {
 text-indent: 5px;
 }
-#suixgkagsc .gt_indent_2 {
+#hqiywghqhu .gt_indent_2 {
 text-indent: 10px;
 }
-#suixgkagsc .gt_indent_3 {
+#hqiywghqhu .gt_indent_3 {
 text-indent: 15px;
 }
-#suixgkagsc .gt_indent_4 {
+#hqiywghqhu .gt_indent_4 {
 text-indent: 20px;
 }
-#suixgkagsc .gt_indent_5 {
-=======
-#fjsdehmnua .gt_asterisk {
-font-size: 100%;
-vertical-align: 0;
-}
-#fjsdehmnua .gt_indent_1 {
-text-indent: 5px;
-}
-#fjsdehmnua .gt_indent_2 {
-text-indent: 10px;
-}
-#fjsdehmnua .gt_indent_3 {
-text-indent: 15px;
-}
-#fjsdehmnua .gt_indent_4 {
-text-indent: 20px;
-}
-#fjsdehmnua .gt_indent_5 {
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+#hqiywghqhu .gt_indent_5 {
 text-indent: 25px;
 }
 </style>
@@ -1231,19 +1002,11 @@ text-indent: 25px;
     
     <tr class="gt_col_headings">
       <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Caractéristique du Chef de ménage entre les deux recensements">Caractéristique du Chef de ménage entre les deux recensements</th>
-<<<<<<< HEAD
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;2002&lt;/strong&gt;, N = 34,226&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/span&gt;"><strong>2002</strong>, N = 34,226<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>1</sup></span></th>
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;2013&lt;/strong&gt;, N = 43,188&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/span&gt;"><strong>2013</strong>, N = 43,188<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>1</sup></span></th>
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;Difference&lt;/strong&gt;&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/span&gt;"><strong>Difference</strong><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>2</sup></span></th>
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;95% CI&lt;/strong&gt;&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;2,3&lt;/sup&gt;&lt;/span&gt;"><strong>95% CI</strong><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>2,3</sup></span></th>
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;p-value&lt;/strong&gt;&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/span&gt;"><strong>p-value</strong><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>2</sup></span></th>
-=======
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;2002&lt;/strong&gt;, N = 34,226&lt;sup class=&quot;gt_footnote_marks&quot;&gt;1&lt;/sup&gt;"><strong>2002</strong>, N = 34,226<sup class="gt_footnote_marks">1</sup></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;2013&lt;/strong&gt;, N = 43,188&lt;sup class=&quot;gt_footnote_marks&quot;&gt;1&lt;/sup&gt;"><strong>2013</strong>, N = 43,188<sup class="gt_footnote_marks">1</sup></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;Difference&lt;/strong&gt;&lt;sup class=&quot;gt_footnote_marks&quot;&gt;2&lt;/sup&gt;"><strong>Difference</strong><sup class="gt_footnote_marks">2</sup></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;95% CI&lt;/strong&gt;&lt;sup class=&quot;gt_footnote_marks&quot;&gt;2,3&lt;/sup&gt;"><strong>95% CI</strong><sup class="gt_footnote_marks">2,3</sup></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;p-value&lt;/strong&gt;&lt;sup class=&quot;gt_footnote_marks&quot;&gt;2&lt;/sup&gt;"><strong>p-value</strong><sup class="gt_footnote_marks">2</sup></th>
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
     </tr>
   </thead>
   <tbody class="gt_table_body">
@@ -1263,7 +1026,6 @@ text-indent: 25px;
   
   <tfoot class="gt_footnotes">
     <tr>
-<<<<<<< HEAD
       <td class="gt_footnote" colspan="6"><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>1</sup></span> n (%); Mean</td>
     </tr>
     <tr>
@@ -1271,40 +1033,36 @@ text-indent: 25px;
     </tr>
     <tr>
       <td class="gt_footnote" colspan="6"><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>3</sup></span> CI = Confidence Interval</td>
-=======
-      <td class="gt_footnote" colspan="6"><sup class="gt_footnote_marks">1</sup> n (%); Mean</td>
-    </tr>
-    <tr>
-      <td class="gt_footnote" colspan="6"><sup class="gt_footnote_marks">2</sup> Two sample test for equality of proportions; Welch Two Sample t-test</td>
-    </tr>
-    <tr>
-      <td class="gt_footnote" colspan="6"><sup class="gt_footnote_marks">3</sup> CI = Confidence Interval</td>
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
     </tr>
   </tfoot>
 </table>
 </div>
-<pre class="r"><code>  # Add overall statistics to the table
-  #add_overall() %&gt;%
-  
-  # Add a count of the observations
-  #add_n()</code></pre>
 </div>
-<div id="calcul-multivarié-pour-des-indices-de-pauvreté-bien-des-ménages-niveau-dinstruction-accès-aux-services-bien-daisance-eau-etc." class="section level3">
-<h3>- Calcul multivarié pour des indices de pauvreté (bien des ménages,
-Niveau d’instruction, accès aux services (bien d’aisance, eau,
-etc.)</h3>
+<div id="multivariate-calculation-for-poverty-indices-mpi" class="section level1">
+<h1>Multivariate calculation for poverty indices (MPI)</h1>
+<div id="education-dimension" class="section level2">
+<h2>Education dimension</h2>
+<div id="cleaning-of-the-education-variable" class="section level3">
+<h3>Cleaning of the “education” variable</h3>
 <pre class="r"><code># Transform values in the &quot;QB15&quot; column of the &quot;individus_2002&quot; dataset
 # The transformation categorizes educational levels into descriptive labels
 
 individus_2002 &lt;- individus_2002 %&gt;% 
+  
   mutate(QB15 = case_when(
+    
     QB15 == 0 ~ &quot;aucune&quot;,      # If QB15 is 0, set it to &quot;aucune&quot;
+    
     QB15 == 1 ~ &quot;prescolaire&quot;, # If QB15 is 1, set it to &quot;prescolaire&quot;
+    
     QB15 %in% seq(2,7,1) ~ &quot;elementaire&quot;, # If QB15 is 2 to 7, set it to &quot;elementaire&quot;
+    
     QB15 %in% seq(8,11,1) ~ &quot;moyen&quot;, # If QB15 is 8 to 11, set it to &quot;moyen&quot;
+    
     QB15 %in% seq(12,14,1) ~ &quot;secondaire&quot;, # If QB15 is 12 to 14, set it to &quot;secondaire&quot;
+    
     QB15 %in% seq(15,19,1) ~ &quot;superieur&quot;, # If QB15 is 15 to 19, set it to &quot;superieur&quot;
+    
     TRUE ~ as.character(QB15) # If none, keep the old value
     ) %&gt;% 
   structure(label = Hmisc::label(individus_2002$QB15))) # Apply labels to the QB15 column
@@ -1328,6 +1086,139 @@ individus_2013 &lt;- individus_2013 %&gt;%
     B32 %in% seq(17,24,1) ~ &quot;superieur&quot;, # If B32 corresponds to higher education levels, set it to &quot;superieur&quot; c(&quot;1ère année&quot;, &quot;2ème année&quot;, &quot;Licence/3ième année&quot;, &quot;Maitrise/4ième année&quot;, &quot;DEA/5ième année&quot;, &quot;6ième année&quot;, &quot;7ième année&quot;, &quot;8ième année et +&quot;)
     TRUE ~ as.character(B32) %&gt;% 
   structure(label = Hmisc::label(individus_2013$B32)))) # Apply labels to the B32 column</code></pre>
+</div>
+<div id="education-indicators-computation" class="section level3">
+<h3>Education indicators computation</h3>
+<p><em>Years of schooling indicator</em></p>
+<pre class="r"><code># For the 2002 individus data  
+
+individus_2002 &lt;- 
+  individus_2002 %&gt;% 
+  left_join(
+# Group the &#39;individus_2002&#39; dataframe by the &#39;ID_MENAGE&#39; column
+individus_2002 %&gt;%
+  group_by(ID_MENAGE) %&gt;%
+  
+# Calculate the sum of individuals with &#39;elementaire&#39; education within each household
+  summarise(nbr_educ_primaire = sum(QB15 == &quot;elementaire&quot;, na.rm = TRUE),
+  
+# Calculate the sum of individuals with &#39;moyen&#39; education within each household
+            nbr_educ_moyen = sum(QB15 == &quot;moyen&quot;, na.rm = TRUE),
+            
+# Calculate the sum of individuals with &#39;secondaire&#39; education within each household
+            nbr_educ_secondaire = sum(QB15 == &quot;secondaire&quot;, na.rm = TRUE),
+            
+# Calculate the sum of individuals with &#39;superieur&#39; education within each household
+            nbr_educ_superieur = sum(QB15 == &quot;superieur&quot;, na.rm = TRUE)
+  ) %&gt;%
+  
+# Remove the grouping to get a flat summary data frame
+  ungroup() %&gt;%
+  
+# Calculate a binary variable &#39;school_attendance&#39; for each household.
+# If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
+# otherwise, it means no one is attending school (1).
+  mutate(years_schooling_dim = 
+           as.factor(ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur &gt; 0, 0, 1)) %&gt;% structure(label = &quot;Education: years of schooling&quot;)) %&gt;%
+  select(ID_MENAGE, years_schooling_dim),
+
+  by=c(&quot;ID_MENAGE&quot;=&quot;ID_MENAGE&quot;)
+)
+  
+# For the 2013 individus data  
+
+individus_2013 &lt;- 
+  individus_2013 %&gt;% 
+  left_join(
+# Group the &#39;individus_2013&#39; dataframe by the &#39;ID_MENAGE&#39; column
+individus_2013 %&gt;%
+  group_by(ID_MENAGE) %&gt;%
+  
+# Calculate the sum of individuals with &#39;elementaire&#39; education within each household
+  summarise(nbr_educ_primaire = sum(B32 == &quot;elementaire&quot;, na.rm = TRUE),
+  
+# Calculate the sum of individuals with &#39;moyen&#39; education within each household
+            nbr_educ_moyen = sum(B32 == &quot;moyen&quot;, na.rm = TRUE),
+            
+# Calculate the sum of individuals with &#39;secondaire&#39; education within each household
+            nbr_educ_secondaire = sum(B32 == &quot;secondaire&quot;, na.rm = TRUE),
+            
+# Calculate the sum of individuals with &#39;superieur&#39; education within each household
+            nbr_educ_superieur = sum(B32 == &quot;superieur&quot;, na.rm = TRUE)
+  ) %&gt;%
+  
+# Remove the grouping to get a flat summary data frame
+  ungroup() %&gt;%
+  
+# Calculate a binary variable &#39;school_attendance&#39; for each household.
+# If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
+# otherwise, it means no one is attending school (1).
+  mutate(years_schooling_dim = 
+           as.factor(ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur &gt; 0, 0, 1)) %&gt;% structure(label = &quot;Education: years of schooling&quot;)) %&gt;%
+  select(ID_MENAGE, years_schooling_dim),
+
+  by=c(&quot;ID_MENAGE&quot;=&quot;ID_MENAGE&quot;)
+)</code></pre>
+<p><em>School Attendance indicator</em></p>
+<pre class="r"><code># Processing for the year 2002
+individus_2002 &lt;- 
+  individus_2002 %&gt;% 
+  left_join(
+    # Joining the data with summarized statistics per household
+    individus_2002 %&gt;%
+    group_by(ID_MENAGE) %&gt;%
+    summarise(
+      # Calculating the number of children (lien_cm==&quot;children&quot; and age &lt; 13) with no school attendance 
+      
+      nbr_school_attendance = sum(QB15 == &quot;aucune&quot; &amp; age5 &gt; 3 &amp; QB03 == 3, na.rm = TRUE),
+      
+      #The total number of (lien_cm==&quot;children&quot;) in the household
+      nbr_children_hh = sum(QB03 == 3)
+    ) %&gt;%
+    ungroup() %&gt;%
+      
+    # Computing a dimension for school attendance in the household
+    mutate(
+      school_attendance_dim = as.factor(ifelse(nbr_school_attendance == nbr_children_hh, 1, 0))%&gt;% structure(label = &quot;Education: school attendance&quot;)
+    ) %&gt;%
+      
+    # Selecting relevant columns for the join
+    select(ID_MENAGE, school_attendance_dim),
+    by = c(&quot;ID_MENAGE&quot;=&quot;ID_MENAGE&quot;)
+  )
+
+# Processing for the year 2013
+individus_2013 &lt;- 
+  individus_2013 %&gt;% 
+  left_join(
+    # Joining the data with summarized statistics per household
+    individus_2013 %&gt;%
+    group_by(ID_MENAGE) %&gt;%
+    summarise(
+      
+      # Calculating the number of children (lien_cm==&quot;children&quot; and age &lt; 13) with no school attendance  (NA for B32)
+      nbr_school_attendance = sum(is.na(B32) &amp; B08 &gt; 13 &amp; B04 == 3, na.rm = TRUE),
+      
+      # Computing a dimension for school attendance in the household
+      nbr_children_hh = sum(B04 == 3)
+    ) %&gt;%
+    ungroup() %&gt;%
+      
+    # Computing a dimension for school attendance in the household
+    mutate(
+      school_attendance_dim = as.factor(ifelse(nbr_school_attendance == nbr_children_hh, 1, 0)) %&gt;% structure(label = &quot;Education: school attendance&quot;)
+    ) %&gt;%
+      
+    # Selecting relevant columns for the join
+    select(ID_MENAGE, school_attendance_dim),
+    by = c(&quot;ID_MENAGE&quot;=&quot;ID_MENAGE&quot;)
+  )</code></pre>
+</div>
+</div>
+<div id="standard-of-living-dimension" class="section level2">
+<h2>Standard of Living dimension</h2>
+<div id="cleaning-the-standard-of-living-variables" class="section level3">
+<h3>Cleaning the “Standard of Living” variables</h3>
 <pre class="r"><code># Renaming variables so that they can have the same name in the two
 # datasets
 
@@ -1336,65 +1227,120 @@ individus_2013 &lt;- individus_2013 %&gt;%
 ## For the RGPH 2002
 menage_2002 &lt;- menage_2002 %&gt;% 
   
-  # Mutate and rename variables in the &quot;menage_2002&quot; dataset
+  # Create and rename variables in the &quot;menage_2002&quot; dataset
   mutate(
-    
+       # Create a new variable &quot;nb_indiv&quot; with labels from the &quot;menage_2002&quot; dataset
     nb_indiv = E01 %&gt;% structure(label=Hmisc::label(menage_2002$Nb_indiv)),
+    
+    # Create a new variable &quot;id_dr&quot; with labels from the &quot;menage_2002&quot; dataset
     id_dr = DR %&gt;% structure(label=Hmisc::label(menage_2002$DR)),
     
-    type_log = E01 %&gt;% structure(label=Hmisc::label(menage_2002$E01)),
-    nbr_piece_occup = E02 %&gt;% structure(label=Hmisc::label(menage_2002$E02)),
-    stat_occupation = E03 %&gt;% structure(label=Hmisc::label(menage_2002$E03)),
-    type_aisance = E04 %&gt;% structure(label=Hmisc::label(menage_2002$E04)),
-    approv_eau = E05 %&gt;% structure(label=Hmisc::label(menage_2002$E05)),
-    eclairage = E06 %&gt;% structure(label=Hmisc::label(menage_2002$E06)),
-    combustible_cuisine = E07 %&gt;% structure(label=Hmisc::label(menage_2002$E07)),
+    # Create a new variable &quot;type_log&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+    type_log = as.factor(E01) %&gt;% structure(label=Hmisc::label(menage_2002$E01)),
     
-    nature_mur = E08 %&gt;% structure(label=Hmisc::label(menage_2002$E08)),
-    nature_toit = E09 %&gt;% structure(label=Hmisc::label(menage_2002$E09)),
-    nature_sol = E10 %&gt;% structure(label=Hmisc::label(menage_2002$E10)),
-    radio = E11B %&gt;% structure(label=Hmisc::label(menage_2002$E11B)),
-    televiseur = E11C %&gt;% structure(label=Hmisc::label(menage_2002$E11C)),
-    video = E11D %&gt;% structure(label=Hmisc::label(menage_2002$E11D)),
-    refri_conge = E11E %&gt;% structure(label=Hmisc::label(menage_2002$E11E)),
+    # Create a new variable &quot;nbr_piece_occup&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+    nbr_piece_occup = as.factor(E02) %&gt;% structure(label=Hmisc::label(menage_2002$E02)),
     
-    telephone = E11F %&gt;% structure(label=Hmisc::label(menage_2002$E11F)),
-    rechaud_cuis = E11G %&gt;% structure(label=Hmisc::label(menage_2002$E11G)),
-    foyer_ameli = E11H %&gt;% structure(label=Hmisc::label(menage_2002$E11H)),
-    climatisateur = E11I %&gt;% structure(label=Hmisc::label(menage_2002$E11I)),
-    machine_coudre = E11J %&gt;% structure(label=Hmisc::label(menage_2002$E11J)),
-    #aucun_11K = E11K %&gt;% structure(label=Hmisc::label(menage_2002$E11K)),
-    voiture = E12B %&gt;% structure(label=Hmisc::label(menage_2002$E12B)),
+    # Create a new variable &quot;stat_occupation&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+    stat_occupation = as.factor(E03) %&gt;% structure(label=Hmisc::label(menage_2002$E03)),
     
-    mobylette = E12C %&gt;% structure(label=Hmisc::label(menage_2002$E12C)),
-    bicyclette = E12E %&gt;% structure(label=Hmisc::label(menage_2002$E12E)),
-    caleche_charette = E12F %&gt;% structure(label=Hmisc::label(menage_2002$E12F)),
-    pirogue = E12G %&gt;% structure(label=Hmisc::label(menage_2002$E12G)),
-    #aucun_G12 = E12G %&gt;% structure(label=Hmisc::label(menage_2002$E12G)),
-    houe_charrue = E13B %&gt;% structure(label=Hmisc::label(menage_2002$E13B)),
-    caleche_char = E13C %&gt;% structure(label=Hmisc::label(menage_2002$E13C)),
+    # Create a new variable &quot;type_aisance&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+    type_aisance = as.factor(E04) %&gt;% structure(label=Hmisc::label(menage_2002$E04)),
     
-    animaux_traite = E13D %&gt;% structure(label=Hmisc::label(menage_2002$E13D)),
-    tracteur = E13E %&gt;% structure(label=Hmisc::label(menage_2002$E13E)),
-    voiture_cam = E13F %&gt;% structure(label=Hmisc::label(menage_2002$E13F)),
-    mobylette_bicycl = E13G %&gt;%     structure(label=Hmisc::label(menage_2002$E13G)),
-    refriger_congelat = E13I %&gt;% structure(label=Hmisc::label(menage_2002$E13I)),
-    machine_coudre = E13J %&gt;% structure(label=Hmisc::label(menage_2002$E13J)),
-    materiel_musique = E13K %&gt;% structure(label=Hmisc::label(menage_2002$E13K)),
+    # Create a new variable &quot;approv_eau&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+    approv_eau = as.factor(E05) %&gt;% structure(label=Hmisc::label(menage_2002$E05)),
     
-    chaise_bache = E13L %&gt;% structure(label=Hmisc::label(menage_2002$E13L)),
-    telephone_tele = E13M %&gt;% structure(label=Hmisc::label(menage_2002$E13M)),
-    photocopieuse = E13N %&gt;% structure(label=Hmisc::label(menage_2002$E13N)),
-    ordinateur = E13O %&gt;% structure(label=Hmisc::label(menage_2002$E13O)),
-    moulin = E13P %&gt;% structure(label=Hmisc::label(menage_2002$E13P)),
-    appareil_photo = E13Q %&gt;% structure(label=Hmisc::label(menage_2002$E13Q)),
-    terrain_bat = E13R %&gt;% structure(label=Hmisc::label(menage_2002$E13R)),
+    # Create a new variable &quot;eclairage&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+    eclairage = as.factor(E06) %&gt;% structure(label=Hmisc::label(menage_2002$E06)),
     
-    #aucun_produc = E13S %&gt;% structure(label=Hmisc::label(menage_2002$E13S)),
-    evacut_ordures = E14 %&gt;% structure(label=Hmisc::label(menage_2002$E14)),
-    evacut_eaux_usees = E15 %&gt;% structure(label=Hmisc::label(menage_2002$E15)),
-    repas_saute = E16 %&gt;% structure(label=Hmisc::label(menage_2002$E16)),
-    soins_medicaux = E17 %&gt;% structure(label=Hmisc::label(menage_2002$E17))
+    # Create a new variable &quot;combustible_cuisine&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+    combustible_cuisine = as.factor(E07) %&gt;% structure(label=Hmisc::label(menage_2002$E07)),
+    
+    # Create new variables &quot;nature_mur,&quot; &quot;nature_toit,&quot; and &quot;nature_sol&quot; as factors with labels from the &quot;menage_2002&quot; dataset
+    nature_mur = as.factor(E08) %&gt;% structure(label=Hmisc::label(menage_2002$E08)),
+    nature_toit = as.factor(E09) %&gt;% structure(label=Hmisc::label(menage_2002$E09)),
+    nature_sol = as.factor(E10) %&gt;% structure(label=Hmisc::label(menage_2002$E10)),
+    
+    # Create new variables &quot;radio,&quot; &quot;televiseur,&quot; &quot;video,&quot; and &quot;refri_conge&quot; as factors with labels from the &quot;menage_2002&quot; dataset
+    radio = as.factor(E11B) %&gt;% structure(label=Hmisc::label(menage_2002$E11B)),
+    televiseur = as.factor(E11C) %&gt;% structure(label=Hmisc::label(menage_2002$E11C)),
+    video = as.factor(E11D) %&gt;% structure(label=Hmisc::label(menage_2002$E11D)),
+    refri_conge = as.factor(E11E) %&gt;% structure(label=Hmisc::label(menage_2002$E11E)),
+    
+    # Create new variables &quot;telephone,&quot; &quot;rechaud_cuis,&quot; &quot;foyer_ameli,&quot; and &quot;climatisateur&quot; as factors with labels from the &quot;menage_2002&quot; dataset
+    telephone = as.factor(E11F) %&gt;% structure(label=Hmisc::label(menage_2002$E11F)),
+    rechaud_cuis = as.factor(E11G) %&gt;% structure(label=Hmisc::label(menage_2002$E11G)),
+    foyer_ameli = as.factor(E11H) %&gt;% structure(label=Hmisc::label(menage_2002$E11H)),
+    climatisateur = as.factor(E11I) %&gt;% structure(label=Hmisc::label(menage_2002$E11I)),
+    
+    # Create new variables &quot;machine_coudre,&quot; &quot;voiture,&quot; &quot;mobylette,&quot; &quot;bicyclette,&quot; &quot;caleche_charette,&quot; and &quot;pirogue&quot; as factors with labels from the &quot;menage_2002&quot; dataset
+    machine_coudre = as.factor(E11J) %&gt;% structure(label=Hmisc::label(menage_2002$E11J)),
+    voiture = as.factor(E12B) %&gt;% structure(label=Hmisc::label(menage_2002$E12B)),
+    mobylette = as.factor(E12C) %&gt;% structure(label=Hmisc::label(menage_2002$E12C)),
+    bicyclette = as.factor(E12E) %&gt;% structure(label=Hmisc::label(menage_2002$E12E)),
+    caleche_charette = as.factor(E12F) %&gt;% structure(label=Hmisc::label(menage_2002$E12F)),
+    pirogue = as.factor(E12G) %&gt;% structure(label=Hmisc::label(menage_2002$E12G)),
+    
+    
+# Create a new variable &quot;houe_charrue&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+houe_charrue = as.factor(E13B) %&gt;% structure(label=Hmisc::label(menage_2002$E13B)),
+
+# Create a new variable &quot;caleche_char&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+caleche_char = as.factor(E13C) %&gt;% structure(label=Hmisc::label(menage_2002$E13C)),
+
+# Create a new variable &quot;animaux_traite&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+animaux_traite = as.factor(E13D) %&gt;% structure(label=Hmisc::label(menage_2002$E13D)),
+
+# Create a new variable &quot;tracteur&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+tracteur = as.factor(E13E) %&gt;% structure(label=Hmisc::label(menage_2002$E13E)),
+
+# Create a new variable &quot;voiture_cam&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+voiture_cam = as.factor(E13F) %&gt;% structure(label=Hmisc::label(menage_2002$E13F)),
+
+# Create a new variable &quot;mobylette_bicycl&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+mobylette_bicycl = as.factor(E13G) %&gt;% structure(label=Hmisc::label(menage_2002$E13G)),
+
+# Create a new variable &quot;refriger_congelat&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+refriger_congelat = as.factor(E13I) %&gt;% structure(label=Hmisc::label(menage_2002$E13I)),
+
+# Create a new variable &quot;machine_coudre&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+machine_coudre = as.factor(E13J) %&gt;% structure(label=Hmisc::label(menage_2002$E13J)),
+
+# Create a new variable &quot;materiel_musique&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+materiel_musique = as.factor(E13K) %&gt;% structure(label=Hmisc::label(menage_2002$E13K)),
+
+# Create a new variable &quot;chaise_bache&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+chaise_bache = as.factor(E13L) %&gt;% structure(label=Hmisc::label(menage_2002$E13L)),
+
+# Create a new variable &quot;telephone_tele&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+telephone_tele = as.factor(E13M) %&gt;% structure(label=Hmisc::label(menage_2002$E13M)),
+
+# Create a new variable &quot;photocopieuse&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+photocopieuse = as.factor(E13N) %&gt;% structure(label=Hmisc::label(menage_2002$E13N)),
+
+# Create a new variable &quot;ordinateur&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+ordinateur = as.factor(E13O) %&gt;% structure(label=Hmisc::label(menage_2002$E13O)),
+
+# Create a new variable &quot;moulin&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+moulin = as.factor(E13P) %&gt;% structure(label=Hmisc::label(menage_2002$E13P)),
+
+# Create a new variable &quot;appareil_photo&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+appareil_photo = as.factor(E13Q) %&gt;% structure(label=Hmisc::label(menage_2002$E13Q)),
+
+# Create a new variable &quot;terrain_bat&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+terrain_bat = as.factor(E13R) %&gt;% structure(label=Hmisc::label(menage_2002$E13R)),
+
+# Create a new variable &quot;evacut_ordures&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+evacut_ordures = as.factor(E14) %&gt;% structure(label=Hmisc::label(menage_2002$E14)),
+
+# Create a new variable &quot;evacut_eaux_usees&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+evacut_eaux_usees = as.factor(E15) %&gt;% structure(label=Hmisc::label(menage_2002$E15)),
+
+# Create a new variable &quot;repas_saute&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+repas_saute = as.factor(E16) %&gt;% structure(label=Hmisc::label(menage_2002$E16)),
+
+# Create a new variable &quot;soins_medicaux&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+soins_medicaux = as.factor(E17) %&gt;% structure(label=Hmisc::label(menage_2002$E17))
   )
 
 
@@ -1402,156 +1348,234 @@ menage_2002 &lt;- menage_2002 %&gt;%
 menage_2013 &lt;- menage_2013 %&gt;% 
   
   mutate(
-    id_dr = IDDR %&gt;% structure(label=Hmisc::label(menage_2013$IDDR)),
-    nb_indiv = Nbre_indiv %&gt;% structure(label=Hmisc::label(menage_2013$Nbre_indiv)),
-    type_log = E01 %&gt;% structure(label=Hmisc::label(menage_2013$E01)),
-    nbr_piece_occup = E02 %&gt;% structure(label=Hmisc::label(menage_2013$E02)),
-    stat_occupation = E03 %&gt;% structure(label=Hmisc::label(menage_2013$E03)),
-    type_aisance = E08 %&gt;% structure(label=Hmisc::label(menage_2013$E08)),
-    approv_eau = E09 %&gt;% structure(label=Hmisc::label(menage_2013$E09)),
-    eclairage = E11 %&gt;% structure(label=Hmisc::label(menage_2013$E11)),
-    combustible_cuisine = E12 %&gt;% structure(label=Hmisc::label(menage_2013$E12)),
-    
-    nature_mur = E05 %&gt;% structure(label=Hmisc::label(menage_2013$E05)),
-    nature_toit = E06 %&gt;% structure(label=Hmisc::label(menage_2013$E06)),
-    nature_sol = E07 %&gt;% structure(label=Hmisc::label(menage_2013$E07)),
-    radio = E13_1 %&gt;% structure(label=Hmisc::label(menage_2013$E13_1)),
-    televiseur = E13_2 %&gt;% structure(label=Hmisc::label(menage_2013$E13_2)),
-    video = E13_3 %&gt;% structure(label=Hmisc::label(menage_2013$E13_3)),
-    refri_conge = E13_4 %&gt;% structure(label=Hmisc::label(menage_2013$E13_4)),
-    
-    telephone = E13_6 %&gt;% structure(label=Hmisc::label(menage_2013$E13_6)),
-    rechaud_cuis = E13_18 %&gt;% structure(label=Hmisc::label(menage_2013$E13_18)),
-    foyer_ameli = E13_7 %&gt;% structure(label=Hmisc::label(menage_2013$E13_7)),
-    climatisateur = E13_8 %&gt;% structure(label=Hmisc::label(menage_2013$E13_8)),
-    machine_coudre = E13_9 %&gt;% structure(label=Hmisc::label(menage_2013$E13_9)),
-    
-    voiture = E15_5 %&gt;% structure(label=Hmisc::label(menage_2013$E15_5)),
-    mobylette = E15_6 %&gt;% structure(label=Hmisc::label(menage_2013$E15_6)),
-    bicyclette = E14_3 %&gt;% structure(label=Hmisc::label(menage_2013$E14_3)),
-    caleche_charette = E14_4 %&gt;% structure(label=Hmisc::label(menage_2013$E14_4)),
-    pirogue = E15_7 %&gt;% structure(label=Hmisc::label(menage_2013$E15_7)),
-    houe_charrue = E15_1 %&gt;% structure(label=Hmisc::label(menage_2013$E15_1)),
-    caleche_char = E15_2 %&gt;% structure(label=Hmisc::label(menage_2013$E15_2)),
-    
-    animaux_traite = E15_3 %&gt;% structure(label=Hmisc::label(menage_2013$E15_3)),
-    tracteur = E15_4 %&gt;% structure(label=Hmisc::label(menage_2013$E15_4)),
-    voiture_cam = E15_5 %&gt;% structure(label=Hmisc::label(menage_2013$E15_5)),
-    mobylette_bicycl = E15_6 %&gt;% structure(label=Hmisc::label(menage_2013$E15_6)),
-    refriger_congelat = E15_8 %&gt;% structure(label=Hmisc::label(menage_2013$E15_8)),
-    machine_coudre = E15_9 %&gt;% structure(label=Hmisc::label(menage_2013$E15_9)),
-    materiel_musique = E15_10 %&gt;% structure(label=Hmisc::label(menage_2013$E15_10)),
-    
-    chaise_bache = E15_11 %&gt;% structure(label=Hmisc::label(menage_2013$E15_11)),
-    telephone_tele = E15_12 %&gt;% structure(label=Hmisc::label(menage_2013$E15_12)),
-    photocopieuse = E15_13 %&gt;% structure(label=Hmisc::label(menage_2013$E15_13)),
-    ordinateur = E15_14 %&gt;% structure(label=Hmisc::label(menage_2013$E15_14)),
-    moulin = E15_15 %&gt;% structure(label=Hmisc::label(menage_2013$E15_15)),
-    appareil_photo = E15_16 %&gt;% structure(label=Hmisc::label(menage_2013$E15_16)),
-    terrain_bat = E15_17 %&gt;% structure(label=Hmisc::label(menage_2013$E15_17)),
-    
-    evacut_ordures = E16 %&gt;% structure(label=Hmisc::label(menage_2013$E16)),
-    evacut_eaux_usees = E17 %&gt;% structure(label=Hmisc::label(menage_2013$E17)),
-    repas_saute = E18 %&gt;% structure(label=Hmisc::label(menage_2013$E18)),
-    soins_medicaux = E20 %&gt;% structure(label=Hmisc::label(menage_2013$E20))
-    
-    )
+# Create a new variable &quot;id_dr&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+id_dr = IDDR %&gt;% structure(label=Hmisc::label(menage_2013$IDDR)),
 
+# Create a new variable &quot;nb_indiv&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+nb_indiv = Nbre_indiv %&gt;% structure(label=Hmisc::label(menage_2013$Nbre_indiv)),
 
+# Create a new variable &quot;type_log&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+type_log = as.factor(E01) %&gt;% structure(label=Hmisc::label(menage_2013$E01)),
 
-## In the following we merge the &quot;menage_2002&quot; with the individual dataset
+# Create a new variable &quot;nbr_piece_occup&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+nbr_piece_occup = as.factor(E02) %&gt;% structure(label=Hmisc::label(menage_2013$E02)),
+
+# Create a new variable &quot;stat_occupation&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+stat_occupation = as.factor(E03) %&gt;% structure(label=Hmisc::label(menage_2013$E03)),
+
+# Create a new variable &quot;type_aisance&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+type_aisance = as.factor(E08) %&gt;% structure(label=Hmisc::label(menage_2013$E08)),
+
+# Create a new variable &quot;approv_eau&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+approv_eau = as.factor(E09) %&gt;% structure(label=Hmisc::label(menage_2013$E09)),
+
+# Create a new variable &quot;eclairage&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+eclairage = as.factor(E11) %&gt;% structure(label=Hmisc::label(menage_2013$E11)),
+
+# Create a new variable &quot;combustible_cuisine&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+combustible_cuisine = as.factor(E12) %&gt;% structure(label=Hmisc::label(menage_2013$E12)),
+
+# Create a new variable &quot;nature_mur&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+nature_mur = as.factor(E05) %&gt;% structure(label=Hmisc::label(menage_2013$E05)),
+
+# Create a new variable &quot;nature_toit&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+nature_toit = as.factor(E06) %&gt;% structure(label=Hmisc::label(menage_2013$E06)),
+
+# Create a new variable &quot;nature_sol&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+nature_sol = as.factor(E07) %&gt;% structure(label=Hmisc::label(menage_2013$E07)),
+
+# Create a new variable &quot;radio&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+radio = as.factor(E13_1) %&gt;% structure(label=Hmisc::label(menage_2013$E13_1)),
+
+# Create a new variable &quot;televiseur&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+televiseur = as.factor(E13_2) %&gt;% structure(label=Hmisc::label(menage_2013$E13_2)),
+
+# Create a new variable &quot;video&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+video = as.factor(E13_3) %&gt;% structure(label=Hmisc::label(menage_2013$E13_3)),
+
+# Create a new variable &quot;refri_conge&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+refri_conge = as.factor(E13_4) %&gt;% structure(label=Hmisc::label(menage_2013$E13_4)),
+
+# Create a new variable &quot;telephone&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+telephone = as.factor(E13_6) %&gt;% structure(label=Hmisc::label(menage_2013$E13_6)),
+
+# Create a new variable &quot;rechaud_cuis&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+rechaud_cuis = as.factor(E13_18) %&gt;% structure(label=Hmisc::label(menage_2013$E13_18)),
+
+# Create a new variable &quot;foyer_ameli&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+foyer_ameli = as.factor(E13_7) %&gt;% structure(label=Hmisc::label(menage_2013$E13_7)),
+
+# Create a new variable &quot;climatisateur&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+climatisateur = as.factor(E13_8) %&gt;% structure(label=Hmisc::label(menage_2013$E13_8)),
+
+# Create a new variable &quot;machine_coudre&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+machine_coudre = as.factor(E13_9) %&gt;% structure(label=Hmisc::label(menage_2013$E13_9)),
+    # Create a new variable &quot;voiture&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+voiture = as.factor(E15_5) %&gt;% structure(label=Hmisc::label(menage_2013$E15_5)),
+
+# Create a new variable &quot;mobylette&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+mobylette = as.factor(E15_6) %&gt;% structure(label=Hmisc::label(menage_2013$E15_6)),
+
+# Create a new variable &quot;bicyclette&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+bicyclette = as.factor(E14_3) %&gt;% structure(label=Hmisc::label(menage_2013$E14_3)),
+
+# Create a new variable &quot;caleche_charette&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+caleche_charette = as.factor(E14_4) %&gt;% structure(label=Hmisc::label(menage_2013$E14_4)),
+
+# Create a new variable &quot;pirogue&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+pirogue = as.factor(E15_7) %&gt;% structure(label=Hmisc::label(menage_2013$E15_7)),
+
+# Create a new variable &quot;houe_charrue&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+houe_charrue = as.factor(E15_1) %&gt;% structure(label=Hmisc::label(menage_2013$E15_1)),
+
+# Create a new variable &quot;caleche_char&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+caleche_char = as.factor(E15_2) %&gt;% structure(label=Hmisc::label(menage_2013$E15_2)),
+
+# Create a new variable &quot;animaux_traite&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+animaux_traite = as.factor(E15_3) %&gt;% structure(label=Hmisc::label(menage_2013$E15_3)),
+
+# Create a new variable &quot;tracteur&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+tracteur = as.factor(E15_4) %&gt;% structure(label=Hmisc::label(menage_2013$E15_4)),
+
+# Create a new variable &quot;voiture_cam&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+voiture_cam = as.factor(E15_5) %&gt;% structure(label=Hmisc::label(menage_2013$E15_5)),
+
+# Create a new variable &quot;mobylette_bicycl&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+mobylette_bicycl = as.factor(E15_6) %&gt;% structure(label=Hmisc::label(menage_2013$E15_6)),
+
+# Create a new variable &quot;refriger_congelat&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+refriger_congelat = as.factor(E15_8) %&gt;% structure(label=Hmisc::label(menage_2013$E15_8)),
+
+# Create a new variable &quot;machine_coudre&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+machine_coudre = as.factor(E15_9) %&gt;% structure(label=Hmisc::label(menage_2013$E15_9)),
+
+# Create a new variable &quot;materiel_musique&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+materiel_musique = as.factor(E15_10) %&gt;% structure(label=Hmisc::label(menage_2013$E15_10)),
+
+# Create a new variable &quot;chaise_bache&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+chaise_bache = as.factor(E15_11) %&gt;% structure(label=Hmisc::label(menage_2013$E15_11)),
+
+# Create a new variable &quot;telephone_tele&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+telephone_tele = as.factor(E15_12) %&gt;% structure(label=Hmisc::label(menage_2013$E15_12)),
+
+# Create a new variable &quot;photocopieuse&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+photocopieuse = as.factor(E15_13) %&gt;% structure(label=Hmisc::label(menage_2013$E15_13)),
+
+# Create a new variable &quot;ordinateur&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+ordinateur = as.factor(E15_14) %&gt;% structure(label=Hmisc::label(menage_2013$E15_14)),
+
+# Create a new variable &quot;moulin&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+moulin = as.factor(E15_15) %&gt;% structure(label=Hmisc::label(menage_2013$E15_15)),
+
+# Create a new variable &quot;appareil_photo&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+appareil_photo = as.factor(E15_16) %&gt;% structure(label=Hmisc::label(menage_2013$E15_16)),
+
+# Create a new variable &quot;terrain_bat&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+terrain_bat = as.factor(E15_17) %&gt;% structure(label=Hmisc::label(menage_2013$E15_17)),
+
+# Create a new variable &quot;evacut_ordures&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+evacut_ordures = as.factor(E16) %&gt;% structure(label=Hmisc::label(menage_2013$E16)),
+
+# Create a new variable &quot;evacut_eaux_usees&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+evacut_eaux_usees = as.factor(E17) %&gt;% structure(label=Hmisc::label(menage_2013$E17)),
+
+# Create a new variable &quot;repas_saute&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+repas_saute = as.factor(E18) %&gt;% structure(label=Hmisc::label(menage_2013$E18)),
+
+# Create a new variable &quot;soins_medicaux&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+soins_medicaux = as.factor(E20) %&gt;% structure(label=Hmisc::label(menage_2013$E20))
+    )</code></pre>
+</div>
+<div id="standard-of-living-indicators-computation" class="section level3">
+<h3>Standard of living indicators computation</h3>
+<p><strong>Data source</strong>:</p>
+<ul>
+<li><p><em>For the Sanitation</em>: <a href="https://www.who.int/data/gho/data/indicators/indicator-details/GHO/population-using-improved-sanitation-facilities-(-)">link</a></p></li>
+<li><p><em>For water</em>: <a href="https://data.unicef.org/topic/water-and-sanitation/drinking-water/">link</a></p></li>
+</ul>
+<pre class="r"><code># For RGPH 2002
 menage_2002 &lt;- menage_2002 %&gt;% 
-  left_join(
-    
-    individus_2002 %&gt;% 
-      
-      # Filtering to get only individuals marked as &quot;Chef de menage&quot; in QB03
-      filter(QB03== 1) %&gt;% #&quot;Chef de menage&quot;
-      
-      # Renaming the QB15 column to &quot;niveau_instruction_cm&quot;
-      mutate(niveau_instruction_cm = QB15 %&gt;% structure(label=Hmisc::label(individus_2002$QB15))) %&gt;% 
+  # Creating a dimension for cooking fuel, checking if it&#39;s wood or charcoal
+  # Bois=1, Charbon = 2 and Autre=5
+  mutate(cooking_fuel_dim = as.factor(ifelse(combustible_cuisine == 1 | combustible_cuisine == 2| combustible_cuisine == 5, 1, 0)) %&gt;% structure(label = &quot;Standard of living: cooking fuel&quot;), 
+         
+  # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
+  # Edicule public==4, Dans la nature==4, Autre==6
+         sanitation_dim = as.factor(ifelse(type_aisance %in% seq(4, 6), 1, 0)) %&gt;% structure(label = &quot;Standard of living: sanitation&quot;),
+         
+  # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
+  # Puits interieur = 1, Puits exterieur = 2, cours d&#39;eau = 7 et autre = 8
+         drinking_water_dim = as.factor(ifelse(approv_eau %in% c(1, 2, 7, 8), 1, 0)) %&gt;% structure(label = &quot;Standard of living: drinking water&quot;),
+         
+  # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
+  # Lampe tempête = 6, Bougie = 7, Bois=8, Autre= 9,
+         electricity_dim = as.factor(ifelse(eclairage %in% c(6, 7, 8, 9), 1, 0))%&gt;% structure(label = &quot;Standard of living: electricity&quot;),
+         
+  # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
+        # For nature_mur, 3 is &quot;Banco&quot;, 4 is &quot;Paille/tige&quot; and 5 is &#39;autre&quot;.
+         # For nature_sol, 3 is &#39;Argile/banco&quot;, 4 is Sable and 5 is &quot;autre&quot;.
+         # For nature_toit, 4 is &quot;Chaume&quot; and 5 is &quot;autre&quot;
+         housing_dim = as.factor(ifelse(nature_mur %in% c(3, 4, 5) &amp; nature_sol %in% c(3, 4, 5) &amp; nature_toit %in% c(4, 5), 1, 0))%&gt;% structure(label = &quot;Standard of living: housing&quot;),
+         
+  # Creating a dimension for household assets, checking if various assets are absent in the household
   
-    rename(
-      sexe_cm = QB04,        # Renamed QB04 to &quot;sexe_cm&quot;
-      age_cm = QB06,         # Renamed QB06 to &quot;age_cm&quot;
-    ) %&gt;% 
-      # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm),
-      
-      # Merging by matching columns in both datasets
-      by = c(&quot;ID_MENAGE&quot; = &quot;ID_MENAGE&quot;, 
-             &quot;num_men&quot;=&quot;num_men&quot;,
-             &quot;id_dr&quot; = &quot;DR&quot;)
-    
+         assets_dim = as.factor(ifelse(radio == 0 &amp; televiseur == 0 &amp; telephone == 0 &amp; animaux_traite == 0 &amp; bicyclette == 0 &amp; mobylette == 0 &amp; mobylette_bicycl == 0 &amp; 
+                           refri_conge == 0 &amp; refriger_congelat == 0 &amp; voiture == 0 &amp; voiture_cam == 0, 1, 0)) %&gt;% structure(label = &quot;Standard of living: assets&quot;)
   )
 
 
-## In the following we merge the &quot;menage_2013&quot; with the individual dataset
+
+# For RGPH 2013
 menage_2013 &lt;- menage_2013 %&gt;% 
-  left_join(
-    
-    individus_2013 %&gt;% 
-      
-      # Filtering to get only individuals marked as &quot;Chef de menage&quot; in B04
-      filter(B04==1) %&gt;% #&quot;Chef de ménage&quot;
-      
-      # Renaming the B32 column to &quot;niveau_instruction_cm&quot;
-      mutate(niveau_instruction_cm = B32 %&gt;% structure(label=Hmisc::label(individus_2013$B32))) %&gt;% 
-      
-       # Rename columns for clarity
-  rename(
-    sexe_cm = B06,        # Renamed B06 to &quot;sexe_cm&quot;
-    age_cm = B08,         # Renamed B08 to &quot;age_cm&quot;
-  ) %&gt;% 
-      # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm),
-      
-      # Merging by matching columns in both datasets
-      by = c(&quot;ID_MENAGE&quot; = &quot;ID_MENAGE&quot;, &quot;id_dr&quot; = &quot;IDDR&quot;)
-    
+  # Creating a dimension for cooking fuel, checking if it&#39;s wood or charcoal
+  # Bois=1, Charbon = 2, Bouse de vache=5 and Autre=8
+  mutate(cooking_fuel_dim = as.factor(ifelse(combustible_cuisine %in% c(1,2,5,8), 1, 0))%&gt;% structure(label = &quot;Standard of living: cooking fuel&quot;), 
+         
+  # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
+  # Non couverte =22, Edicule public==31, Dans la nature==41, Autre==88
+         sanitation_dim = as.factor(ifelse(type_aisance %in% c(22, 31, 41, 88), 1, 0))%&gt;% structure(label = &quot;Standard of living: sanitation&quot;),
+         
+  # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
+  # Puits non protégés = 6, Eau de pluie = 9, Source, cour d&#39;eau = 10 and autre = 98
+         drinking_water_dim = as.factor(ifelse(approv_eau %in% c(6, 9, 10, 98), 1, 0))%&gt;% structure(label = &quot;Standard of living: drinking water&quot;),
+         
+  # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
+  # Lampe à pétrole artisanale=5, Lampe tempête = 6, Bougie = 7, Bois=8, Lampe rechargeable= 9, Autre=98
+         electricity_dim = as.factor(ifelse(eclairage %in% c(5, 6, 7, 8, 9, 98), 1, 0))%&gt;% structure(label = &quot;Standard of living: electricity&quot;),
+         
+  # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
+        # For nature_mur, 5 is Bois, 6 is &quot;Banco&quot;, 7 is &quot;Banco+ enduit ciment&quot;,  8 is &#39;Paille/Tige&quot; and 9 is &quot;Autre&quot;.
+         # For nature_sol, 3 is &#39;Argile/banco&quot;, 4 is Sable and 7 is &quot;Bois ciré&quot; and 8 is &quot;autre&quot;.
+         # For nature_toit, 0 is &quot;Autre&quot; and 4 is &quot;Chaume/paille&quot;
+         housing_dim = as.factor(ifelse(nature_mur %in% c(5, 6, 7, 8, 9) &amp; nature_sol %in% c(3, 4, 7, 8) &amp; nature_toit %in% c(0, 4), 1, 0))%&gt;% structure(label = &quot;Standard of living: housing&quot;),
+         
+  # Creating a dimension for household assets, checking if various assets are absent in the household
+  
+         assets_dim = as.factor(ifelse(radio == 0 &amp; televiseur == 0 &amp; telephone == 0 &amp; telephone_tele == 0 &amp; animaux_traite == 0 &amp; bicyclette == 0 &amp; mobylette == 0 &amp; mobylette_bicycl == 0 &amp; 
+                           refri_conge == 0 &amp; refriger_congelat == 0 &amp; voiture == 0 &amp; voiture_cam == 0, 1, 0))%&gt;% structure(label = &quot;Standard of living: assets&quot;)
   )</code></pre>
+<p><em>Additionnal cleaning</em></p>
 <pre class="r"><code># For the RGPH 2013 dataset, recode the &quot;soins_medicaux&quot; variable
 # This code modifies the &quot;soins_medicaux&quot; variable, replacing &quot;2&quot; with &quot;0&quot; if present
 
-<<<<<<< HEAD
 menage_2013 &lt;- menage_2013 %&gt;%
-  mutate(
-            soins_medicaux = as.numeric(soins_medicaux),
+  mutate(soins_medicaux = as.numeric(soins_medicaux),
             soins_medicaux = 
-                dplyr::recode(soins_medicaux,
-                    &quot;2&quot; = 0
-                  )) 
+                dplyr::recode(soins_medicaux,&quot;2&quot; = 0),
+            soins_medicaux = as.factor(soins_medicaux) %&gt;% structure(label=Hmisc::label(menage_2002$E17))) 
 
 # For the RGPH 2002 dataset, recode the &quot;soins_medicaux&quot; variable
 # This code modifies the &quot;soins_medicaux&quot; variable, replacing &quot;2&quot; with &quot;0&quot;, &quot;3&quot; with NA, and &quot;9&quot; with NA
-
 menage_2002 &lt;- menage_2002 %&gt;%
   mutate(soins_medicaux = as.numeric(soins_medicaux),
-           soins_medicaux = dplyr::recode(soins_medicaux,
-                  &quot;2&quot; = 0,
-                  &quot;3&quot; = NULL, 
-                  &quot;9&quot; = NULL
-                  ))</code></pre>
-=======
-# menage_2013 &lt;- menage_2013 %&gt;%
-#   mutate(soins_medicaux = 
-#            recode(soins_medicaux,
-#                   &quot;2&quot; = 0
-#                   )) 
-menage_2013$soins_medicaux &lt;- car::recode(menage_2013$soins_medicaux, &quot;2 = 0&quot;)
-# For the RGPH 2002 dataset, recode the &quot;soins_medicaux&quot; variable
-# This code modifies the &quot;soins_medicaux&quot; variable, replacing &quot;2&quot; with &quot;0&quot;, &quot;3&quot; with NA, and &quot;9&quot; with NA
-
-# menage_2002 &lt;- menage_2002 %&gt;%
-#   mutate(soins_medicaux = 
-#            recode(soins_medicaux,
-#                   &quot;2&quot; = 0,
-#                   &quot;3&quot; = NULL, 
-#                   &quot;9&quot; = NULL
-#                   ))
-
-menage_2002$soins_medicaux &lt;- car::recode(menage_2002$soins_medicaux, &quot;2 = 0; 3:NA; 9:NA&quot;)</code></pre>
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
+           soins_medicaux = dplyr::recode(soins_medicaux, &quot;2&quot; = 0, &quot;3&quot; = NULL, &quot;9&quot; = NULL), 
+         soins_medicaux = as.factor(soins_medicaux) %&gt;% structure(label=Hmisc::label(menage_2002$E17)))</code></pre>
+</div>
+</div>
+<div id="health-dimension" class="section level2">
+<h2>Health dimension</h2>
+<div id="cleaning-of-the-health-variables-and-indicators-computation" class="section level3">
+<h3>Cleaning of the “Health” variables and indicators computation</h3>
 <pre class="r"><code># For the RGPH 2002 dataset, determine if there was a death in the household in the last twelve months
 # This code calculates whether there was a death in the household based on specific columns
 deces_2002 &lt;- deces_2002 %&gt;% 
@@ -1559,13 +1583,33 @@ deces_2002 &lt;- deces_2002 %&gt;%
     est_decedee = ifelse(is.na(C03) &amp; is.na(C04) &amp; is.na(C05) &amp; is.na(GROUPE_AGE_DECES), 0, 1) %&gt;% structure(label = &quot;y-a-t-il eu décès dans le ménage au cours des douze derniers mois?&quot;)
   ) %&gt;% 
   group_by(ID_MENAGE) %&gt;% 
-  summarise(nbr_deces = sum(est_decedee, na.rm = TRUE))
+  summarise(
+    
+    # Count the number of death in the household
+    nbr_deces = sum(est_decedee, na.rm = TRUE),
+    
+    # Count the number of death in the household below the age of 18
+    nbr_deces_under_five = sum(est_decedee==1 &amp; C04 &lt;=18,
+                                       na.rm = TRUE)) %&gt;% 
+  ungroup() %&gt;% 
+  # Create a variable for an under 18 death in the household
+  mutate(deces_under_five_dim = as.factor(ifelse(nbr_deces_under_five &gt; 0, 1, ifelse(is.na(nbr_deces_under_five), 0, 0)) %&gt;%
+                                            structure(label = &quot;Y a-t-il eu un décés d&#39;un enfant de moins de cinq ans dans le ménage ?&quot;)),
+         nbr_deces_under_five = nbr_deces_under_five %&gt;%
+                                            structure(label = &quot;Nombre de décés de moins de cinq ans&quot;)) 
 
 # For the RGPH 2013 dataset, calculate the number of deaths in each household
 # This code groups the data by household and calculates the number of deaths in each household
 deces_2013 &lt;- deces_2013 %&gt;% 
   group_by(ID_MENAGE) %&gt;% 
-  summarise(nbr_deces = sum(C01, na.rm = TRUE))</code></pre>
+  summarise(nbr_deces = sum(C01, na.rm = TRUE)
+    
+    # Count the number of death in the household below the age of 18
+  ) %&gt;% 
+  ungroup() %&gt;% 
+  # Create the variable for the number of death in the household
+  mutate(nbr_deces = as.numeric(nbr_deces) %&gt;%
+           structure(label = &quot;Nombre de décés dans le ménage&quot;)) </code></pre>
 <pre class="r"><code># For the RGPH 2013 dataset, select specific columns and merge with &quot;deces_2013&quot; data
 # This code selects the &quot;id_dr,&quot; &quot;ID_MENAGE,&quot; and columns 77 to the last column in &quot;menage_2013&quot;
 # It then performs a left join with &quot;deces_2013&quot; based on the &quot;ID_MENAGE&quot; key
@@ -1607,7 +1651,65 @@ menage_2002 &lt;- menage_2002 %&gt;%
   rename(ID_MENAGE = ID_MENAGE_corrige) %&gt;%
   
 # Adding a new column &#39;nbr_deces&#39; by checking if it&#39;s missing and setting it to 0, with a label
-  mutate(nbr_deces = ifelse(is.na(nbr_deces), 0, nbr_deces) %&gt;% structure(label = &quot;Nombre de décès dans le ménage au cours des 12 derniers mois&quot;))</code></pre>
+  mutate(nbr_deces = ifelse(is.na(nbr_deces), 0, nbr_deces) %&gt;% structure(label = &quot;Nombre de décès dans le ménage au cours des 12 derniers mois&quot;),
+         
+         # Replace Na by 0
+         
+         nbr_deces_under_five = ifelse(is.na(nbr_deces_under_five), 0, nbr_deces_under_five),
+         
+         deces_under_five_dim = as.factor(ifelse(is.na(deces_under_five_dim), 0, deces_under_five_dim)) %&gt;% structure(label = &quot;Health: child mortality&quot;))</code></pre>
+<pre class="r"><code>## In the following we merge the &quot;menage_2002&quot; with the individual dataset
+menage_2002 &lt;- menage_2002 %&gt;% 
+  left_join(
+    
+    individus_2002 %&gt;% 
+      
+      # Filtering to get only individuals marked as &quot;Chef de menage&quot; in QB03
+      filter(QB03== 1) %&gt;% #&quot;Chef de menage&quot;
+      
+      # Creating the &quot;niveau_instruction_cm&quot; variable from QB15 column
+      mutate(niveau_instruction_cm = QB15 %&gt;% structure(label=paste0(Hmisc::label(individus_2002$QB15), &quot; CM&quot;)),
+      
+             # Creating the &quot;sexe_cm&quot; variable from QB04 column
+          sexe_cm = QB04 %&gt;% structure(label= paste0(Hmisc::label(individus_2002$QB04), &quot; CM&quot;)),
+          
+          # Creating the &quot;age_cm&quot; variable from QB06 column
+          age_cm = QB06 %&gt;% structure(label=paste0(Hmisc::label(individus_2002$QB06), &quot; CM&quot;))) %&gt;% 
+  
+      # Selecting specific columns from the filtered dataset
+      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim, years_schooling_dim),
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot; = &quot;ID_MENAGE&quot;, 
+             &quot;id_dr&quot; = &quot;DR&quot;)
+    
+  )
+
+
+## In the following we merge the &quot;menage_2013&quot; with the individual dataset
+menage_2013 &lt;- menage_2013 %&gt;% 
+  left_join(
+    
+    individus_2013 %&gt;% 
+      
+      # Filtering to get only individuals marked as &quot;Chef de menage&quot; in B04
+      filter(B04==1) %&gt;% #&quot;Chef de ménage&quot;
+      
+      # Renaming the B32 column to &quot;niveau_instruction_cm&quot;
+      mutate(niveau_instruction_cm = B32 %&gt;% structure(label=paste0(Hmisc::label(individus_2013$B32),&quot; CM&quot;)), 
+      
+      # Creating the &quot;sexe_cm&quot; variable from B06 column
+          sexe_cm = B06 %&gt;% structure(label= paste0(Hmisc::label(individus_2013$B06), &quot; CM&quot;)),
+          
+          # Creating the &quot;age_cm&quot; variable from QB08 column
+          age_cm = B08 %&gt;% structure(label=paste0(Hmisc::label(individus_2013$B08), &quot; CM&quot;))) %&gt;% 
+      # Selecting specific columns from the filtered dataset
+      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim, years_schooling_dim),
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot; = &quot;ID_MENAGE&quot;, &quot;id_dr&quot; = &quot;IDDR&quot;)
+    
+  )</code></pre>
 <pre class="r"><code># Filtering the &#39;menage_2013&#39; dataset to exclude specific values in the &#39;id_dr&#39; column
 menage_2013 &lt;- menage_2013 %&gt;% 
   filter(!(id_dr %in% c(&quot;014301140124&quot;, &quot;014301140125&quot;)))
@@ -1617,43 +1719,57 @@ sp_rgph_2002 &lt;- sp_rgph_2002 %&gt;%
   mutate(id_dr = ifelse(NUMDEPT==&quot;3&quot;, 
                       paste0(NUM_REG, NUMDEPT, NUM_ARRDT, &quot;18&quot;, NUM_CA, IDDR, &quot;O&quot;), 
                       paste0(&quot;0&quot;, NUM_REG, NUMDEPT, NUM_ARRDT, &quot;8&quot;, NUM_CA, IDDR, &quot;O&quot;)))</code></pre>
-<pre class="r"><code># Exporting the &quot;menage_2013&quot; and &quot;menage_2002&quot; datasets
-# This code uses the &quot;plyr::rbind.fill&quot; function to stack the two datasets on top of each other, 
+<pre class="r"><code># Replace &#39;NA&#39; with 0 (for the nbr deces )
 
-# 
-# sn_census &lt;- menage_2013 %&gt;% 
-#   plyr::rbind.fill(menage_2002)
+## For RGPH 2013
+menage_2013 &lt;- menage_2013 %&gt;%
+  
+  #replace all NA values with zero
+  mutate_if(is.numeric , replace_na, replace = 0)
+
+## For RGPH 2002
+menage_2002 &lt;- menage_2002 %&gt;%
+  
+  #replace all NA values with zero
+  mutate_if(is.numeric , replace_na, replace = 0)
+
+
+# Ranking variables
+
+## For RGPH 2013
+menage_2013 &lt;- menage_2013 %&gt;%
+ select(id_dr, ID_MENAGE, RGPH, everything())
+
+## For RGPH 2002
+menage_2002 &lt;- menage_2002 %&gt;%
+ select(id_dr, ID_MENAGE, RGPH, everything())</code></pre>
+</div>
+</div>
+</div>
+<div id="exporting-the-datasets" class="section level1">
+<h1>Exporting the datasets</h1>
+<pre class="r"><code># Exporting the &quot;menage_2013&quot; and &quot;menage_2002&quot; datasets
 
 # For the &quot;menage_2002&quot;
 # Saving in SPSS format
 haven::write_sav(menage_2002,paste0(here::here(), &quot;/output/output_data/menage_2002.sav&quot;))
 
 # Saving in R format
-save(menage_2002,file=paste0(here::here(), &quot;/output/output_data/menage_2002.RData&quot;))
+saveRDS(menage_2002,file=paste0(here::here(), &quot;/output/output_data/menage_2002.rds&quot;))
 
 # For the &quot;menage_2013&quot;
 # Saving in SPSS format
 haven::write_sav(menage_2013,paste0(here::here(), &quot;/output/output_data/menage_2013.sav&quot;))
 
 # Saving in R format
-save(menage_2013,file=paste0(here::here(), &quot;/output/output_data/menage_2013.RData&quot;))
+saveRDS(menage_2013,file=paste0(here::here(), &quot;/output/output_data/menage_2013.rds&quot;))
 
 
 # For the &quot;sp_rgph_2002&quot;
 # Saving in the sf format
-sf::st_write(obj=sp_rgph_2002, paste0(here::here(), &quot;/output/output_data/EAs_2002_new.shp&quot;),  driver = &quot;ESRI Shapefile&quot;, delete_layer = TRUE) # we change the id _dr</code></pre>
-<<<<<<< HEAD
-<pre><code>## Deleting layer `EAs_2002_new&#39; using driver `ESRI Shapefile&#39;
-## Writing layer `EAs_2002_new&#39; to data source 
-##   `C:/Users/ASUS/Desktop/projet_sn/Analysing-Senegal-Census-Data/output/output_data/EAs_2002_new.shp&#39; using driver `ESRI Shapefile&#39;
-=======
-<pre><code>## Writing layer `EAs_2002_new&#39; to data source 
-##   `C:/Users/AHema/Desktop/These Pape Djiby/Analysing Senegal Census Data/output/output_data/EAs_2002_new.shp&#39; using driver `ESRI Shapefile&#39;
->>>>>>> 9aaadbf6e8bdeeb6669dcd329682ef8b092014cf
-## Writing 271 features with 246 fields and geometry type Polygon.</code></pre>
+sf::st_write(obj=sp_rgph_2002, paste0(here::here(), &quot;/output/output_data/EAs_2002_new.shp&quot;),  driver = &quot;ESRI Shapefile&quot;, delete_layer = TRUE) # we change the id_dr</code></pre>
 <pre class="r"><code>## Removing all objects
 rm(list=ls())</code></pre>
-</div>
 </div>
 
 
