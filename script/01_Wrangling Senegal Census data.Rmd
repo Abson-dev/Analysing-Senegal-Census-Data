@@ -2,10 +2,14 @@
 title: "Wrangling Senegal Census data with tidyverse tools"
 author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
 date: "`r Sys.Date()`"
-output:
+output: 
   html_document:
     toc: true
     toc_depth: 3
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -49,7 +53,11 @@ lapply(required_packages, library, character.only = TRUE)
 ```{r, results='hide'}
 # Read shapefile data for 2002 and 2013
 sp_rgph_2002 <- sf::read_sf(paste0(here::here(),"/data/SHAPEFILE/EAs_2002.shp"))
-
+# Mutating the 'sp_rgph_2002' dataset to create a new 'id_dr' column based on conditions
+sp_rgph_2002 <- sp_rgph_2002 %>% 
+  mutate(id_dr = ifelse(NUMDEPT=="3", 
+                      paste0(NUM_REG, NUMDEPT, NUM_ARRDT, "18", NUM_CA, IDDR, "O"), 
+                      paste0("0", NUM_REG, NUMDEPT, NUM_ARRDT, "8", NUM_CA, IDDR, "O")))
 sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/data/SHAPEFILE/EAs_2013.shp"))
 
 # Display the first 10 rows of the 2002 and 2013 shapefiles
@@ -89,6 +97,8 @@ menage_2002_complement %>% janitor::get_dupes()
 individus_2002_complement_pikine <- read_sav(paste0(here::here(),"/data/1. RGPH 2002/PDBA_rgph2002_Individus Complement Pikine.sav"))
 individus_2002_complement_pikine %>% janitor::get_dupes() 
 ```
+
+
 
 ```{r}
 
@@ -142,6 +152,7 @@ menage_2013 %>% janitor::get_dupes(ID_MENAGE)
 
 
 # Preparation of data on the two censuses (Wrangling)
+
 ```{r}
 # Creating a variable "RGPH" to identify each survey 
 
@@ -149,13 +160,15 @@ menage_2013 %>% janitor::get_dupes(ID_MENAGE)
 ## Add a new column "RGPH" with the value "2002" to the "individus_2002" dataset
 individus_2002 <- 
   individus_2002 %>% 
-  mutate(RGPH = "2002")
+  mutate(RGPH = "2002") %>% 
+  rename(id_dr = DR)
 
 # For 2013
 ## Add a new column "RGPH" with the value "2013" to the "individus_2013" dataset
 individus_2013 <- 
   individus_2013 %>% 
-  mutate(RGPH = "2013")
+  mutate(RGPH = "2013") %>% 
+  rename(id_dr = IDDR)
 ```
 
 
@@ -226,6 +239,7 @@ individus_2013 %>%
 ## Education dimension
 
 ### Cleaning of the "education" variable
+
 ```{r}
 
 # Transform values in the "QB15" column of the "individus_2002" dataset
@@ -278,7 +292,7 @@ individus_2013 <- individus_2013 %>%
 *Years of schooling indicator*
 
 ```{r}
-
+edu_var = c("nbr_educ_primaire","nbr_educ_moyen","nbr_educ_secondaire","nbr_educ_superieur")
 # For the 2002 individus data  
 
 individus_2002 <- 
@@ -307,8 +321,9 @@ individus_2002 %>%
 # Calculate a binary variable 'school_attendance' for each household.
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
-  mutate(years_schooling_dim = 
-           as.factor(ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>% structure(label = "Education: years of schooling")) %>%
+  mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
+    years_schooling_dim = 
+           as.factor(ifelse(years_schooling_dim > 0, 0, 1)) %>% structure(label = "Education: years of schooling")) %>%
   select(ID_MENAGE, years_schooling_dim),
 
   by=c("ID_MENAGE"="ID_MENAGE")
@@ -342,8 +357,9 @@ individus_2013 %>%
 # Calculate a binary variable 'school_attendance' for each household.
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
-  mutate(years_schooling_dim = 
-           as.factor(ifelse(nbr_educ_primaire + nbr_educ_moyen + nbr_educ_secondaire + nbr_educ_superieur > 0, 0, 1)) %>% structure(label = "Education: years of schooling")) %>%
+  mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
+    years_schooling_dim = 
+           as.factor(ifelse(years_schooling_dim > 0, 0, 1)) %>% structure(label = "Education: years of schooling")) %>%
   select(ID_MENAGE, years_schooling_dim),
 
   by=c("ID_MENAGE"="ID_MENAGE")
@@ -413,6 +429,7 @@ individus_2013 <-
 ## Standard of Living dimension
 
 ### Cleaning the "Standard of Living" variables
+
 ```{r}
 
 # Renaming variables so that they can have the same name in the two
@@ -807,8 +824,8 @@ deces_2002 <- deces_2002 %>%
     # Count the number of death in the household
     nbr_deces = sum(est_decedee, na.rm = TRUE),
     
-    # Count the number of death in the household below the age of 18
-    nbr_deces_under_five = sum(est_decedee==1 & C04 <=18,
+    # Count the number of death in the household below the age of 5
+    nbr_deces_under_five = sum(est_decedee==1 & C04 <=5,
                                        na.rm = TRUE)) %>% 
   ungroup() %>% 
   # Create a variable for an under 18 death in the household
@@ -954,16 +971,59 @@ menage_2013 <- menage_2013 %>%
 menage_2013 <- menage_2013 %>% 
   filter(!(id_dr %in% c("014301140124", "014301140125")))
 
-# Mutating the 'sp_rgph_2002' dataset to create a new 'id_dr' column based on conditions
-sp_rgph_2002 <- sp_rgph_2002 %>% 
-  mutate(id_dr = ifelse(NUMDEPT=="3", 
-                      paste0(NUM_REG, NUMDEPT, NUM_ARRDT, "18", NUM_CA, IDDR, "O"), 
-                      paste0("0", NUM_REG, NUMDEPT, NUM_ARRDT, "8", NUM_CA, IDDR, "O")))
+
 
 ```
 
+# Study Variables
 
-```{r}
+## Socio-demographic variables
+
+### Sex/gender
+
+
+### Age
+
+### Marital Status
+
+### Fertility
+
+
+### Educational level
+
+
+### Literacy level
+
+
+### Migration variable
+
+
+### Maternal death variable
+
+
+## Socio-economic variables
+
+
+### Employed variable
+
+### Occupational status variable
+
+### Income variable
+
+## Household variables
+
+### Capital goods variable
+
+### Access to basic equipment
+
+### Household size
+
+
+### Head of household
+
+### Household composition
+
+```{r eval=FALSE, include=FALSE}
 # Replace 'NA' with 0 (for the nbr deces )
 
 ## For RGPH 2013
@@ -979,6 +1039,12 @@ menage_2002 <- menage_2002 %>%
   mutate_if(is.numeric , replace_na, replace = 0)
 
 
+
+```
+
+
+
+```{r}
 # Ranking variables
 
 ## For RGPH 2013
@@ -991,6 +1057,22 @@ menage_2002 <- menage_2002 %>%
 ```
 
 # Exporting the datasets
+
+
+```{r}
+## For RGPH 2013
+individus_2002 <- individus_2002 %>%
+ select(id_dr, ID_MENAGE, RGPH, everything())#
+
+## For RGPH 2002
+individus_2013 <- individus_2013 %>%
+ select(id_dr, ID_MENAGE, RGPH, everything())#id_dr, 
+# Saving in SPSS format
+haven::write_sav(individus_2002,paste0(here::here(), "/output/output_data/individus_2002.sav"))
+# Saving in SPSS format
+haven::write_sav(individus_2013,paste0(here::here(), "/output/output_data/individus_2013.sav"))
+```
+
 
 ```{r, results='hide'}
 # Exporting the "menage_2013" and "menage_2002" datasets

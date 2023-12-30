@@ -1,0 +1,368 @@
+---
+title: "Modeling Senegal Census data "
+author: "HEMA Aboubacar"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error=FALSE)
+```
+
+
+
+```{r}
+rm(list=ls())
+```
+
+## Importing library
+
+```{r Package needed, results = "hide"}
+
+
+## Importing library
+### List of required packages
+required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf", "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot", "fastDummies","ggthemes","spdep","patchwork")
+
+# Check if packages are installed
+missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
+
+### Install missing packages
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+### Load all packages
+lapply(required_packages, library, character.only = TRUE)
+
+```
+
+
+```{r}
+# Read shapefile data for 2002 and 2002
+
+
+MPI_data_dr_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2002.shp"))
+MPI_data_dr_2013 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2013.shp"))
+```
+
+
+# Regression modeling with Senegal Census data
+
+```{r}
+#"nb_indv",
+predictors = c("nbr_mng","nbr_dc_p","nbr_dc_m","nbr_dc_sc","nbr_dc_sp","mdn_cm_","mn_cm_g","nbr_cm_h","nbr_cm_f","pct_cm_")
+outcome = "MPI_ndx"
+```
+
+## Inspecting the outcome variable (MPI) with visualization
+
+```{r}
+
+mhv_map <- ggplot(MPI_data_dr_2013, aes(fill = MPI_ndx)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  theme_void() + 
+  labs(fill = "MPI ")
+
+mhv_histogram <- ggplot(MPI_data_dr_2013, aes(x = MPI_ndx)) + 
+  geom_histogram(alpha = 0.5, fill = "navy", color = "navy",
+                 bins = 100) + 
+  theme_minimal() + 
+  scale_x_continuous(labels = scales::label_number_si(accuracy = 0.1)) + 
+  labs(x = "MPI")
+
+mhv_map + mhv_histogram + labs(title = "MPI value charts for Senegal Census 2002")
+```
+
+```{r}
+
+mhv_map_log <- ggplot(MPI_data_dr_2013, aes(fill = log(MPI_ndx))) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  theme_void() + 
+  labs(fill = "MPI\nvalue (log)")
+
+mhv_histogram_log <- ggplot(MPI_data_dr_2013, aes(x = log(MPI_ndx))) + 
+  geom_histogram(alpha = 0.5, fill = "navy", color = "navy",
+                 bins = 100) + 
+  theme_minimal() + 
+  scale_x_continuous() + 
+  labs(x = "MPI (log)")
+
+mhv_map_log + mhv_histogram_log + labs(title = "Logged MPI value charts for Senegal Census 2002")
+```
+
+## A first regression model
+
+```{r}
+library(sf)
+library(units)
+predictors = c("nbr_mng","nbr_dc_p","nbr_dc_m","nbr_dc_sc","nbr_dc_sp","mn_cm_g","pct_cm_","nb_indv")
+outcome = "MPI_ndx"
+MPI_data_dr_2013_for_model<- MPI_data_dr_2013 %>%
+  dplyr::select(MPI_ndx,predictors) %>% 
+  mutate(pop_density = as.numeric(set_units(nb_indv / st_area(.), "1/km2"))) %>% 
+  dplyr::select(-nb_indv)
+```
+
+```{r}
+
+formula <- "log(MPI_ndx) ~ nbr_mng + nbr_dc_p + nbr_dc_m + nbr_dc_sc + nbr_dc_sp + mn_cm_g + pct_cm_ + pop_density "
+
+model1 <- lm(formula = formula, data = MPI_data_dr_2013_for_model)
+
+summary(model1)
+```
+```{r}
+library(corrr)
+
+dfw_estimates <- MPI_data_dr_2013_for_model%>%
+  select(-MPI_ndx) %>%
+  st_drop_geometry()
+
+correlations <- correlate(dfw_estimates, method = "pearson")
+network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Senegal Census 2002")
+```
+
+```{r}
+library(car)
+
+vif(model1)
+```
+
+## Dimension reduction with principal components analysis
+
+
+```{r}
+pca <- prcomp(
+  formula = ~., 
+  data = dfw_estimates, 
+  scale. = TRUE, 
+  center = TRUE
+)
+
+summary(pca)
+```
+```{r}
+pca_tibble <- pca$rotation %>%
+  as_tibble(rownames = "predictor")
+pca_tibble
+```
+
+```{r}
+pca_tibble %>%
+  select(predictor:PC5) %>%
+  pivot_longer(PC1:PC5, names_to = "component", values_to = "value") %>%
+  ggplot(aes(x = value, y = predictor)) + 
+  geom_col(fill = "darkgreen", color = "darkgreen", alpha = 0.5) + 
+  facet_wrap(~component, nrow = 1) + 
+  labs(y = NULL, x = "Value", title = " Loadings for first five principal components  for Senegal Census 2002") + 
+  theme_minimal()
+```
+
+```{r}
+components <- predict(pca, dfw_estimates)
+
+dfw_pca <- MPI_data_dr_2013_for_model%>%
+  select(MPI_ndx) %>%
+  cbind(components) 
+
+ggplot(dfw_pca, aes(fill = PC1)) +
+  geom_sf(color = NA) +
+  labs(title = "Map of principal component 1 for Senegal Census 2002") +
+  theme_void() +
+  scale_fill_viridis_c()
+```
+
+```{r}
+pca_formula <- paste0("log(MPI_ndx) ~ ", 
+                      paste0('PC', 1:6, collapse = ' + '))
+
+pca_model <- lm(formula = pca_formula, data = dfw_pca)
+
+summary(pca_model)
+```
+
+## Spatial regression
+
+```{r}
+MPI_data_dr_2013_for_model$residuals <- residuals(model1)
+
+ggplot(MPI_data_dr_2013_for_model, aes(x = residuals)) + 
+  geom_histogram(bins = 100, alpha = 0.5, color = "navy",
+                 fill = "navy") + 
+  labs(title = "Distribution of model residuals for Senegal Census 2002") +
+  theme_minimal()
+```
+
+```{r}
+library(spdep)
+
+wts <- MPI_data_dr_2013_for_model %>%
+  poly2nb() %>%
+  nb2listw()
+
+moran.test(MPI_data_dr_2013_for_model$residuals, wts)
+```
+
+```{r}
+MPI_data_dr_2013_for_model$lagged_residuals <- lag.listw(wts, MPI_data_dr_2013_for_model$residuals)
+
+ggplot(MPI_data_dr_2013_for_model, aes(x = residuals, y = lagged_residuals)) + 
+  theme_minimal() + 
+  labs(title = "Moran scatterplot of residual spatial autocorrelation for Senegal Census 2002") +
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = "lm", color = "red")
+```
+
+# Geographically weighted regression
+
+## Choosing a bandwidth for GWR
+
+```{r}
+library(GWmodel)
+library(sf)
+
+dfw_data_sp <- MPI_data_dr_2013_for_model%>%
+  as_Spatial()
+
+bw <- bw.gwr(
+  formula = formula, 
+  data = dfw_data_sp, 
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+```
+```{r}
+
+gw_model <- gwr.basic(
+  formula = formula, 
+  data = dfw_data_sp, 
+  bw = bw,
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+```
+
+```{r}
+names(gw_model)
+```
+
+```{r}
+gw_model_results <- gw_model$SDF %>%
+  st_as_sf() 
+
+names(gw_model_results)
+```
+
+```{r}
+ggplot(gw_model_results, aes(fill = Local_R2)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  labs(title = "Local R-squared values from the GWR model for Senegal Census 2002") +
+  theme_void()
+```
+```{r}
+ggplot(gw_model_results, aes(fill = nbr_mng)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  labs(title = "Local parameter estimates for household members for Senegal Census 2002") +
+  theme_void() + 
+  labs(fill = "Local β for \nHH")
+```
+```{r}
+ggplot(gw_model_results, aes(fill = pop_density)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  labs(title = "Local parameter estimates for population density for Senegal Census 2002") +
+  theme_void() + 
+  labs(fill = "Local β for \npopulation density")
+```
+
+# Classification and clustering of Senegal census data
+
+## Geodemographic classification
+
+```{r}
+set.seed(1983)
+
+dfw_kmeans <- dfw_pca %>%
+  st_drop_geometry() %>%
+  select(PC1:PC8) %>%
+  kmeans(centers = 6)
+
+table(dfw_kmeans$cluster)
+```
+
+```{r}
+dfw_clusters <- dfw_pca %>%
+  mutate(cluster = as.character(dfw_kmeans$cluster))
+
+ggplot(dfw_clusters, aes(fill = cluster)) + 
+  geom_sf(size = 0.1) + 
+  scale_fill_brewer(palette = "Set1") + 
+  labs(title = "Map of geodemographic clusters for Senegal Census 2002") +
+  theme_void() + 
+  labs(fill = "Cluster ")
+```
+
+```{r}
+library(plotly)
+
+cluster_plot <- ggplot(dfw_clusters, 
+                       aes(x = PC1, y = PC2, color = cluster)) + 
+  geom_point() + 
+  scale_color_brewer(palette = "Set1") + 
+  labs(title = "Interactive scatterplot of PC1 and PC2 colored by cluster for Senegal Census 2002") +
+  theme_minimal()
+
+ggplotly(cluster_plot) %>%
+  layout(legend = list(orientation = "h", y = -0.15, 
+                       x = 0.2, title = "Cluster"))
+```
+
+## Spatial clustering & regionalization
+
+```{r}
+library(spdep)
+
+input_vars <- dfw_pca %>%
+  select(PC1:PC8) %>%
+  st_drop_geometry() %>%
+  as.data.frame() 
+
+skater_nbrs <- poly2nb(dfw_pca, queen = TRUE)
+costs <- nbcosts(skater_nbrs, input_vars)
+skater_weights <- nb2listw(skater_nbrs, costs, style = "B")
+```
+
+```{r}
+mst <- mstree(skater_weights)
+
+regions <- skater(
+  mst[,1:2], 
+  input_vars, 
+  ncuts = 7,
+  crit = 10
+)
+```
+
+
+```{r}
+dfw_clusters$region <- as.character(regions$group)
+
+ggplot(dfw_clusters, aes(fill = region)) + 
+  geom_sf(size = 0.1) + 
+  labs(title = "Map of contiguous regions derived with the SKATER algorithm for Senegal Census 2002") +
+  scale_fill_brewer(palette = "Set1") + 
+  theme_void()
+```
+
