@@ -1,5 +1,5 @@
 ---
-title: "Modeling Senegal Census data "
+title: "Modeling Guediawaye Census data "
 author: "HEMA Aboubacar"
 date: "`r Sys.Date()`"
 output: 
@@ -46,182 +46,494 @@ lapply(required_packages, library, character.only = TRUE)
 
 
 ```{r}
-# Read shapefile data for 2002 and 2002
+# Read shapefile data for 2013 and 2013
 
 
-MPI_data_dr_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2002.shp"))
 MPI_data_dr_2013 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2013.shp"))
+MPI_data_dr_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2002.shp"))
+MPI_data_dr <- MPI_data_dr_2013 %>%
+  plyr::rbind.fill(MPI_data_dr_2002) %>% 
+  st_as_sf()
 ```
 
 
-# Regression modeling with Senegal Census data
+# Regression modeling with Guediawaye Census data
 
 ```{r}
-#"nb_indv",
-predictors = c("nbr_mng","nbr_dc_p","nbr_dc_m","nbr_dc_sc","nbr_dc_sp","mdn_cm_","mn_cm_g","nbr_cm_h","nbr_cm_f","pct_cm_")
-outcome = "MPI_ndx"
+#"hh_size",
+predictors = c("menage","Aucun","Primair","Moyen","Secondr","fertlty","Ltrcy_F","nbr_cm_h","nbr_cm_f","pct_cm_f")
+outcome = "MPI_men"
 ```
 
 ## Inspecting the outcome variable (MPI) with visualization
 
 ```{r}
 
-mhv_map <- ggplot(MPI_data_dr_2013, aes(fill = MPI_ndx)) + 
+mhv_map <- ggplot(MPI_data_dr_2013, aes(fill = MPI_men)) + 
   geom_sf(color = NA) + 
   scale_fill_viridis_c() + 
   theme_void() + 
   labs(fill = "MPI ")
 
-mhv_histogram <- ggplot(MPI_data_dr_2013, aes(x = MPI_ndx)) + 
+mhv_histogram <- ggplot(MPI_data_dr_2013, aes(x = MPI_men)) + 
   geom_histogram(alpha = 0.5, fill = "navy", color = "navy",
                  bins = 100) + 
   theme_minimal() + 
   scale_x_continuous(labels = scales::label_number_si(accuracy = 0.1)) + 
   labs(x = "MPI")
 
-mhv_map + mhv_histogram + labs(title = "MPI value charts for Senegal Census 2002")
+mhv_map + mhv_histogram + labs(title = "MPI value charts for Guediawaye Census 2013")
 ```
+
+
+```{r}
+MPI_data_dr %>% 
+    
+      ggplot(aes(fill = MPI_men)) + 
+      
+      geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  theme_void() + 
+  labs(fill = "MPI ")+
+       
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+```{r}
+ggplot(MPI_data_dr, aes(x = MPI_men)) + 
+  geom_histogram(alpha = 0.5, fill = "navy", color = "navy",
+                 bins = 100) + 
+  theme_minimal() + 
+  scale_x_continuous(labels = scales::label_number_si(accuracy = 0.1)) + 
+  labs(x = "MPI")+
+       
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
 
 ```{r}
 
-mhv_map_log <- ggplot(MPI_data_dr_2013, aes(fill = log(MPI_ndx))) + 
+mhv_map_log <- ggplot(MPI_data_dr_2013, aes(fill = log(MPI_men))) + 
   geom_sf(color = NA) + 
   scale_fill_viridis_c() + 
   theme_void() + 
   labs(fill = "MPI\nvalue (log)")
 
-mhv_histogram_log <- ggplot(MPI_data_dr_2013, aes(x = log(MPI_ndx))) + 
+mhv_histogram_log <- ggplot(MPI_data_dr_2013, aes(x = log(MPI_men))) + 
   geom_histogram(alpha = 0.5, fill = "navy", color = "navy",
                  bins = 100) + 
   theme_minimal() + 
   scale_x_continuous() + 
   labs(x = "MPI (log)")
 
-mhv_map_log + mhv_histogram_log + labs(title = "Logged MPI value charts for Senegal Census 2002")
+mhv_map_log + mhv_histogram_log + labs(title = "Logged MPI value charts for Guediawaye Census 2013")
 ```
+
+
+```{r}
+MPI_data_dr %>% 
+    
+      ggplot(aes(fill = log(MPI_men))) + 
+      
+      geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  theme_void() + 
+  labs(fill = "MPI\nvalue (log)")+
+       
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
 
 ## A first regression model
 
 ```{r}
 library(sf)
 library(units)
-predictors = c("nbr_mng","nbr_dc_p","nbr_dc_m","nbr_dc_sc","nbr_dc_sp","mn_cm_g","pct_cm_","nb_indv")
-outcome = "MPI_ndx"
+predictors = c("menage","Primair","Moyen","Secondr","Ltrcy_F","pct_cm_f","hh_size","Ltrcy_A","Ltrcy_W","Ltrcy_M","fertlty")
+outcome = "MPI_men"
 MPI_data_dr_2013_for_model<- MPI_data_dr_2013 %>%
-  dplyr::select(MPI_ndx,predictors) %>% 
-  mutate(pop_density = as.numeric(set_units(nb_indv / st_area(.), "1/km2"))) %>% 
-  dplyr::select(-nb_indv)
+  dplyr::select(MPI_men,predictors) %>% 
+  mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
+  dplyr::select(-hh_size)
+
+##
+MPI_data_dr_2002_for_model<- MPI_data_dr_2002 %>%
+  dplyr::select(MPI_men,predictors) %>% 
+  mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
+  dplyr::select(-hh_size)
 ```
 
 ```{r}
 
-formula <- "log(MPI_ndx) ~ nbr_mng + nbr_dc_p + nbr_dc_m + nbr_dc_sc + nbr_dc_sp + mn_cm_g + pct_cm_ + pop_density "
+formula <- "log(MPI_men) ~ menage  + Primair + Moyen + Secondr + Ltrcy_F + pct_cm_f + pop_density + Ltrcy_A + Ltrcy_W + Ltrcy_M + fertlty"
 
-model1 <- lm(formula = formula, data = MPI_data_dr_2013_for_model)
+model_2013 <- lm(formula = formula, data = MPI_data_dr_2013_for_model)
+summary(model_2013)
+###
+model_2002 <- lm(formula = formula, data = MPI_data_dr_2002_for_model)
 
-summary(model1)
+summary(model_2002)
 ```
+
 ```{r}
 library(corrr)
 
-dfw_estimates <- MPI_data_dr_2013_for_model%>%
-  select(-MPI_ndx) %>%
+dfw_estimates_2013 <- MPI_data_dr_2013_for_model%>%
+  select(-MPI_men) %>%
   st_drop_geometry()
 
-correlations <- correlate(dfw_estimates, method = "pearson")
-network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Senegal Census 2002")
+correlations <- correlate(dfw_estimates_2013, method = "pearson")
+network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Guediawaye Census 2013")
+
+##
+dfw_estimates_2002 <- MPI_data_dr_2002_for_model%>%
+  select(-MPI_men) %>%
+  st_drop_geometry()
+
+correlations <- correlate(dfw_estimates_2002, method = "pearson")
+network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Guediawaye Census 2002")
 ```
 
 ```{r}
 library(car)
 
-vif(model1)
+vif(model_2013)
+vif(model_2002)
 ```
 
 ## Dimension reduction with principal components analysis
 
 
 ```{r}
-pca <- prcomp(
+pca_2013 <- prcomp(
   formula = ~., 
-  data = dfw_estimates, 
+  data = dfw_estimates_2013, 
   scale. = TRUE, 
   center = TRUE
 )
 
-summary(pca)
-```
-```{r}
-pca_tibble <- pca$rotation %>%
-  as_tibble(rownames = "predictor")
-pca_tibble
+summary(pca_2013)
+##
+pca_2002 <- prcomp(
+  formula = ~., 
+  data = dfw_estimates_2002, 
+  scale. = TRUE, 
+  center = TRUE
+)
+
+summary(pca_2002)
 ```
 
 ```{r}
-pca_tibble %>%
+pca_2013_tibble <- pca_2013$rotation %>%
+  as_tibble(rownames = "predictor")
+pca_2013_tibble
+
+###
+pca_2002_tibble <- pca_2002$rotation %>%
+  as_tibble(rownames = "predictor")
+pca_2002_tibble
+```
+
+```{r}
+
+pca_2013_tibble %>%
   select(predictor:PC5) %>%
   pivot_longer(PC1:PC5, names_to = "component", values_to = "value") %>%
   ggplot(aes(x = value, y = predictor)) + 
   geom_col(fill = "darkgreen", color = "darkgreen", alpha = 0.5) + 
   facet_wrap(~component, nrow = 1) + 
-  labs(y = NULL, x = "Value", title = " Loadings for first five principal components  for Senegal Census 2002") + 
+  labs(y = NULL, x = "Value", title = " Loadings for first five principal components  for Guediawaye Census 2013") + 
   theme_minimal()
 ```
 
 ```{r}
-components <- predict(pca, dfw_estimates)
+pca_2002_tibble %>%
+  select(predictor:PC5) %>%
+  pivot_longer(PC1:PC5, names_to = "component", values_to = "value") %>%
+  ggplot(aes(x = value, y = predictor)) + 
+  geom_col(fill = "darkgreen", color = "darkgreen", alpha = 0.5) + 
+  facet_wrap(~component, nrow = 1) + 
+  labs(y = NULL, x = "Value", title = " Loadings for first five principal components  for Guediawaye Census 2002") + 
+  theme_minimal()
+```
 
-dfw_pca <- MPI_data_dr_2013_for_model%>%
-  select(MPI_ndx) %>%
-  cbind(components) 
 
-ggplot(dfw_pca, aes(fill = PC1)) +
+```{r eval=FALSE, include=FALSE}
+pca_2013_tibble<-pca_2013_tibble %>% 
+  select(predictor:PC5) %>%
+  pivot_longer(PC1:PC5, names_to = "component", values_to = "value")
+
+
+pca_2013_tibble$RGPH<-"2013"
+pca_2002_tibble<-pca_2002_tibble %>% 
+  select(predictor:PC5) %>%
+  pivot_longer(PC1:PC5, names_to = "component", values_to = "value")
+pca_2002_tibble$RGPH<-"2002"
+
+pca_tibble <- pca_2013_tibble %>%
+  plyr::rbind.fill(pca_2002_tibble)
+esquisse::esquisser(pca_tibble)
+pca_tibble %>% 
+  ggplot(aes(x = value, y = predictor)) + 
+  geom_col(fill = "darkgreen", color = "darkgreen", alpha = 0.5) + 
+  facet_wrap(~component, nrow = 1) +
+       
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
+```{r eval=FALSE, include=FALSE}
+ggplot(pca_tibble) +
+  aes(x = predictor, colour = RGPH, weight = value) +
+  geom_bar(position = "dodge", fill = "#112446") +
+  scale_color_brewer(palette = "Set1", direction = 1) +
+  coord_flip() +
+  ggthemes::theme_igray() +
+  facet_wrap(vars(component), scales = "free")
+```
+
+
+```{r}
+components_2013 <- predict(pca_2013, dfw_estimates_2013)
+
+dfw_pca_2013 <- MPI_data_dr_2013_for_model%>%
+  select(MPI_men) %>%
+  cbind(components_2013) 
+
+ggplot(dfw_pca_2013, aes(fill = PC1)) +
   geom_sf(color = NA) +
-  labs(title = "Map of principal component 1 for Senegal Census 2002") +
+  labs(title = "Map of principal component 1 for Guediawaye Census 2013") +
   theme_void() +
   scale_fill_viridis_c()
 ```
 
 ```{r}
-pca_formula <- paste0("log(MPI_ndx) ~ ", 
+components_2002 <- predict(pca_2002, dfw_estimates_2002)
+
+dfw_pca_2002 <- MPI_data_dr_2002_for_model%>%
+  select(MPI_men) %>%
+  cbind(components_2002) 
+
+ggplot(dfw_pca_2002, aes(fill = PC1)) +
+  geom_sf(color = NA) +
+  labs(title = "Map of principal component 1 for Guediawaye Census 2002") +
+  theme_void() +
+  scale_fill_viridis_c()
+```
+```{r}
+dfw_pca_2002$RGPH<-"2002"
+dfw_pca_2013$RGPH<-"2013"
+dfw_pca <- dfw_pca_2002 %>%
+  plyr::rbind.fill(dfw_pca_2013) %>% 
+  st_as_sf()
+
+
+dfw_pca %>% 
+    
+      ggplot(aes(fill = PC1))  + 
+      
+      # Adding spatial features to the plot
+      geom_sf(color = NA) +
+       scale_fill_viridis_c()+
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
+```{r}
+dfw_pca %>% 
+    
+      ggplot(aes(fill = PC2))  + 
+      
+      # Adding spatial features to the plot
+      geom_sf(color = NA) +
+       scale_fill_viridis_c()+
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
+
+
+
+```{r}
+pca_2013_formula <- paste0("log(MPI_men) ~ ", 
                       paste0('PC', 1:6, collapse = ' + '))
 
-pca_model <- lm(formula = pca_formula, data = dfw_pca)
+pca_2013_model <- lm(formula = pca_2013_formula, data = dfw_pca_2013)
 
-summary(pca_model)
+summary(pca_2013_model)
+
+###
+pca_2002_formula <- paste0("log(MPI_men) ~ ", 
+                      paste0('PC', 1:6, collapse = ' + '))
+
+pca_2002_model <- lm(formula = pca_2002_formula, data = dfw_pca_2002)
+
+summary(pca_2002_model)
 ```
 
 ## Spatial regression
 
 ```{r}
-MPI_data_dr_2013_for_model$residuals <- residuals(model1)
+MPI_data_dr_2013_for_model$residuals <- residuals(model_2013)
 
 ggplot(MPI_data_dr_2013_for_model, aes(x = residuals)) + 
   geom_histogram(bins = 100, alpha = 0.5, color = "navy",
                  fill = "navy") + 
-  labs(title = "Distribution of model residuals for Senegal Census 2002") +
+  labs(title = "Distribution of model residuals for Guediawaye Census 2013") +
   theme_minimal()
 ```
 
 ```{r}
-library(spdep)
+MPI_data_dr_2002_for_model$residuals <- residuals(model_2002)
 
-wts <- MPI_data_dr_2013_for_model %>%
-  poly2nb() %>%
-  nb2listw()
-
-moran.test(MPI_data_dr_2013_for_model$residuals, wts)
+ggplot(MPI_data_dr_2002_for_model, aes(x = residuals)) + 
+  geom_histogram(bins = 100, alpha = 0.5, color = "navy",
+                 fill = "navy") + 
+  labs(title = "Distribution of model residuals for Guediawaye Census 2002") +
+  theme_minimal()
 ```
 
 ```{r}
-MPI_data_dr_2013_for_model$lagged_residuals <- lag.listw(wts, MPI_data_dr_2013_for_model$residuals)
+MPI_data_dr_for_model <- MPI_data_dr_2002_for_model %>%
+  dplyr::mutate(RGPH = "2002") %>% 
+  plyr::rbind.fill(MPI_data_dr_2013_for_model %>%
+  dplyr::mutate(RGPH = "2013"))
+
+ggplot(MPI_data_dr_for_model, aes(x = residuals)) + 
+      geom_histogram(bins = 100, alpha = 0.5, color = "navy",
+                 fill = "navy") +
+       
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
+
+```{r}
+library(spdep)
+
+wts_2013 <- MPI_data_dr_2013_for_model %>%
+  poly2nb() %>%
+  nb2listw()
+
+moran.test(MPI_data_dr_2013_for_model$residuals, wts_2013)
+```
+
+```{r}
+wts_2002 <- MPI_data_dr_2002_for_model %>%
+  poly2nb() %>%
+  nb2listw()
+
+moran.test(MPI_data_dr_2002_for_model$residuals, wts_2002)
+```
+
+
+```{r}
+MPI_data_dr_2013_for_model$lagged_residuals <- lag.listw(wts_2013, MPI_data_dr_2013_for_model$residuals)
 
 ggplot(MPI_data_dr_2013_for_model, aes(x = residuals, y = lagged_residuals)) + 
   theme_minimal() + 
-  labs(title = "Moran scatterplot of residual spatial autocorrelation for Senegal Census 2002") +
+  labs(title = "Moran scatterplot of residual spatial autocorrelation for Guediawaye Census 2013") +
   geom_point(alpha = 0.5) + 
   geom_smooth(method = "lm", color = "red")
 ```
+```{r}
+MPI_data_dr_2002_for_model$lagged_residuals <- lag.listw(wts_2002, MPI_data_dr_2002_for_model$residuals)
+
+ggplot(MPI_data_dr_2002_for_model, aes(x = residuals, y = lagged_residuals)) + 
+  theme_minimal() + 
+  labs(title = "Moran scatterplot of residual spatial autocorrelation for Guediawaye Census 2002") +
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = "lm", color = "red")
+```
+```{r}
+MPI_data_dr_for_model <- MPI_data_dr_2002_for_model %>%
+  dplyr::mutate(RGPH = "2002") %>% 
+  plyr::rbind.fill(MPI_data_dr_2013_for_model %>%
+  dplyr::mutate(RGPH = "2013"))
+
+ggplot(MPI_data_dr_for_model, aes(x = residuals, y = lagged_residuals)) + 
+  geom_point(alpha = 0.5) + 
+  geom_smooth(method = "lm", color = "red")+
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
+
 
 # Geographically weighted regression
 
@@ -231,21 +543,42 @@ ggplot(MPI_data_dr_2013_for_model, aes(x = residuals, y = lagged_residuals)) +
 library(GWmodel)
 library(sf)
 
-dfw_data_sp <- MPI_data_dr_2013_for_model%>%
+dfw_data_sp_2013 <- MPI_data_dr_2013_for_model%>%
   as_Spatial()
 
 bw <- bw.gwr(
   formula = formula, 
-  data = dfw_data_sp, 
+  data = dfw_data_sp_2013, 
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+###
+dfw_data_sp_2002 <- MPI_data_dr_2002_for_model%>%
+  as_Spatial()
+
+bw <- bw.gwr(
+  formula = formula, 
+  data = dfw_data_sp_2002, 
   kernel = "bisquare",
   adaptive = TRUE
 )
 ```
+
 ```{r}
 
-gw_model <- gwr.basic(
+gw_model_2013 <- gwr.basic(
   formula = formula, 
-  data = dfw_data_sp, 
+  data = dfw_data_sp_2013, 
+  bw = bw,
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+###
+gw_model_2002 <- gwr.basic(
+  formula = formula, 
+  data = dfw_data_sp_2002, 
   bw = bw,
   kernel = "bisquare",
   adaptive = TRUE
@@ -253,75 +586,254 @@ gw_model <- gwr.basic(
 ```
 
 ```{r}
-names(gw_model)
+names(gw_model_2013)
+
+##
+names(gw_model_2002)
 ```
 
 ```{r}
-gw_model_results <- gw_model$SDF %>%
+gw_model_2013_results <- gw_model_2013$SDF %>%
   st_as_sf() 
 
-names(gw_model_results)
+names(gw_model_2013_results)
+
+###
+gw_model_2002_results <- gw_model_2002$SDF %>%
+  st_as_sf() 
+
+names(gw_model_2002_results)
 ```
 
 ```{r}
-ggplot(gw_model_results, aes(fill = Local_R2)) + 
+ggplot(gw_model_2013_results, aes(fill = Local_R2)) + 
   geom_sf(color = NA) + 
   scale_fill_viridis_c() + 
-  labs(title = "Local R-squared values from the GWR model for Senegal Census 2002") +
+  labs(title = "Local R-squared values from the GWR model for Guediawaye Census 2013") +
   theme_void()
 ```
 ```{r}
-ggplot(gw_model_results, aes(fill = nbr_mng)) + 
+ggplot(gw_model_2002_results, aes(fill = Local_R2)) + 
   geom_sf(color = NA) + 
   scale_fill_viridis_c() + 
-  labs(title = "Local parameter estimates for household members for Senegal Census 2002") +
+  labs(title = "Local R-squared values from the GWR model for Guediawaye Census 2002") +
+  theme_void()
+```
+
+```{r}
+gw_model_results <- gw_model_2002_results %>%
+  dplyr::mutate(RGPH = "2002") %>% 
+  plyr::rbind.fill(gw_model_2013_results %>%
+  dplyr::mutate(RGPH = "2013")) %>% 
+  st_as_sf()
+
+
+gw_model_results %>% 
+    
+      ggplot(aes(fill = Local_R2)) + 
+      
+      # Adding spatial features to the plot
+      geom_sf() +
+      
+      scale_fill_viridis_c() +
+       
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
+
+
+
+
+```{r}
+ggplot(gw_model_2013_results, aes(fill = menage)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  labs(title = "Local parameter estimates for household members for Guediawaye Census 2013") +
   theme_void() + 
   labs(fill = "Local β for \nHH")
 ```
 ```{r}
-ggplot(gw_model_results, aes(fill = pop_density)) + 
+ggplot(gw_model_2002_results, aes(fill = menage)) + 
   geom_sf(color = NA) + 
   scale_fill_viridis_c() + 
-  labs(title = "Local parameter estimates for population density for Senegal Census 2002") +
+  labs(title = "Local parameter estimates for household members for Guediawaye Census 2002") +
+  theme_void() + 
+  labs(fill = "Local β for \nHH")
+```
+
+```{r}
+gw_model_results <- gw_model_2002_results %>%
+  dplyr::mutate(RGPH = "2002") %>% 
+  plyr::rbind.fill(gw_model_2013_results %>%
+  dplyr::mutate(RGPH = "2013")) %>% 
+  st_as_sf()
+
+
+gw_model_results %>% 
+    
+      ggplot(aes(fill = menage)) + 
+      
+      # Adding spatial features to the plot
+      geom_sf() +
+      
+      scale_fill_viridis_c() +
+  labs(fill = "Local β for \nHH")+
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
+
+
+```{r}
+ggplot(gw_model_2013_results, aes(fill = pop_density)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  labs(title = "Local parameter estimates for population density for Guediawaye Census 2013") +
+  theme_void() + 
+  labs(fill = "Local β for \npopulation density")
+```
+```{r}
+ggplot(gw_model_2002_results, aes(fill = pop_density)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c() + 
+  labs(title = "Local parameter estimates for population density for Guediawaye Census 2002") +
   theme_void() + 
   labs(fill = "Local β for \npopulation density")
 ```
 
-# Classification and clustering of Senegal census data
+```{r}
+gw_model_results <- gw_model_2002_results %>%
+  dplyr::mutate(RGPH = "2002") %>% 
+  plyr::rbind.fill(gw_model_2013_results %>%
+  dplyr::mutate(RGPH = "2013")) %>% 
+  st_as_sf()
+
+
+gw_model_results %>% 
+    
+      ggplot(aes(fill = pop_density)) + 
+      
+      # Adding spatial features to the plot
+      geom_sf() +
+      
+      scale_fill_viridis_c() +
+  labs(fill = "Local β for \npopulation density")+
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
+```
+
+
+
+# Classification and clustering of Guediawaye census data
 
 ## Geodemographic classification
 
 ```{r}
-set.seed(1983)
+set.seed(1994)
 
-dfw_kmeans <- dfw_pca %>%
+dfw_kmeans_2013 <- dfw_pca_2013 %>%
   st_drop_geometry() %>%
   select(PC1:PC8) %>%
   kmeans(centers = 6)
 
-table(dfw_kmeans$cluster)
+table(dfw_kmeans_2013$cluster)
+
+##
+dfw_kmeans_2002 <- dfw_pca_2002 %>%
+  st_drop_geometry() %>%
+  select(PC1:PC8) %>%
+  kmeans(centers = 6)
+
+table(dfw_kmeans_2002$cluster)
 ```
 
 ```{r}
-dfw_clusters <- dfw_pca %>%
-  mutate(cluster = as.character(dfw_kmeans$cluster))
+dfw_clusters_2013 <- dfw_pca_2013 %>%
+  mutate(cluster = as.character(dfw_kmeans_2013$cluster))
 
-ggplot(dfw_clusters, aes(fill = cluster)) + 
+ggplot(dfw_clusters_2013, aes(fill = cluster)) + 
   geom_sf(size = 0.1) + 
   scale_fill_brewer(palette = "Set1") + 
-  labs(title = "Map of geodemographic clusters for Senegal Census 2002") +
+  labs(title = "Map of geodemographic clusters for Guediawaye Census 2013") +
   theme_void() + 
   labs(fill = "Cluster ")
+```
+
+
+```{r}
+dfw_clusters_2002 <- dfw_pca_2002 %>%
+  mutate(cluster = as.character(dfw_kmeans_2002$cluster))
+
+ggplot(dfw_clusters_2002, aes(fill = cluster)) + 
+  geom_sf(size = 0.1) + 
+  scale_fill_brewer(palette = "Set1") + 
+  labs(title = "Map of geodemographic clusters for Guediawaye Census 2002") +
+  theme_void() + 
+  labs(fill = "Cluster ")
+```
+```{r}
+dfw_clusters <- dfw_clusters_2002 %>%
+  dplyr::mutate(RGPH = "2002") %>% 
+  plyr::rbind.fill(dfw_clusters_2013 %>%
+  dplyr::mutate(RGPH = "2013")) %>% 
+  st_as_sf()
+
+
+dfw_clusters %>% 
+    
+      ggplot(aes(fill = cluster)) + 
+      
+  geom_sf(size = 0.1) + 
+  scale_fill_brewer(palette = "Set1") + 
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
 ```
 
 ```{r}
 library(plotly)
 
-cluster_plot <- ggplot(dfw_clusters, 
+cluster_plot <- ggplot(dfw_clusters_2013, 
                        aes(x = PC1, y = PC2, color = cluster)) + 
   geom_point() + 
   scale_color_brewer(palette = "Set1") + 
-  labs(title = "Interactive scatterplot of PC1 and PC2 colored by cluster for Senegal Census 2002") +
+  labs(title = "Interactive scatterplot of PC1 and PC2 colored by cluster for Guediawaye Census 2013") +
   theme_minimal()
 
 ggplotly(cluster_plot) %>%
@@ -329,17 +841,32 @@ ggplotly(cluster_plot) %>%
                        x = 0.2, title = "Cluster"))
 ```
 
+
+```{r}
+cluster_plot <- ggplot(dfw_clusters_2002, 
+                       aes(x = PC1, y = PC2, color = cluster)) + 
+  geom_point() + 
+  scale_color_brewer(palette = "Set1") + 
+  labs(title = "Interactive scatterplot of PC1 and PC2 colored by cluster for Guediawaye Census 2002") +
+  theme_minimal()
+
+ggplotly(cluster_plot) %>%
+  layout(legend = list(orientation = "h", y = -0.15, 
+                       x = 0.2, title = "Cluster"))
+```
+
+
 ## Spatial clustering & regionalization
 
 ```{r}
 library(spdep)
 
-input_vars <- dfw_pca %>%
+input_vars <- dfw_pca_2013 %>%
   select(PC1:PC8) %>%
   st_drop_geometry() %>%
   as.data.frame() 
 
-skater_nbrs <- poly2nb(dfw_pca, queen = TRUE)
+skater_nbrs <- poly2nb(dfw_pca_2013, queen = TRUE)
 costs <- nbcosts(skater_nbrs, input_vars)
 skater_weights <- nb2listw(skater_nbrs, costs, style = "B")
 ```
@@ -357,12 +884,70 @@ regions <- skater(
 
 
 ```{r}
-dfw_clusters$region <- as.character(regions$group)
+dfw_clusters_2013$region <- as.character(regions$group)
 
-ggplot(dfw_clusters, aes(fill = region)) + 
+ggplot(dfw_clusters_2013, aes(fill = region)) + 
   geom_sf(size = 0.1) + 
-  labs(title = "Map of contiguous regions derived with the SKATER algorithm for Senegal Census 2002") +
+  labs(title = "Map of contiguous regions derived with the SKATER algorithm for Guediawaye Census 2013") +
   scale_fill_brewer(palette = "Set1") + 
   theme_void()
+```
+```{r}
+input_vars <- dfw_pca_2002 %>%
+  select(PC1:PC8) %>%
+  st_drop_geometry() %>%
+  as.data.frame() 
+
+skater_nbrs <- poly2nb(dfw_pca_2002, queen = TRUE)
+costs <- nbcosts(skater_nbrs, input_vars)
+skater_weights <- nb2listw(skater_nbrs, costs, style = "B")
+```
+
+```{r}
+mst <- mstree(skater_weights)
+
+regions <- skater(
+  mst[,1:2], 
+  input_vars, 
+  ncuts = 7,
+  crit = 10
+)
+```
+
+
+```{r}
+dfw_clusters_2002$region <- as.character(regions$group)
+
+ggplot(dfw_clusters_2002, aes(fill = region)) + 
+  geom_sf(size = 0.1) + 
+  labs(title = "Map of contiguous regions derived with the SKATER algorithm for Guediawaye Census 2002") +
+  scale_fill_brewer(palette = "Set1") + 
+  theme_void()
+```
+```{r}
+dfw_clusters <- dfw_clusters_2002 %>%
+  dplyr::mutate(RGPH = "2002") %>% 
+  plyr::rbind.fill(dfw_clusters_2013 %>%
+  dplyr::mutate(RGPH = "2013")) %>% 
+  st_as_sf()
+
+
+dfw_clusters %>% 
+    
+      ggplot(aes(fill = region)) + 
+      
+  geom_sf(size = 0.1) + 
+  scale_fill_brewer(palette = "Set1") + 
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = c(.92, .03), 
+            text = element_text(size = 8), 
+            panel.grid = element_line(color = "white", size = 0.8))
 ```
 
