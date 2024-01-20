@@ -59,11 +59,38 @@ menage_2013 %>% janitor::get_dupes()
 
 # Read shapefile data for 2002 and 2013
 sp_rgph_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/EAs_2002_new.shp"))
-sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/data/SHAPEFILE/EAs_2013.shp"))
+sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/data/EAs_2013_2002_SHP/EAs_2013.shp"))
 
 
 # Importing the crosswalk
 #crosswalk_table_dr <- readxl::read_excel(paste0(here::here(),"/data/TABLE_CORRESPONDANCE_SPATIALE_DR.xls"))
+```
+```{r}
+edu_var = c("Primaire","Moyen","Secondaire","Superieur")
+#educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
+# For the 2002 individus data  
+
+menage_2002 <- 
+  menage_2002 %>% 
+  
+# Calculate a binary variable 'school_attendance' for each household.
+# If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
+# otherwise, it means no one is attending school (1).
+  mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
+    years_schooling_dim = 
+           as.factor(ifelse(years_schooling_dim > 0, 0, 1)) %>% structure(label = "Education: years of schooling"))
+  
+# For the 2013 individus data  
+
+menage_2013 <- 
+  menage_2013 %>% 
+  
+# Calculate a binary variable 'school_attendance' for each household.
+# If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
+# otherwise, it means no one is attending school (1).
+  mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
+    years_schooling_dim = 
+           as.factor(ifelse(years_schooling_dim > 0, 0, 1)) %>% structure(label = "Education: years of schooling"))
 ```
 
 
@@ -228,7 +255,7 @@ menage_2013 <- menage_2013 %>%
 
 L'âge du décès n'est pas mentionné dans le recensement de 2013, nous ne pouvons donc pas calculer le nombre de décès pour les personnes de moins de 18 ans.
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 
 # We can then compute the number of poor 
 
@@ -278,30 +305,47 @@ menage_2002 %>%
   bold_labels() 
 ```
 
+
 ```{r}
+mat_status_var = c("Monogame","Polygame","Celibataire","Veuf","Divorce")
+fertility_var = c("fertility")
+educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
+literacy_var = c("Literacy_French","Literacy_Arabic","Literacy_Wolof","Literacy_Pulaar","Literacy_Mandingo","Literacy_Diola","Literacy_Soninke")#"Literacy_Sereer",
+mig_var = c("resident_pres","resident_abs")#,"resident_vis"
+gender_var = c("homme","femme","hh_size")
+income_var = c("I_repas_saute","I_soins_medicaux")
+study_var = c(gender_var,
+              fertility_var,
+              educ_var,
+              literacy_var,
+              mig_var,
+              income_var)
+```
+
+```{r}
+
 # The RGPH 2002
 # Grouping menage_2002 data by id_dr and summarizing relevant information
 plt_df_2002 <- menage_2002 %>% 
   group_by(id_dr) %>% 
-  summarise(nbr_menage = n(),  # Counting the number of households in each id_dr group
-            #nbr_poor = sum(MPI_poor == 1, na.rm = TRUE),# Counting the number of poor households in each id_dr group
-            nb_indiv = sum(nb_indiv, na.rm = TRUE),
-            MPI_index = mean(MPI_index, na.rm = TRUE),
-            nbr_educ_primaire = sum(niveau_instruction_cm == "elementaire", na.rm = TRUE),
-            nbr_educ_moyen = sum(niveau_instruction_cm == "moyen", na.rm = TRUE),
-            nbr_educ_secondaire = sum(niveau_instruction_cm == "secondaire", na.rm = TRUE),
-            nbr_educ_superieur = sum(niveau_instruction_cm == "superieur", na.rm = TRUE),
-            nbr_educ_aucune = sum(niveau_instruction_cm == "aucune", na.rm = TRUE),
+  summarise_at(study_var, sum, na.rm = TRUE) %>% 
+  left_join(
+    menage_2002 %>% 
+  group_by(id_dr) %>%
+    summarise(menage = n(),  # Counting the number of households in each id_dr group
+            MPI_mean = mean(MPI_index, na.rm = TRUE),
             median_cm_age = median(age_cm, na.rm =TRUE),
             mean_cm_age = mean(age_cm, na.rm =TRUE),
-            nbr_cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
-            nbr_cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
-            pct_cm_homme = nbr_cm_homme/(nbr_cm_homme + nbr_cm_femme)) %>%  
+            cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
+            cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
+            pct_cm_homme = cm_homme/(cm_homme + cm_femme),
+            pct_cm_femme = cm_femme/(cm_homme + cm_femme))
+  )%>%  
   # Ungrouping the data to avoid unintended side effects in subsequent operations
   ungroup() %>%
   
   # Calculating the proportion of poor households and adding the results as a new column
-  mutate(#prop_poor = nbr_poor / nbr_menage,
+  mutate(#prop_poor = poor / menage,
                   
          # The information on the survey
          RGPH = "2002") %>%
@@ -310,38 +354,89 @@ plt_df_2002 <- menage_2002 %>%
   # Joining with the sp_rgph_2002 data frame based on the id_dr column
   left_join(sp_rgph_2002, by = "id_dr")
 
+
+
 # The RGPH 2013
 # Grouping menage_2013 data by id_dr and summarizing relevant information
 plt_df_2013 <- menage_2013 %>% 
   group_by(id_dr) %>% 
-  summarise(nbr_menage = n(),  # Counting the number of households in each id_dr group
-            #nbr_poor = sum(MPI_poor == 1, na.rm = TRUE),# Counting the number of poor households in each id_dr group
-            nb_indiv = sum(nb_indiv, na.rm = TRUE),
-            MPI_index = mean(MPI_index, na.rm = TRUE),
-            nbr_educ_primaire = sum(niveau_instruction_cm == "elementaire", na.rm = TRUE),
-            nbr_educ_moyen = sum(niveau_instruction_cm == "moyen", na.rm = TRUE),
-            nbr_educ_secondaire = sum(niveau_instruction_cm == "secondaire", na.rm = TRUE),
-            nbr_educ_superieur = sum(niveau_instruction_cm == "superieur", na.rm = TRUE),
-            median_cm_age = median(age_cm, na.rm =TRUE),
-            mean_cm_age = mean(age_cm, na.rm =TRUE),
-            nbr_cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
-            nbr_cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
-            pct_cm_homme = nbr_cm_homme/(nbr_cm_homme + nbr_cm_femme)) %>%  
+  summarise_at(study_var, sum, na.rm = TRUE) %>% 
+  left_join(
+    menage_2013 %>% 
+      group_by(id_dr) %>%
+      summarise(menage = n(),  # Counting the number of households in each id_dr group
+                MPI_mean = mean(MPI_index, na.rm = TRUE),
+                median_cm_age = median(age_cm, na.rm =TRUE),
+                mean_cm_age = mean(age_cm, na.rm =TRUE),
+                cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
+                cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
+                pct_cm_homme = cm_homme/(cm_homme + cm_femme),
+                pct_cm_femme = cm_femme/(cm_homme + cm_femme))
+  )%>%  
   # Ungrouping the data to avoid unintended side effects in subsequent operations
   ungroup() %>%
   
   # Calculating the proportion of poor households and adding the results as a new column
-  mutate(#prop_poor = nbr_poor / nbr_menage,
-         
-         # The information on the survey
-         RGPH = "2013") %>%
-
-
+  mutate(#prop_poor = poor / menage,
+    
+    # The information on the survey
+    RGPH = "2013") %>%
+  
+  
   # Joining with the sp_rgph_2013 data frame based on the id_dr column
   left_join(
     sp_rgph_2013 %>%
   rename(id_dr=COD_DR2012), by = "id_dr")
+```
 
+
+```{r}
+plt_df_2013 = plt_df_2013 %>% 
+  dplyr::rename(REGION=REG,
+                NOM_ARRDT=CAV,
+                NOM_CA=CCRCA
+                )
+
+other_var = c(
+              "MPI_mean",
+              "menage",
+              "median_cm_age",
+              "mean_cm_age",
+              "cm_homme",
+              "cm_femme",
+              "pct_cm_homme",
+              "pct_cm_femme",
+              "geometry"
+              )
+```
+
+```{r}
+plt_df_2002 = plt_df_2002 %>% 
+  dplyr::select(#"OBJECTID",
+              "id_dr",
+              "REGION",
+              "DEPT",
+              "NOM_ARRDT",
+              "NOM_CA",
+              "RGPH",
+              study_var,
+              other_var)
+
+
+plt_df_2013 = plt_df_2013 %>% 
+  dplyr::select(#"OBJECTID",
+              "id_dr",
+              "REGION",
+              "DEPT",
+              "NOM_ARRDT",
+              "NOM_CA",
+              "RGPH",
+              study_var,
+              other_var)
+```
+
+
+```{r}
 
 ```
 
@@ -353,10 +448,19 @@ df_2002=plt_df_2002 %>%
 df_2013=plt_df_2013 %>%
   # Convert the resulting data frame to a spatial data frame using st_as_sf()
   st_as_sf()
+
+
+
+# lookup <- c(ID = "id_dr")
+# df_2002=plt_df_2002 %>% dplyr::rename(all_of(lookup))
+# df_2013=plt_df_2013 %>% dplyr::rename(all_of(lookup))
+
 # Saving the merged dataset in the sf format (for the household data)
 sf::st_write(obj = df_2002, paste0(here::here(), "/output/output_data/MPI_data_dr_2002.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
 # Saving the merged dataset in the sf format (for the household data)
 sf::st_write(obj = df_2013, paste0(here::here(), "/output/output_data/MPI_data_dr_2013.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
+
+
 ```
 
 
@@ -369,22 +473,22 @@ MPI_data_dr <- plt_df_2002 %>%
 
 
 
-  # Mutate columns and add labels using structure() for better readability
-  mutate(
-    id_dr = id_dr %>% structure(label = "DR identifier"),
-    MPI_index = MPI_index %>% structure(label = "Multidimensional Poverty Index (MPI)"),
-    #prop_poor = prop_poor %>% structure(label = "Proportion of poor in the DR"),
-    #nbr_poor = nbr_poor %>% structure(label = "Number of poor households in the DR"),
-    nbr_menage = nbr_menage %>% structure(label = "Number of households in the DR"),
-    nb_indiv = nb_indiv %>% structure(label = "Number of household members"),
-    RGPH = RGPH %>% structure(label = "RGPH year"),
-    Shape_Area = Shape_Area %>% structure(label = "Shape Area"),
-    Shape_Leng = Shape_Leng %>% structure(label = "Shape Length"),
-    REGION = REGION %>% structure(label = "Region"), 
-    DEPT = DEPT %>% structure(label = "Department"),
-    NOM_ARRDT = NOM_ARRDT %>% structure(label = "Name district"), 
-    NOM_CA = NOM_CA %>% structure(label = "Name CA")
-  ) %>%
+  # # Mutate columns and add labels using structure() for better readability
+  # mutate(
+  #   id_dr = id_dr %>% structure(label = "DR identifier"),
+  #   MPI_mean = MPI_mean %>% structure(label = "Multidimensional Poverty Index (MPI)"),
+  #   #prop_poor = prop_poor %>% structure(label = "Proportion of poor in the DR"),
+  #   #poor = poor %>% structure(label = "Number of poor households in the DR"),
+  #   menage = menage %>% structure(label = "Number of households in the DR"),
+  #   hh_size = hh_size %>% structure(label = "Number of household members"),
+  #   RGPH = RGPH %>% structure(label = "RGPH year"),
+  #   Shape_Area = Shape_Area %>% structure(label = "Shape Area"),
+  #   Shape_Leng = Shape_Leng %>% structure(label = "Shape Length"),
+  #   REGION = REGION %>% structure(label = "Region"), 
+  #   DEPT = DEPT %>% structure(label = "Department"),
+  #   NOM_ARRDT = NOM_ARRDT %>% structure(label = "Name district"), 
+  #   NOM_CA = NOM_CA %>% structure(label = "Name CA")
+  # ) %>%
 
 
   # Convert the resulting data frame to a spatial data frame using st_as_sf()
@@ -393,7 +497,7 @@ MPI_data_dr <- plt_df_2002 %>%
 # Creating a ggplot object, mapping the fill color to the MPI
 MPI_data_dr %>% 
     
-      ggplot(aes(fill = MPI_index)) + 
+      ggplot(aes(fill = MPI_mean)) + 
       
       # Adding spatial features to the plot
       geom_sf() +
@@ -413,81 +517,18 @@ MPI_data_dr %>%
             axis.text = element_blank(),
             legend.position = c(.92, .03), 
             text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8)) +
+            panel.grid = element_line(color = "white", size = 0.8))
       
       # Adding plot titles, caption and saving the plot
-      labs(
-        title = "Indice Multidimensionnel de Pauvreté au Sénégal par année et district (en %)",
-        caption = "Données : RGPH, Indicateur: Indice Multidimensionnel de Pauvreté (IMP).")
+      #  + labs(
+      #   title = "Indice Multidimensionnel de Pauvreté au Sénégal par année et district (en %)",
+      #   caption = "Données : RGPH, Indicateur: Indice Multidimensionnel de Pauvreté (IMP).")
     ggsave(paste0(here::here(),"/output/output_img/MPI_rgph.pdf"), width = 8, height = 5)
 
 
 ```
 
 
-```{r eval=FALSE, include=FALSE}
-MPI_data_dr %>% 
-    
-      ggplot(aes(fill = nbr_menage)) + 
-      
-      # Adding spatial features to the plot
-      geom_sf() +
-      
-      # Customizing the color scale for the fill
-      scale_fill_continuous(type = "gradient", low = "white", high = "#1E1E1E", 
-                             name = '', breaks = 0.15 * 0:4, 
-                             labels = c("0", "250", "", "500", "750")) +
-       
-      facet_wrap(~RGPH) +
-      
-      # Adjusting the plot theme
-      theme_map(base_size = 8) +
-      theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = c(.92, .03), 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8)) +
-      
-      # Adding plot titles, caption and saving the plot
-      labs(
-        title = "Nombre de menage au Sénégal par année et district (en %)",
-        caption = "Données : RGPH, Indicateur: Nombre de menage.")
-    ggsave(paste0(here::here(),"/output/output_img/menage_rgph.pdf"), width = 8, height = 5)
-```
-
-```{r eval=FALSE, include=FALSE}
-MPI_data_dr %>% 
-    
-      ggplot(aes(fill = nb_indiv)) + 
-      
-      # Adding spatial features to the plot
-      geom_sf() +
-      
-      # Customizing the color scale for the fill
-      scale_fill_continuous(type = "gradient", low = "white", high = "#1E1E1E", 
-                             name = '', breaks = 0.15 * 0:4, 
-                             labels = c("0", "250", "", "500", "750")) +
-       
-      facet_wrap(~RGPH) +
-      
-      # Adjusting the plot theme
-      theme_map(base_size = 8) +
-      theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = c(.92, .03), 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8)) +
-      
-      # Adding plot titles, caption and saving the plot
-      labs(
-        title = "Nombre d'individus au Sénégal par année et district (en %)",
-        caption = "Données : RGPH, Indicateur: Nombre d'individus.")
-    ggsave(paste0(here::here(),"/output/output_img/Individus_rgph.pdf"), width = 8, height = 5)
-```
 
 
 # Exporting the datasets
@@ -496,7 +537,7 @@ MPI_data_dr %>%
 
 # Selecting the relevant variables
 MPI_data_dr <- MPI_data_dr %>% 
-  select(id_dr, REGION, DEPT, RGPH, NOM_ARRDT, NOM_CA, MPI_index, nbr_menage, nb_indiv, Shape_Leng, Shape_Area, geometry)
+  select(id_dr, REGION, DEPT, RGPH, NOM_ARRDT, NOM_CA, MPI_index, menage, hh_size, Shape_Leng, Shape_Area, geometry)
 
 # Saving the merged dataset in the sf format (for the household data)
 sf::st_write(obj = MPI_data_dr, paste0(here::here(), "/output/output_data/MPI_data_dr.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
@@ -509,7 +550,7 @@ sf::st_write(obj = MPI_data_dr, paste0(here::here(), "/output/output_data/MPI_da
 # Selecting specific columns from the 'menage_2002' data frame
 MPI_data_household <- 
     menage_2002 %>% 
-    select(id_dr, ID_MENAGE, MPI_index, MPI_poor,  nb_indiv,  RGPH) %>% 
+    select(id_dr, ID_MENAGE, MPI_index, MPI_poor,  hh_size,  RGPH) %>% 
   
   # Binding with the menage_2013 data frame
   
@@ -517,7 +558,7 @@ MPI_data_household <-
       # Selecting specific columns from the 'menage_2013' data frame
       menage_2013 <-
         menage_2013 %>% 
-        select(id_dr, ID_MENAGE, MPI_index, MPI_poor,  nb_indiv, RGPH)
+        select(id_dr, ID_MENAGE, MPI_index, MPI_poor,  hh_size, RGPH)
     )
 ```
 

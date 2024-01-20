@@ -11,7 +11,7 @@
 
 <meta name="author" content="IBRAHIM KASSOUM Habibou &amp; HEMA Aboubacar" />
 
-<meta name="date" content="2023-12-29" />
+<meta name="date" content="2024-01-13" />
 
 <title>Wrangling Senegal Census data with tidyverse tools</title>
 
@@ -1570,7 +1570,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">Wrangling Senegal Census data with
 tidyverse tools</h1>
 <h4 class="author">IBRAHIM KASSOUM Habibou &amp; HEMA Aboubacar</h4>
-<h4 class="date">2023-12-29</h4>
+<h4 class="date">2024-01-13</h4>
 
 </div>
 
@@ -1606,13 +1606,13 @@ datasets an checking for duplicated row</h2>
 <h3><span class="header-section-number">1.2.1</span> Importing the
 shapefile data</h3>
 <pre class="r"><code># Read shapefile data for 2002 and 2013
-sp_rgph_2002 &lt;- sf::read_sf(paste0(here::here(),&quot;/data/SHAPEFILE/EAs_2002.shp&quot;))
+sp_rgph_2002 &lt;- sf::read_sf(paste0(here::here(),&quot;/data/EAs_2013_2002_SHP/EAs_2002.shp&quot;))
 # Mutating the &#39;sp_rgph_2002&#39; dataset to create a new &#39;id_dr&#39; column based on conditions
 sp_rgph_2002 &lt;- sp_rgph_2002 %&gt;% 
   mutate(id_dr = ifelse(NUMDEPT==&quot;3&quot;, 
                       paste0(NUM_REG, NUMDEPT, NUM_ARRDT, &quot;18&quot;, NUM_CA, IDDR, &quot;O&quot;), 
                       paste0(&quot;0&quot;, NUM_REG, NUMDEPT, NUM_ARRDT, &quot;8&quot;, NUM_CA, IDDR, &quot;O&quot;)))
-sp_rgph_2013 &lt;- sf::read_sf(paste0(here::here(),&quot;/data/SHAPEFILE/EAs_2013.shp&quot;))
+sp_rgph_2013 &lt;- sf::read_sf(paste0(here::here(),&quot;/data/EAs_2013_2002_SHP/EAs_2013.shp&quot;))
 
 # Display the first 10 rows of the 2002 and 2013 shapefiles
 head(sp_rgph_2002, 10L)
@@ -1720,19 +1720,573 @@ menage_2013 %&gt;% janitor::get_dupes() </code></pre>
 <div id="preparation-of-data-on-the-two-censuses-wrangling" class="section level1" number="2">
 <h1><span class="header-section-number">2</span> Preparation of data on
 the two censuses (Wrangling)</h1>
+<pre class="r"><code>rm(list = c(&quot;deces_2002_complement&quot;,&quot;individus_2002_complement_pikine&quot;,&quot;menage_2002_complement&quot;,&quot;missing_packages&quot;,&quot;required_packages&quot;))</code></pre>
 <pre class="r"><code># Creating a variable &quot;RGPH&quot; to identify each survey 
 
 # For 2002
 ## Add a new column &quot;RGPH&quot; with the value &quot;2002&quot; to the &quot;individus_2002&quot; dataset
 individus_2002 &lt;- 
   individus_2002 %&gt;% 
-  mutate(RGPH = &quot;2002&quot;)
+  mutate(RGPH = &quot;2002&quot;) %&gt;% 
+  mutate(id_dr = DR)
 
 # For 2013
 ## Add a new column &quot;RGPH&quot; with the value &quot;2013&quot; to the &quot;individus_2013&quot; dataset
 individus_2013 &lt;- 
   individus_2013 %&gt;% 
-  mutate(RGPH = &quot;2013&quot;)</code></pre>
+  mutate(RGPH = &quot;2013&quot;) %&gt;% 
+  mutate(id_dr = IDDR)
+
+## For RGPH 2013
+individus_2002 &lt;- individus_2002 %&gt;%
+ select(id_dr,ID_MENAGE, RGPH, everything())# 
+
+## For RGPH 2002
+individus_2013 &lt;- individus_2013 %&gt;%
+ select(id_dr,ID_MENAGE, RGPH, everything())# </code></pre>
+</div>
+<div id="study-variables" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> Study Variables</h1>
+<div id="socio-demographic-variables" class="section level2" number="3.1">
+<h2><span class="header-section-number">3.1</span> Socio-demographic
+variables</h2>
+<div id="sexgender" class="section level3" number="3.1.1">
+<h3><span class="header-section-number">3.1.1</span> Sex/gender</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+menage_2002 &lt;- menage_2002 %&gt;% 
+  left_join(
+    individus_2002 %&gt;% 
+  group_by(ID_MENAGE) %&gt;% 
+  summarise(
+    homme = sum(QB04 == 1, na.rm = TRUE),
+    femme = sum(QB04 == 2, na.rm = TRUE),
+    hh_size = homme + femme
+  ) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(
+    homme = as.numeric(homme) %&gt;%
+           structure(label = &quot;Nombre d&#39;homme dans le ménage&quot;),
+    femme = as.numeric(femme) %&gt;%
+           structure(label = &quot;Nombre de femmes dans le ménage&quot;),
+    hh_size = as.numeric(hh_size) %&gt;%
+           structure(label = &quot;Taille du ménage&quot;)),
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot;))
+
+#1 = Male, 2 = Female
+#For the RGPH 2013 dataset
+
+#1 = Male, 2 = Female
+menage_2013 &lt;- menage_2013 %&gt;% 
+  left_join( 
+    individus_2013 %&gt;% 
+  group_by(ID_MENAGE) %&gt;% 
+  summarise(
+    homme = sum(B06 == 1, na.rm = TRUE),
+    femme = sum(B06 == 2, na.rm = TRUE),
+    hh_size = homme + femme
+  ) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(
+    homme = as.numeric(homme) %&gt;%
+           structure(label = &quot;Nombre d&#39;homme dans le ménage&quot;),
+    femme = as.numeric(femme) %&gt;%
+           structure(label = &quot;Nombre de femmes dans le ménage&quot;),
+    hh_size = as.numeric(hh_size) %&gt;%
+           structure(label = &quot;Taille du ménage&quot;)),
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot;))
+
+gender_var = c(&quot;homme&quot;,&quot;femme&quot;,&quot;hh_size&quot;)</code></pre>
+</div>
+<div id="age" class="section level3" number="3.1.2">
+<h3><span class="header-section-number">3.1.2</span> Age</h3>
+</div>
+<div id="marital-status" class="section level3" number="3.1.3">
+<h3><span class="header-section-number">3.1.3</span> Marital Status</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+
+     # 0         Monogame
+     # 1     Polygame à 2
+     # 2     Polygame à 3
+     # 3 Polygame à 4 et+
+     # 4      Célibataire
+     # 5     Veuf / Veuve
+     # 6          Divorcé
+     # 7            Autre
+menage_2002 &lt;- menage_2002 %&gt;% 
+  left_join(
+    individus_2002 %&gt;% 
+  group_by(ID_MENAGE) %&gt;% 
+  summarise(
+    Monogame = sum(QB20 == 0, na.rm = TRUE),
+    Polygame = sum(QB20 == 1 | QB20 == 2 | QB20 == 3 , na.rm = TRUE),
+    Celibataire = sum(QB20 == 4, na.rm = TRUE),
+    Veuf = sum(QB20 == 5, na.rm = TRUE),
+    Divorce = sum(QB20 == 6, na.rm = TRUE)
+  ) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(
+    Monogame = as.numeric(Monogame) %&gt;%
+           structure(label = &quot;Nombre de monogame dans le ménage&quot;),
+    Polygame = as.numeric(Polygame) %&gt;%
+           structure(label = &quot;Nombre de polygame dans le ménage&quot;),
+    Celibataire = as.numeric(Celibataire) %&gt;%
+           structure(label = &quot;Nombre de celibataire dans le ménage&quot;),
+    Veuf = as.numeric(Veuf) %&gt;%
+           structure(label = &quot;Nombre de veuf/veuve dans le ménage&quot;),
+    Divorce = as.numeric(Divorce) %&gt;%
+           structure(label = &quot;Nombre de divorce dans le ménage&quot;)
+    ),
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot;))
+#For the RGPH 2013 dataset
+    #  0                   Monogame
+    #  1           Poly/1ère épouse
+    #  2 Poly/2ié  épouse/2 épouses
+    #  3  Poly/3iè épouse/3 épouses
+    #  4 Poly/4iè épouse /4 épouses
+    #  5 Poly/5iè épouse /5 épouses
+    #  6                Célibataire
+    #  7                 Veuf/Veuve
+    #  8                 Divorcé(e)
+    #  9   Union libre(concubinage)
+    # 10                  Séparé(e)
+menage_2013 &lt;- menage_2013 %&gt;% 
+  left_join(
+    individus_2013 %&gt;% 
+      group_by(ID_MENAGE) %&gt;% 
+      summarise(
+        Monogame = sum(B41 == 0, na.rm = TRUE),
+        Polygame = sum(B41 == 1 | B41 == 2 | B41 == 3 | B41 == 4 | B41 == 5 , na.rm = TRUE),
+        Celibataire = sum(B41 == 6 | B41 == 9 , na.rm = TRUE),
+        Veuf = sum(B41 == 7, na.rm = TRUE),
+        Divorce = sum(B41 == 8 | B41 == 10 , na.rm = TRUE)
+      ) %&gt;% 
+      ungroup() %&gt;% 
+      mutate(
+        Monogame = as.numeric(Monogame) %&gt;%
+          structure(label = &quot;Nombre de monogame dans le ménage&quot;),
+        Polygame = as.numeric(Polygame) %&gt;%
+          structure(label = &quot;Nombre de polygame dans le ménage&quot;),
+        Celibataire = as.numeric(Celibataire) %&gt;%
+          structure(label = &quot;Nombre de celibataire dans le ménage&quot;),
+        Veuf = as.numeric(Veuf) %&gt;%
+          structure(label = &quot;Nombre de veuf/veuve dans le ménage&quot;),
+        Divorce = as.numeric(Divorce) %&gt;%
+          structure(label = &quot;Nombre de divorce dans le ménage&quot;)
+      ),
+    
+    # Merging by matching columns in both datasets
+    by = c(&quot;ID_MENAGE&quot;))
+mat_status_var = c(&quot;Monogame&quot;,&quot;Polygame&quot;,&quot;Celibataire&quot;,&quot;Veuf&quot;,&quot;Divorce&quot;)</code></pre>
+</div>
+<div id="fertility" class="section level3" number="3.1.4">
+<h3><span class="header-section-number">3.1.4</span> Fertility</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+ferti_2002 = c(&quot;QB21M&quot;,&quot;QB21F&quot;,&quot;QB22M&quot;,&quot;QB22F&quot;,&quot;QB23M&quot;,&quot;QB23F&quot;)
+
+menage_2002 &lt;- menage_2002 %&gt;% 
+  left_join(
+    individus_2002 %&gt;% 
+  
+  mutate(
+    fertility = rowSums(select(., .dots=all_of(ferti_2002)),na.rm = T)
+  ) %&gt;% 
+    group_by(ID_MENAGE) %&gt;% 
+  
+  summarise(
+    fertility = sum(fertility,na.rm = TRUE) %&gt;%
+           structure(label = &quot;Fertilité dans le ménage&quot;)
+    ) , 
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot;))
+#For the RGPH 2013 dataset
+
+ferti_2013 = c(&quot;B43&quot;,&quot;B44&quot;,&quot;B45&quot;,&quot;B46&quot;,&quot;B47&quot;,&quot;B48&quot;)
+menage_2013 &lt;- menage_2013 %&gt;% 
+  left_join(
+    individus_2013 %&gt;% 
+  
+  mutate(
+    fertility = rowSums(select(., .dots=all_of(ferti_2013)),na.rm = T)
+  ) %&gt;% 
+    group_by(ID_MENAGE) %&gt;% 
+  
+  summarise(
+    fertility = sum(fertility,na.rm = TRUE) %&gt;%
+           structure(label = &quot;Fertilité dans le ménage&quot;)
+    ) , 
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot;))
+fertility_var = c(&quot;fertility&quot;)</code></pre>
+</div>
+<div id="educational-level" class="section level3" number="3.1.5">
+<h3><span class="header-section-number">3.1.5</span> Educational
+level</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+#QB15 | educ
+     # 0      Aucun
+     # 1   Primaire
+     # 2      Moyen
+     # 3 Secondaire
+     # 4  Supérieur
+     # 9   manquant
+menage_2002 &lt;- menage_2002 %&gt;% 
+  left_join(
+    individus_2002 %&gt;% 
+      group_by(ID_MENAGE) %&gt;% 
+      summarise(
+        Aucun = sum(educ == 0, na.rm = TRUE),
+        Primaire = sum(educ == 1, na.rm = TRUE),
+        Moyen = sum(educ == 2, na.rm = TRUE),
+        Secondaire = sum(educ == 3, na.rm = TRUE),
+        Superieur = sum(educ == 4, na.rm = TRUE)
+      ) %&gt;% 
+      ungroup() %&gt;% 
+      mutate(
+        Aucun = as.numeric(Aucun) %&gt;%
+          structure(label = &quot;Nombre de Aucun dans le ménage&quot;),
+        Primaire = as.numeric(Primaire) %&gt;%
+          structure(label = &quot;Nombre de Primaire dans le ménage&quot;),
+        Moyen = as.numeric(Moyen) %&gt;%
+          structure(label = &quot;Nombre de Moyen dans le ménage&quot;),
+        Secondaire = as.numeric(Secondaire) %&gt;%
+          structure(label = &quot;Nombre de Secondaire dans le ménage&quot;),
+        Superieur = as.numeric(Superieur) %&gt;%
+          structure(label = &quot;Nombre de Supérieur dans le ménage&quot;)
+      ),
+    
+    # Merging by matching columns in both datasets
+    by = c(&quot;ID_MENAGE&quot;))
+#For the RGPH 2013 dataset
+
+individus_2013 &lt;- individus_2013 %&gt;% 
+  
+  mutate(educ = case_when(
+    
+    B32 %in% seq(1,3,1)  ~ 1, # If B32 is in pre-school levels, set it to &quot;prescolaire&quot; for c(&quot;Petite section&quot;,&quot;Moyenne section&quot;, &quot;Grnde section&quot;)
+    
+    B32 %in% seq(4,9,1) ~ 1, # If B32 corresponds to elementary levels, set it to &quot;elementaire&quot; for c(&quot;Cours d&#39;initiation (CI)&quot;, &quot;Cours préparatoire (CP)&quot;, &quot;Cours élémentaire 1ère année (CE1)&quot;, &quot;Cours élémentaire 2ème année (CE2)&quot;, &quot;Cours moyen 1ère année (CM1)&quot;, &quot;Cours moyen 2ème année (CM2)&quot;
+    
+    B32 %in% seq(10,13,1) ~ 2, # If B32 corresponds to middle school levels, set it to &quot;moyen&quot; for c(&quot;Sixième (6ième)&quot;, &quot;Cinquième (5ième)&quot;, &quot;Quatrième (4ième)&quot;, &quot;Troisième (3ième)&quot;)
+    
+    B32 %in% seq(14,16,1) ~ 3, # If B32 corresponds to high school levels, set it to &quot;secondaire&quot; for c(&quot;Seconde&quot;, &quot;Première&quot;, &quot;Terminale&quot;)
+    
+    B32 %in% seq(17,24,1) ~ 4, # If B32 corresponds to higher education levels, set it to &quot;superieur&quot; c(&quot;1ère année&quot;, &quot;2ème année&quot;, &quot;Licence/3ième année&quot;, &quot;Maitrise/4ième année&quot;, &quot;DEA/5ième année&quot;, &quot;6ième année&quot;, &quot;7ième année&quot;, &quot;8ième année et +&quot;)
+    TRUE ~ as.numeric(B32) %&gt;% 
+  structure(label = Hmisc::label(individus_2013$B32)))) # Apply labels to the B32 column
+
+menage_2013 &lt;- menage_2013 %&gt;% 
+  left_join(
+    individus_2013 %&gt;% 
+      group_by(ID_MENAGE) %&gt;% 
+      summarise(
+        Aucun = sum(educ == 0, na.rm = TRUE),
+        Primaire = sum(educ == 1, na.rm = TRUE),
+        Moyen = sum(educ == 2, na.rm = TRUE),
+        Secondaire = sum(educ == 3, na.rm = TRUE),
+        Superieur = sum(educ == 4, na.rm = TRUE)
+      ) %&gt;% 
+      ungroup() %&gt;% 
+      mutate(
+        Aucun = as.numeric(Aucun) %&gt;%
+          structure(label = &quot;Nombre de Aucun dans le ménage&quot;),
+        Primaire = as.numeric(Primaire) %&gt;%
+          structure(label = &quot;Nombre de Primaire dans le ménage&quot;),
+        Moyen = as.numeric(Moyen) %&gt;%
+          structure(label = &quot;Nombre de Moyen dans le ménage&quot;),
+        Secondaire = as.numeric(Secondaire) %&gt;%
+          structure(label = &quot;Nombre de Secondaire dans le ménage&quot;),
+        Superieur = as.numeric(Superieur) %&gt;%
+          structure(label = &quot;Nombre de Supérieur dans le ménage&quot;)
+      ),
+    
+    # Merging by matching columns in both datasets
+    by = c(&quot;ID_MENAGE&quot;))
+
+educ_var = c(&quot;Aucun&quot;,&quot;Primaire&quot;,&quot;Moyen&quot;,&quot;Secondaire&quot;,&quot;Superieur&quot;)</code></pre>
+</div>
+<div id="literacy-level" class="section level3" number="3.1.6">
+<h3><span class="header-section-number">3.1.6</span> Literacy level</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+#QB16A,QB16B,QB16C,QB16D,QB16E,QB16F,QB16G,QB16H,QB16I,QB16J
+#1-None, 2-French, 3-Arabic, 4-Wolof, 5-Pulaar, 6-Sereer, 7-Mandingo, 8-Diola, 9 -Soninke, 10-Other Language.
+menage_2002 &lt;- menage_2002 %&gt;% 
+  left_join(
+    individus_2002 %&gt;% 
+      group_by(ID_MENAGE) %&gt;% 
+      summarise(
+        Literacy_None = sum(QB16A == 1, na.rm = TRUE),
+        Literacy_French = sum(QB16B == 1, na.rm = TRUE),
+        Literacy_Arabic = sum(QB16C == 1, na.rm = TRUE),
+        Literacy_Wolof = sum(QB16D == 1, na.rm = TRUE),
+        Literacy_Pulaar = sum(QB16E == 1, na.rm = TRUE),
+        Literacy_Sereer = sum(QB16F == 1, na.rm = TRUE),
+        Literacy_Mandingo = sum(QB16G == 1, na.rm = TRUE),
+        Literacy_Diola = sum(QB16H == 1, na.rm = TRUE),
+        Literacy_Soninke = sum(QB16I == 1, na.rm = TRUE),
+        Literacy_Other = sum(QB16J == 1, na.rm = TRUE)
+      ) %&gt;% 
+      ungroup() %&gt;% 
+      mutate(
+        Literacy_None = as.numeric(Literacy_None) %&gt;%
+          structure(label = &quot;Nombre de Aucun dans le ménage&quot;),
+        Literacy_French = as.numeric(Literacy_French) %&gt;%
+          structure(label = &quot;Nombre de French dans le ménage&quot;),
+        Literacy_Arabic = as.numeric(Literacy_Arabic) %&gt;%
+          structure(label = &quot;Nombre de Arabic dans le ménage&quot;),
+        Literacy_Wolof = as.numeric(Literacy_Wolof) %&gt;%
+          structure(label = &quot;Nombre de Wolof dans le ménage&quot;),
+        Literacy_Pulaar = as.numeric(Literacy_Pulaar) %&gt;%
+          structure(label = &quot;Nombre de Pulaar dans le ménage&quot;),
+        Literacy_Sereer = as.numeric(Literacy_Sereer) %&gt;%
+          structure(label = &quot;Nombre de Sereer dans le ménage&quot;),
+        Literacy_Mandingo = as.numeric(Literacy_Mandingo) %&gt;%
+          structure(label = &quot;Nombre de Mandingo dans le ménage&quot;),
+        Literacy_Diola = as.numeric(Literacy_Diola) %&gt;%
+          structure(label = &quot;Nombre de Diola dans le ménage&quot;),
+        Literacy_Soninke = as.numeric(Literacy_Soninke) %&gt;%
+          structure(label = &quot;Nombre de Soninke dans le ménage&quot;),
+        Literacy_Other = as.numeric(Literacy_Other) %&gt;%
+          structure(label = &quot;Nombre de Other dans le ménage&quot;)
+      ),
+    
+    # Merging by matching columns in both datasets
+    by = c(&quot;ID_MENAGE&quot;))
+#For the RGPH 2013 dataset
+#B34_FR,B34_AR,B34_WO,B34_PU,B34_SE,B34_MA,B34_DI,B34_SO
+menage_2013 &lt;- menage_2013 %&gt;% 
+  left_join(
+    individus_2013 %&gt;% 
+      group_by(ID_MENAGE) %&gt;% 
+      summarise(
+        Literacy_French = sum(B34_FR == 1, na.rm = TRUE),
+        Literacy_Arabic = sum(B34_AR == 1, na.rm = TRUE),
+        Literacy_Wolof = sum(B34_WO == 1, na.rm = TRUE),
+        Literacy_Pulaar = sum(B34_PU == 1, na.rm = TRUE),
+        Literacy_Sereer = sum(B34_SE == 1, na.rm = TRUE),
+        Literacy_Mandingo = sum(B34_MA == 1, na.rm = TRUE),
+        Literacy_Diola = sum(B34_DI == 1, na.rm = TRUE),
+        Literacy_Soninke = sum(B34_SO == 1, na.rm = TRUE)
+      ) %&gt;% 
+      ungroup() %&gt;% 
+      mutate(
+        Literacy_French = as.numeric(Literacy_French) %&gt;%
+          structure(label = &quot;Nombre de French dans le ménage&quot;),
+        Literacy_Arabic = as.numeric(Literacy_Arabic) %&gt;%
+          structure(label = &quot;Nombre de Arabic dans le ménage&quot;),
+        Literacy_Wolof = as.numeric(Literacy_Wolof) %&gt;%
+          structure(label = &quot;Nombre de Wolof dans le ménage&quot;),
+        Literacy_Pulaar = as.numeric(Literacy_Pulaar) %&gt;%
+          structure(label = &quot;Nombre de Pulaar dans le ménage&quot;),
+        Literacy_Sereer = as.numeric(Literacy_Sereer) %&gt;%
+          structure(label = &quot;Nombre de Sereer dans le ménage&quot;),
+        Literacy_Mandingo = as.numeric(Literacy_Mandingo) %&gt;%
+          structure(label = &quot;Nombre de Mandingo dans le ménage&quot;),
+        Literacy_Diola = as.numeric(Literacy_Diola) %&gt;%
+          structure(label = &quot;Nombre de Diola dans le ménage&quot;),
+        Literacy_Soninke = as.numeric(Literacy_Soninke) %&gt;%
+          structure(label = &quot;Nombre de Soninke dans le ménage&quot;)
+      ),
+    
+    # Merging by matching columns in both datasets
+    by = c(&quot;ID_MENAGE&quot;))
+literacy_var = c(&quot;Literacy_French&quot;,&quot;Literacy_Arabic&quot;,&quot;Literacy_Wolof&quot;,&quot;Literacy_Pulaar&quot;,&quot;Literacy_Sereer&quot;,&quot;Literacy_Mandingo&quot;,&quot;Literacy_Diola&quot;,&quot;Literacy_Soninke&quot;)</code></pre>
+</div>
+<div id="migration-variable" class="section level3" number="3.1.7">
+<h3><span class="header-section-number">3.1.7</span> Migration
+variable</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+#the place of residence 5 years ago was also asked for residents present, absent or for visitors.
+
+     # 1 Resident present
+     # 2  Resident absent
+     # 3         Visiteur
+menage_2002 &lt;- menage_2002 %&gt;% 
+  left_join(
+    individus_2002 %&gt;% 
+      group_by(ID_MENAGE) %&gt;% 
+      summarise(
+        resident_pres = sum(QB08 == 1, na.rm = TRUE),
+        resident_abs = sum(QB08 == 2, na.rm = TRUE),
+        resident_vis = sum(QB08 == 3, na.rm = TRUE)
+      ) %&gt;% 
+      ungroup() %&gt;% 
+      mutate(
+        resident_pres = as.numeric(resident_pres) %&gt;%
+          structure(label = &quot;Nombre de Résident Présent dans le ménage&quot;),
+        resident_abs = as.numeric(resident_abs) %&gt;%
+          structure(label = &quot;Nombre de Résident Absent dans le ménage&quot;),
+        resident_vis = as.numeric(resident_vis) %&gt;%
+          structure(label = &quot;Nombre de Visiteur dans le ménage&quot;)
+      ),
+    
+    # Merging by matching columns in both datasets
+    by = c(&quot;ID_MENAGE&quot;))
+#For the RGPH 2013 dataset
+
+     # 1 Résident Présent
+     # 2  Résident Absent
+     # 3         Visiteur
+menage_2013 &lt;- menage_2013 %&gt;% 
+  left_join(
+    individus_2013 %&gt;% 
+      group_by(ID_MENAGE) %&gt;% 
+      summarise(
+        resident_pres = sum(B11 == 1, na.rm = TRUE),
+        resident_abs = sum(B11 == 2, na.rm = TRUE),
+        resident_vis = sum(B11 == 3, na.rm = TRUE)
+      ) %&gt;% 
+      ungroup() %&gt;% 
+      mutate(
+        resident_pres = as.numeric(resident_pres) %&gt;%
+          structure(label = &quot;Nombre de Résident Présent dans le ménage&quot;),
+        resident_abs = as.numeric(resident_abs) %&gt;%
+          structure(label = &quot;Nombre de Résident Absent dans le ménage&quot;),
+        resident_vis = as.numeric(resident_vis) %&gt;%
+          structure(label = &quot;Nombre de Visiteur dans le ménage&quot;)
+      ),
+    
+    # Merging by matching columns in both datasets
+    by = c(&quot;ID_MENAGE&quot;))
+mig_var = c(&quot;resident_pres&quot;,&quot;resident_abs&quot;,&quot;resident_vis&quot;)</code></pre>
+</div>
+<div id="maternal-death-variable" class="section level3" number="3.1.8">
+<h3><span class="header-section-number">3.1.8</span> Maternal death
+variable</h3>
+</div>
+</div>
+<div id="socio-economic-variables" class="section level2" number="3.2">
+<h2><span class="header-section-number">3.2</span> Socio-economic
+variables</h2>
+<div id="employed-variable" class="section level3" number="3.2.1">
+<h3><span class="header-section-number">3.2.1</span> Employed
+variable</h3>
+</div>
+<div id="occupational-status-variable" class="section level3" number="3.2.2">
+<h3><span class="header-section-number">3.2.2</span> Occupational status
+variable</h3>
+</div>
+<div id="income-variable" class="section level3" number="3.2.3">
+<h3><span class="header-section-number">3.2.3</span> Income
+variable</h3>
+<p>Two identical questions asked for the two censuses are: (1) during
+the last 12 months, has your household skipped a meal because of lack of
+income? (2) During the last 12 months, has it happened that a sick
+member of your household could not receive medical care because of lack
+of income? The answers to these questions were either 1. Yes or 2.
+No</p>
+<pre class="r"><code>#For the RGPH 2002 dataset, base menage
+#E16: Repas sauté
+     # 1   Oui
+     # 2   Non
+     # 9    nd
+#E17:Soins médicaux
+     # 1            Oui
+     # 2            Non
+     # 3 Non Applicable
+     # 9             nd
+menage_2002 &lt;- menage_2002 %&gt;% 
+  dplyr::mutate(I_repas_saute = ifelse(E16==1,1,0) %&gt;% structure(label=Hmisc::label(individus_2002$E16)),
+                I_soins_medicaux = ifelse(E17==1,1,0) %&gt;% structure(label=Hmisc::label(individus_2002$E17)))
+
+#For the RGPH 2013 dataset
+menage_2013 &lt;- menage_2013 %&gt;% 
+  dplyr::mutate(I_repas_saute = ifelse(E18==1,1,0) %&gt;% structure(label=Hmisc::label(individus_2002$E18)),
+                I_soins_medicaux = ifelse(E20==1,1,0) %&gt;% structure(label=Hmisc::label(individus_2002$E20)))
+income_var = c(&quot;I_repas_saute&quot;,&quot;I_soins_medicaux&quot;)</code></pre>
+</div>
+</div>
+<div id="household-variables" class="section level2" number="3.3">
+<h2><span class="header-section-number">3.3</span> Household
+variables</h2>
+<div id="capital-goods-variable" class="section level3" number="3.3.1">
+<h3><span class="header-section-number">3.3.1</span> Capital goods
+variable</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+#OK
+# 1. Radio, 2. Television, 3. Video/VCD/DVD, 4. Refrigerator/freezer, 5. Telephone, 6. Improved fireplace, 7. Air conditioner, 8. Sewing machine, 9. Water heater, 10. Stove
+
+#For the RGPH 2013 dataset</code></pre>
+</div>
+<div id="access-to-basic-equipment" class="section level3" number="3.3.2">
+<h3><span class="header-section-number">3.3.2</span> Access to basic
+equipment</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+#OK
+# 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
+#For the RGPH 2013 dataset</code></pre>
+</div>
+<div id="household-size" class="section level3" number="3.3.3">
+<h3><span class="header-section-number">3.3.3</span> Household size</h3>
+<pre class="r"><code>#For the RGPH 2002 dataset
+#OK
+#For the RGPH 2013 dataset</code></pre>
+</div>
+<div id="head-of-household" class="section level3" number="3.3.4">
+<h3><span class="header-section-number">3.3.4</span> Head of
+household</h3>
+<pre class="r"><code>## In the following we merge the &quot;menage_2002&quot; with the individual dataset
+menage_2002 &lt;- menage_2002 %&gt;% 
+  left_join(
+    
+    individus_2002 %&gt;% 
+      
+      # Filtering to get only individuals marked as &quot;Chef de menage&quot; in QB03
+      filter(QB03== 1) %&gt;% #&quot;Chef de menage&quot;
+      
+      # Creating the &quot;niveau_instruction_cm&quot; variable from QB15 column
+      mutate(niveau_instruction_cm = QB15 %&gt;% structure(label=paste0(Hmisc::label(individus_2002$QB15), &quot; CM&quot;)),
+      
+             # Creating the &quot;sexe_cm&quot; variable from QB04 column
+          sexe_cm = QB04 %&gt;% structure(label= paste0(Hmisc::label(individus_2002$QB04), &quot; Sexe CM&quot;)),
+          
+          # Creating the &quot;age_cm&quot; variable from QB06 column
+          age_cm = QB06 %&gt;% structure(label=paste0(Hmisc::label(individus_2002$QB06), &quot;Age CM&quot;))) %&gt;% 
+      # Selecting specific columns from the filtered dataset
+      select(ID_MENAGE, niveau_instruction_cm, sexe_cm, age_cm) ,
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot;)# = &quot;ID_MENAGE&quot;, &quot;id_dr&quot; = &quot;DR&quot;
+             
+    
+  )
+
+
+## In the following we merge the &quot;menage_2013&quot; with the individual dataset
+menage_2013 &lt;- menage_2013 %&gt;% 
+  left_join(
+    
+    individus_2013 %&gt;% 
+      
+      # Filtering to get only individuals marked as &quot;Chef de menage&quot; in B04
+      filter(B04==1) %&gt;% #&quot;Chef de ménage&quot;
+      
+      # Renaming the B32 column to &quot;niveau_instruction_cm&quot;
+      mutate(niveau_instruction_cm = B32 %&gt;% structure(label=paste0(Hmisc::label(individus_2013$B32),&quot; CM&quot;)), 
+      
+      # Creating the &quot;sexe_cm&quot; variable from B06 column
+          sexe_cm = B06 %&gt;% structure(label= paste0(Hmisc::label(individus_2013$B06), &quot;Sexe CM&quot;)),
+          
+          # Creating the &quot;age_cm&quot; variable from QB08 column
+          age_cm = B08 %&gt;% structure(label=paste0(Hmisc::label(individus_2013$B08), &quot;Age CM&quot;)))%&gt;% 
+      # Selecting specific columns from the filtered dataset
+      select(ID_MENAGE, niveau_instruction_cm, sexe_cm, age_cm),
+      
+      # Merging by matching columns in both datasets
+      by = c(&quot;ID_MENAGE&quot;)# = &quot;ID_MENAGE&quot;, &quot;id_dr&quot; = &quot;IDDR&quot;
+    
+  )</code></pre>
+</div>
+<div id="household-composition" class="section level3" number="3.3.5">
+<h3><span class="header-section-number">3.3.5</span> Household
+composition</h3>
 <p><em>Calculation of indices on household-related component variables
 (Age of household heads, by gender between the two censuses)</em></p>
 <pre class="r"><code># Select the CM (Chef de ménage) and compute the average age
@@ -1790,20 +2344,20 @@ individus_2013 %&gt;%
   
   # Add difference statistics to the table
   add_difference() </code></pre>
-<div id="zgswumbokx" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#zgswumbokx table {
+<div id="zjzcfthjrs" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#zjzcfthjrs table {
 font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#zgswumbokx thead, #zgswumbokx tbody, #zgswumbokx tfoot, #zgswumbokx tr, #zgswumbokx td, #zgswumbokx th {
+#zjzcfthjrs thead, #zjzcfthjrs tbody, #zjzcfthjrs tfoot, #zjzcfthjrs tr, #zjzcfthjrs td, #zjzcfthjrs th {
 border-style: none;
 }
-#zgswumbokx p {
+#zjzcfthjrs p {
 margin: 0;
 padding: 0;
 }
-#zgswumbokx .gt_table {
+#zjzcfthjrs .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
@@ -1828,11 +2382,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-#zgswumbokx .gt_caption {
+#zjzcfthjrs .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#zgswumbokx .gt_title {
+#zjzcfthjrs .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -1843,7 +2397,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-#zgswumbokx .gt_subtitle {
+#zjzcfthjrs .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -1854,7 +2408,7 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-#zgswumbokx .gt_heading {
+#zjzcfthjrs .gt_heading {
 background-color: #FFFFFF;
 text-align: center;
 border-bottom-color: #FFFFFF;
@@ -1865,12 +2419,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#zgswumbokx .gt_bottom_border {
+#zjzcfthjrs .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#zgswumbokx .gt_col_headings {
+#zjzcfthjrs .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -1884,7 +2438,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#zgswumbokx .gt_col_heading {
+#zjzcfthjrs .gt_col_heading {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1903,7 +2457,7 @@ padding-left: 5px;
 padding-right: 5px;
 overflow-x: hidden;
 }
-#zgswumbokx .gt_column_spanner_outer {
+#zjzcfthjrs .gt_column_spanner_outer {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -1914,13 +2468,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-#zgswumbokx .gt_column_spanner_outer:first-child {
+#zjzcfthjrs .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#zgswumbokx .gt_column_spanner_outer:last-child {
+#zjzcfthjrs .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#zgswumbokx .gt_column_spanner {
+#zjzcfthjrs .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
@@ -1931,10 +2485,10 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-#zgswumbokx .gt_spanner_row {
+#zjzcfthjrs .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#zgswumbokx .gt_group_heading {
+#zjzcfthjrs .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1959,7 +2513,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-#zgswumbokx .gt_empty_group_heading {
+#zjzcfthjrs .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
 background-color: #FFFFFF;
@@ -1973,13 +2527,13 @@ border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 vertical-align: middle;
 }
-#zgswumbokx .gt_from_md > :first-child {
+#zjzcfthjrs .gt_from_md > :first-child {
 margin-top: 0;
 }
-#zgswumbokx .gt_from_md > :last-child {
+#zjzcfthjrs .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#zgswumbokx .gt_row {
+#zjzcfthjrs .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -1997,7 +2551,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 overflow-x: hidden;
 }
-#zgswumbokx .gt_stub {
+#zjzcfthjrs .gt_stub {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -2009,7 +2563,7 @@ border-right-color: #D3D3D3;
 padding-left: 5px;
 padding-right: 5px;
 }
-#zgswumbokx .gt_stub_row_group {
+#zjzcfthjrs .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -2022,13 +2576,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-#zgswumbokx .gt_row_group_first td {
+#zjzcfthjrs .gt_row_group_first td {
 border-top-width: 2px;
 }
-#zgswumbokx .gt_row_group_first th {
+#zjzcfthjrs .gt_row_group_first th {
 border-top-width: 2px;
 }
-#zgswumbokx .gt_summary_row {
+#zjzcfthjrs .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -2037,14 +2591,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#zgswumbokx .gt_first_summary_row {
+#zjzcfthjrs .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #D3D3D3;
 }
-#zgswumbokx .gt_first_summary_row.thick {
+#zjzcfthjrs .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#zgswumbokx .gt_last_summary_row {
+#zjzcfthjrs .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -2053,7 +2607,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#zgswumbokx .gt_grand_summary_row {
+#zjzcfthjrs .gt_grand_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -2062,7 +2616,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#zgswumbokx .gt_first_grand_summary_row {
+#zjzcfthjrs .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -2071,7 +2625,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #D3D3D3;
 }
-#zgswumbokx .gt_last_grand_summary_row_top {
+#zjzcfthjrs .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -2080,10 +2634,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #D3D3D3;
 }
-#zgswumbokx .gt_striped {
+#zjzcfthjrs .gt_striped {
 background-color: rgba(128, 128, 128, 0.05);
 }
-#zgswumbokx .gt_table_body {
+#zjzcfthjrs .gt_table_body {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -2091,7 +2645,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#zgswumbokx .gt_footnotes {
+#zjzcfthjrs .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -2104,7 +2658,7 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#zgswumbokx .gt_footnote {
+#zjzcfthjrs .gt_footnote {
 margin: 0px;
 font-size: 90%;
 padding-top: 4px;
@@ -2112,7 +2666,7 @@ padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#zgswumbokx .gt_sourcenotes {
+#zjzcfthjrs .gt_sourcenotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -2125,57 +2679,57 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#zgswumbokx .gt_sourcenote {
+#zjzcfthjrs .gt_sourcenote {
 font-size: 90%;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#zgswumbokx .gt_left {
+#zjzcfthjrs .gt_left {
 text-align: left;
 }
-#zgswumbokx .gt_center {
+#zjzcfthjrs .gt_center {
 text-align: center;
 }
-#zgswumbokx .gt_right {
+#zjzcfthjrs .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#zgswumbokx .gt_font_normal {
+#zjzcfthjrs .gt_font_normal {
 font-weight: normal;
 }
-#zgswumbokx .gt_font_bold {
+#zjzcfthjrs .gt_font_bold {
 font-weight: bold;
 }
-#zgswumbokx .gt_font_italic {
+#zjzcfthjrs .gt_font_italic {
 font-style: italic;
 }
-#zgswumbokx .gt_super {
+#zjzcfthjrs .gt_super {
 font-size: 65%;
 }
-#zgswumbokx .gt_footnote_marks {
+#zjzcfthjrs .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-#zgswumbokx .gt_asterisk {
+#zjzcfthjrs .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#zgswumbokx .gt_indent_1 {
+#zjzcfthjrs .gt_indent_1 {
 text-indent: 5px;
 }
-#zgswumbokx .gt_indent_2 {
+#zjzcfthjrs .gt_indent_2 {
 text-indent: 10px;
 }
-#zgswumbokx .gt_indent_3 {
+#zjzcfthjrs .gt_indent_3 {
 text-indent: 15px;
 }
-#zgswumbokx .gt_indent_4 {
+#zjzcfthjrs .gt_indent_4 {
 text-indent: 20px;
 }
-#zgswumbokx .gt_indent_5 {
+#zjzcfthjrs .gt_indent_5 {
 text-indent: 25px;
 }
 </style>
@@ -2220,138 +2774,51 @@ text-indent: 25px;
 </table>
 </div>
 </div>
-<div id="multivariate-calculation-for-poverty-indices-mpi" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> Multivariate
-calculation for poverty indices (MPI)</h1>
-<div id="education-dimension" class="section level2" number="3.1">
-<h2><span class="header-section-number">3.1</span> Education
-dimension</h2>
-<div id="cleaning-of-the-education-variable" class="section level3" number="3.1.1">
-<h3><span class="header-section-number">3.1.1</span> Cleaning of the
-“education” variable</h3>
-<pre class="r"><code># Transform values in the &quot;QB15&quot; column of the &quot;individus_2002&quot; dataset
-# The transformation categorizes educational levels into descriptive labels
-
-individus_2002 &lt;- individus_2002 %&gt;% 
-  
-  mutate(QB15 = case_when(
-    
-    QB15 == 0 ~ &quot;aucune&quot;,      # If QB15 is 0, set it to &quot;aucune&quot;
-    
-    QB15 == 1 ~ &quot;prescolaire&quot;, # If QB15 is 1, set it to &quot;prescolaire&quot;
-    
-    QB15 %in% seq(2,7,1) ~ &quot;elementaire&quot;, # If QB15 is 2 to 7, set it to &quot;elementaire&quot;
-    
-    QB15 %in% seq(8,11,1) ~ &quot;moyen&quot;, # If QB15 is 8 to 11, set it to &quot;moyen&quot;
-    
-    QB15 %in% seq(12,14,1) ~ &quot;secondaire&quot;, # If QB15 is 12 to 14, set it to &quot;secondaire&quot;
-    
-    QB15 %in% seq(15,19,1) ~ &quot;superieur&quot;, # If QB15 is 15 to 19, set it to &quot;superieur&quot;
-    
-    TRUE ~ as.character(QB15) # If none, keep the old value
-    ) %&gt;% 
-  structure(label = Hmisc::label(individus_2002$QB15))) # Apply labels to the QB15 column
-
-
-# Transform values in the &quot;B32&quot; column of the &quot;individus_2013&quot; dataset
-# The transformation categorizes educational levels from codes into descriptive labels
-
-individus_2013 &lt;- individus_2013 %&gt;% 
-  
-  mutate(B32 = case_when(
-    
-    B32 %in% seq(1,3,1)  ~ &quot;prescolaire&quot;, # If B32 is in pre-school levels, set it to &quot;prescolaire&quot; for c(&quot;Petite section&quot;,&quot;Moyenne section&quot;, &quot;Grnde section&quot;)
-    
-    B32 %in% seq(4,9,1) ~ &quot;elementaire&quot;, # If B32 corresponds to elementary levels, set it to &quot;elementaire&quot; for c(&quot;Cours d&#39;initiation (CI)&quot;, &quot;Cours préparatoire (CP)&quot;, &quot;Cours élémentaire 1ère année (CE1)&quot;, &quot;Cours élémentaire 2ème année (CE2)&quot;, &quot;Cours moyen 1ère année (CM1)&quot;, &quot;Cours moyen 2ème année (CM2)&quot;
-    
-    B32 %in% seq(10,13,1) ~ &quot;moyen&quot;, # If B32 corresponds to middle school levels, set it to &quot;moyen&quot; for c(&quot;Sixième (6ième)&quot;, &quot;Cinquième (5ième)&quot;, &quot;Quatrième (4ième)&quot;, &quot;Troisième (3ième)&quot;)
-    
-    B32 %in% seq(14,16,1) ~ &quot;secondaire&quot;, # If B32 corresponds to high school levels, set it to &quot;secondaire&quot; for c(&quot;Seconde&quot;, &quot;Première&quot;, &quot;Terminale&quot;)
-    
-    B32 %in% seq(17,24,1) ~ &quot;superieur&quot;, # If B32 corresponds to higher education levels, set it to &quot;superieur&quot; c(&quot;1ère année&quot;, &quot;2ème année&quot;, &quot;Licence/3ième année&quot;, &quot;Maitrise/4ième année&quot;, &quot;DEA/5ième année&quot;, &quot;6ième année&quot;, &quot;7ième année&quot;, &quot;8ième année et +&quot;)
-    TRUE ~ as.character(B32) %&gt;% 
-  structure(label = Hmisc::label(individus_2013$B32)))) # Apply labels to the B32 column</code></pre>
 </div>
-<div id="education-indicators-computation" class="section level3" number="3.1.2">
-<h3><span class="header-section-number">3.1.2</span> Education
+</div>
+<div id="multivariate-calculation-for-poverty-indices-mpi" class="section level1" number="4">
+<h1><span class="header-section-number">4</span> Multivariate
+calculation for poverty indices (MPI)</h1>
+<div id="education-dimension" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span> Education
+dimension</h2>
+<div id="cleaning-of-the-education-variable" class="section level3" number="4.1.1">
+<h3><span class="header-section-number">4.1.1</span> Cleaning of the
+“education” variable</h3>
+</div>
+<div id="education-indicators-computation" class="section level3" number="4.1.2">
+<h3><span class="header-section-number">4.1.2</span> Education
 indicators computation</h3>
 <p><em>Years of schooling indicator</em></p>
-<pre class="r"><code>edu_var = c(&quot;nbr_educ_primaire&quot;,&quot;nbr_educ_moyen&quot;,&quot;nbr_educ_secondaire&quot;,&quot;nbr_educ_superieur&quot;)
+<pre class="r"><code>edu_var = c(&quot;Primaire&quot;,&quot;Moyen&quot;,&quot;Secondaire&quot;,&quot;Superieur&quot;)
+#educ_var = c(&quot;Aucun&quot;,&quot;Primaire&quot;,&quot;Moyen&quot;,&quot;Secondaire&quot;,&quot;Superieur&quot;)
 # For the 2002 individus data  
 
-individus_2002 &lt;- 
-  individus_2002 %&gt;% 
-  left_join(
-# Group the &#39;individus_2002&#39; dataframe by the &#39;ID_MENAGE&#39; column
-individus_2002 %&gt;%
-  group_by(ID_MENAGE) %&gt;%
-  
-# Calculate the sum of individuals with &#39;elementaire&#39; education within each household
-  summarise(nbr_educ_primaire = sum(QB15 == &quot;elementaire&quot;, na.rm = TRUE),
-  
-# Calculate the sum of individuals with &#39;moyen&#39; education within each household
-            nbr_educ_moyen = sum(QB15 == &quot;moyen&quot;, na.rm = TRUE),
-            
-# Calculate the sum of individuals with &#39;secondaire&#39; education within each household
-            nbr_educ_secondaire = sum(QB15 == &quot;secondaire&quot;, na.rm = TRUE),
-            
-# Calculate the sum of individuals with &#39;superieur&#39; education within each household
-            nbr_educ_superieur = sum(QB15 == &quot;superieur&quot;, na.rm = TRUE)
-  ) %&gt;%
-  
-# Remove the grouping to get a flat summary data frame
-  ungroup() %&gt;%
+menage_2002 &lt;- 
+  menage_2002 %&gt;% 
   
 # Calculate a binary variable &#39;school_attendance&#39; for each household.
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
   mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
     years_schooling_dim = 
-           as.factor(ifelse(years_schooling_dim &gt; 0, 0, 1)) %&gt;% structure(label = &quot;Education: years of schooling&quot;)) %&gt;%
-  select(ID_MENAGE, years_schooling_dim),
-
-  by=c(&quot;ID_MENAGE&quot;=&quot;ID_MENAGE&quot;)
-)
+           as.factor(ifelse(years_schooling_dim &gt; 0, 0, 1)) %&gt;% structure(label = &quot;Education: years of schooling&quot;))
   
 # For the 2013 individus data  
 
-individus_2013 &lt;- 
-  individus_2013 %&gt;% 
-  left_join(
-# Group the &#39;individus_2013&#39; dataframe by the &#39;ID_MENAGE&#39; column
-individus_2013 %&gt;%
-  group_by(ID_MENAGE) %&gt;%
-  
-# Calculate the sum of individuals with &#39;elementaire&#39; education within each household
-  summarise(nbr_educ_primaire = sum(B32 == &quot;elementaire&quot;, na.rm = TRUE),
-  
-# Calculate the sum of individuals with &#39;moyen&#39; education within each household
-            nbr_educ_moyen = sum(B32 == &quot;moyen&quot;, na.rm = TRUE),
-            
-# Calculate the sum of individuals with &#39;secondaire&#39; education within each household
-            nbr_educ_secondaire = sum(B32 == &quot;secondaire&quot;, na.rm = TRUE),
-            
-# Calculate the sum of individuals with &#39;superieur&#39; education within each household
-            nbr_educ_superieur = sum(B32 == &quot;superieur&quot;, na.rm = TRUE)
-  ) %&gt;%
-  
-# Remove the grouping to get a flat summary data frame
-  ungroup() %&gt;%
+menage_2013 &lt;- 
+  menage_2013 %&gt;% 
   
 # Calculate a binary variable &#39;school_attendance&#39; for each household.
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
   mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
     years_schooling_dim = 
-           as.factor(ifelse(years_schooling_dim &gt; 0, 0, 1)) %&gt;% structure(label = &quot;Education: years of schooling&quot;)) %&gt;%
-  select(ID_MENAGE, years_schooling_dim),
-
-  by=c(&quot;ID_MENAGE&quot;=&quot;ID_MENAGE&quot;)
-)</code></pre>
+           as.factor(ifelse(years_schooling_dim &gt; 0, 0, 1)) %&gt;% structure(label = &quot;Education: years of schooling&quot;))</code></pre>
 <p><em>School Attendance indicator</em></p>
 <pre class="r"><code># Processing for the year 2002
-individus_2002 &lt;- 
-  individus_2002 %&gt;% 
+menage_2002 &lt;- 
+  menage_2002 %&gt;% 
   left_join(
     # Joining the data with summarized statistics per household
     individus_2002 %&gt;%
@@ -2359,26 +2826,26 @@ individus_2002 &lt;-
     summarise(
       # Calculating the number of children (lien_cm==&quot;children&quot; and age &lt; 13) with no school attendance 
       
-      nbr_school_attendance = sum(QB15 == &quot;aucune&quot; &amp; age5 &gt; 3 &amp; QB03 == 3, na.rm = TRUE),
+      school_attendance = sum(educ == 0 &amp; age5 &gt; 13 &amp; QB03 == 3, na.rm = TRUE),
       
       #The total number of (lien_cm==&quot;children&quot;) in the household
-      nbr_children_hh = sum(QB03 == 3)
+      children_hh = sum(QB03 == 3,na.rm = TRUE)
     ) %&gt;%
     ungroup() %&gt;%
       
     # Computing a dimension for school attendance in the household
     mutate(
-      school_attendance_dim = as.factor(ifelse(nbr_school_attendance == nbr_children_hh, 1, 0))%&gt;% structure(label = &quot;Education: school attendance&quot;)
+      school_attendance_dim = as.factor(ifelse(school_attendance == children_hh, 1, 0))%&gt;% structure(label = &quot;Education: school attendance&quot;)
     ) %&gt;%
       
     # Selecting relevant columns for the join
     select(ID_MENAGE, school_attendance_dim),
-    by = c(&quot;ID_MENAGE&quot;=&quot;ID_MENAGE&quot;)
+    by = c(&quot;ID_MENAGE&quot;)
   )
 
 # Processing for the year 2013
-individus_2013 &lt;- 
-  individus_2013 %&gt;% 
+menage_2013 &lt;- 
+  menage_2013 %&gt;% 
   left_join(
     # Joining the data with summarized statistics per household
     individus_2013 %&gt;%
@@ -2386,29 +2853,29 @@ individus_2013 &lt;-
     summarise(
       
       # Calculating the number of children (lien_cm==&quot;children&quot; and age &lt; 13) with no school attendance  (NA for B32)
-      nbr_school_attendance = sum(is.na(B32) &amp; B08 &gt; 13 &amp; B04 == 3, na.rm = TRUE),
+      school_attendance = sum(is.na(B32) &amp; B08 &gt; 13 &amp; B04 == 3, na.rm = TRUE),
       
       # Computing a dimension for school attendance in the household
-      nbr_children_hh = sum(B04 == 3)
+      children_hh = sum(B04 == 3,na.rm = TRUE)
     ) %&gt;%
     ungroup() %&gt;%
       
     # Computing a dimension for school attendance in the household
     mutate(
-      school_attendance_dim = as.factor(ifelse(nbr_school_attendance == nbr_children_hh, 1, 0)) %&gt;% structure(label = &quot;Education: school attendance&quot;)
+      school_attendance_dim = as.factor(ifelse(school_attendance == children_hh, 1, 0)) %&gt;% structure(label = &quot;Education: school attendance&quot;)
     ) %&gt;%
       
     # Selecting relevant columns for the join
     select(ID_MENAGE, school_attendance_dim),
-    by = c(&quot;ID_MENAGE&quot;=&quot;ID_MENAGE&quot;)
+    by = c(&quot;ID_MENAGE&quot;)
   )</code></pre>
 </div>
 </div>
-<div id="standard-of-living-dimension" class="section level2" number="3.2">
-<h2><span class="header-section-number">3.2</span> Standard of Living
+<div id="standard-of-living-dimension" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> Standard of Living
 dimension</h2>
-<div id="cleaning-the-standard-of-living-variables" class="section level3" number="3.2.1">
-<h3><span class="header-section-number">3.2.1</span> Cleaning the
+<div id="cleaning-the-standard-of-living-variables" class="section level3" number="4.2.1">
+<h3><span class="header-section-number">4.2.1</span> Cleaning the
 “Standard of Living” variables</h3>
 <pre class="r"><code># Renaming variables so that they can have the same name in the two
 # datasets
@@ -2421,7 +2888,7 @@ menage_2002 &lt;- menage_2002 %&gt;%
   # Create and rename variables in the &quot;menage_2002&quot; dataset
   mutate(
        # Create a new variable &quot;nb_indiv&quot; with labels from the &quot;menage_2002&quot; dataset
-    nb_indiv = E01 %&gt;% structure(label=Hmisc::label(menage_2002$Nb_indiv)),
+    #nb_indiv = Nb_indiv %&gt;% structure(label=Hmisc::label(menage_2002$Nb_indiv)),
     
     # Create a new variable &quot;id_dr&quot; with labels from the &quot;menage_2002&quot; dataset
     id_dr = DR %&gt;% structure(label=Hmisc::label(menage_2002$DR)),
@@ -2429,8 +2896,8 @@ menage_2002 &lt;- menage_2002 %&gt;%
     # Create a new variable &quot;type_log&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
     type_log = as.factor(E01) %&gt;% structure(label=Hmisc::label(menage_2002$E01)),
     
-    # Create a new variable &quot;nbr_piece_occup&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
-    nbr_piece_occup = as.factor(E02) %&gt;% structure(label=Hmisc::label(menage_2002$E02)),
+    # Create a new variable &quot;piece_occup&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
+    piece_occup = as.factor(E02) %&gt;% structure(label=Hmisc::label(menage_2002$E02)),
     
     # Create a new variable &quot;stat_occupation&quot; as a factor with labels from the &quot;menage_2002&quot; dataset
     stat_occupation = as.factor(E03) %&gt;% structure(label=Hmisc::label(menage_2002$E03)),
@@ -2543,13 +3010,13 @@ menage_2013 &lt;- menage_2013 %&gt;%
 id_dr = IDDR %&gt;% structure(label=Hmisc::label(menage_2013$IDDR)),
 
 # Create a new variable &quot;nb_indiv&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
-nb_indiv = Nbre_indiv %&gt;% structure(label=Hmisc::label(menage_2013$Nbre_indiv)),
+#nb_indiv = Nbre_indiv %&gt;% structure(label=Hmisc::label(menage_2013$Nbre_indiv)),
 
 # Create a new variable &quot;type_log&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
 type_log = as.factor(E01) %&gt;% structure(label=Hmisc::label(menage_2013$E01)),
 
-# Create a new variable &quot;nbr_piece_occup&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
-nbr_piece_occup = as.factor(E02) %&gt;% structure(label=Hmisc::label(menage_2013$E02)),
+# Create a new variable &quot;piece_occup&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
+piece_occup = as.factor(E02) %&gt;% structure(label=Hmisc::label(menage_2013$E02)),
 
 # Create a new variable &quot;stat_occupation&quot; as a factor with labels from the &quot;menage_2013&quot; dataset
 stat_occupation = as.factor(E03) %&gt;% structure(label=Hmisc::label(menage_2013$E03)),
@@ -2677,8 +3144,8 @@ repas_saute = as.factor(E18) %&gt;% structure(label=Hmisc::label(menage_2013$E18
 soins_medicaux = as.factor(E20) %&gt;% structure(label=Hmisc::label(menage_2013$E20))
     )</code></pre>
 </div>
-<div id="standard-of-living-indicators-computation" class="section level3" number="3.2.2">
-<h3><span class="header-section-number">3.2.2</span> Standard of living
+<div id="standard-of-living-indicators-computation" class="section level3" number="4.2.2">
+<h3><span class="header-section-number">4.2.2</span> Standard of living
 indicators computation</h3>
 <p><strong>Data source</strong>:</p>
 <ul>
@@ -2764,10 +3231,10 @@ menage_2002 &lt;- menage_2002 %&gt;%
          soins_medicaux = as.factor(soins_medicaux) %&gt;% structure(label=Hmisc::label(menage_2002$E17)))</code></pre>
 </div>
 </div>
-<div id="health-dimension" class="section level2" number="3.3">
-<h2><span class="header-section-number">3.3</span> Health dimension</h2>
-<div id="cleaning-of-the-health-variables-and-indicators-computation" class="section level3" number="3.3.1">
-<h3><span class="header-section-number">3.3.1</span> Cleaning of the
+<div id="health-dimension" class="section level2" number="4.3">
+<h2><span class="header-section-number">4.3</span> Health dimension</h2>
+<div id="cleaning-of-the-health-variables-and-indicators-computation" class="section level3" number="4.3.1">
+<h3><span class="header-section-number">4.3.1</span> Cleaning of the
 “Health” variables and indicators computation</h3>
 <pre class="r"><code># For the RGPH 2002 dataset, determine if there was a death in the household in the last twelve months
 # This code calculates whether there was a death in the household based on specific columns
@@ -2779,29 +3246,29 @@ deces_2002 &lt;- deces_2002 %&gt;%
   summarise(
     
     # Count the number of death in the household
-    nbr_deces = sum(est_decedee, na.rm = TRUE),
+    deces = sum(est_decedee, na.rm = TRUE),
     
     # Count the number of death in the household below the age of 5
-    nbr_deces_under_five = sum(est_decedee==1 &amp; C04 &lt;=5,
+    deces_under_five = sum(est_decedee==1 &amp; C04 &lt;=5,
                                        na.rm = TRUE)) %&gt;% 
   ungroup() %&gt;% 
   # Create a variable for an under 18 death in the household
-  mutate(deces_under_five_dim = as.factor(ifelse(nbr_deces_under_five &gt; 0, 1, ifelse(is.na(nbr_deces_under_five), 0, 0)) %&gt;%
+  mutate(deces_under_five_dim = as.factor(ifelse(deces_under_five &gt; 0, 1, ifelse(is.na(deces_under_five), 0, 0)) %&gt;%
                                             structure(label = &quot;Y a-t-il eu un décés d&#39;un enfant de moins de cinq ans dans le ménage ?&quot;)),
-         nbr_deces_under_five = nbr_deces_under_five %&gt;%
+         deces_under_five = deces_under_five %&gt;%
                                             structure(label = &quot;Nombre de décés de moins de cinq ans&quot;)) 
 
 # For the RGPH 2013 dataset, calculate the number of deaths in each household
 # This code groups the data by household and calculates the number of deaths in each household
 deces_2013 &lt;- deces_2013 %&gt;% 
   group_by(ID_MENAGE) %&gt;% 
-  summarise(nbr_deces = sum(C01, na.rm = TRUE)
+  summarise(deces = sum(C01, na.rm = TRUE)
     
     # Count the number of death in the household below the age of 18
   ) %&gt;% 
   ungroup() %&gt;% 
   # Create the variable for the number of death in the household
-  mutate(nbr_deces = as.numeric(nbr_deces) %&gt;%
+  mutate(deces = as.numeric(deces) %&gt;%
            structure(label = &quot;Nombre de décés dans le ménage&quot;)) </code></pre>
 <pre class="r"><code># For the RGPH 2013 dataset, select specific columns and merge with &quot;deces_2013&quot; data
 # This code selects the &quot;id_dr,&quot; &quot;ID_MENAGE,&quot; and columns 77 to the last column in &quot;menage_2013&quot;
@@ -2809,7 +3276,7 @@ deces_2013 &lt;- deces_2013 %&gt;%
 
 # Selecting specific columns from the &#39;menage_2013&#39; dataset
 menage_2013 &lt;- menage_2013 %&gt;% 
-  select(id_dr, ID_MENAGE, 77:ncol(menage_2013)) %&gt;%
+  select(id_dr, ID_MENAGE, everything()) %&gt;%
   
 # Performing a left join with the &#39;deces_2013&#39; dataset based on &#39;ID_MENAGE&#39;
   left_join(deces_2013, by = &quot;ID_MENAGE&quot;) %&gt;%
@@ -2817,8 +3284,8 @@ menage_2013 &lt;- menage_2013 %&gt;%
 # Adding a new column &#39;RGPH&#39; with the value &quot;2013&quot; and setting a label
   mutate(RGPH = &quot;2013&quot; %&gt;% structure(label = &quot;RGPH&quot;),
   
-# Adding a label to the &#39;nbr_deces&#39; column
-         nbr_deces = nbr_deces %&gt;% structure(label = &quot;Nombre de décès dans le ménage au cours des 12 derniers mois&quot;))
+# Adding a label to the &#39;deces&#39; column
+         deces = deces %&gt;% structure(label = &quot;Nombre de décès dans le ménage au cours des 12 derniers mois&quot;))
 
 # For the RGPH 2002 dataset, select specific columns and merge with &quot;deces_2013&quot; data
 # This code selects the &quot;id_dr,&quot; &quot;ID_MENAGE,&quot; and columns 71 to the last column in &quot;menage_2002&quot;
@@ -2826,7 +3293,7 @@ menage_2013 &lt;- menage_2013 %&gt;%
 
 # Selecting specific columns from the &#39;menage_2002&#39; dataset
 menage_2002 &lt;- menage_2002 %&gt;% 
-  select(id_dr, ID_MENAGE, num_men, 71:ncol(menage_2002)) %&gt;%
+  select(id_dr, ID_MENAGE, num_men, everything()) %&gt;%
   
 # Performing a left join with the &#39;deces_2002&#39; dataset based on &#39;ID_MENAGE&#39;
   left_join(deces_2002, by = &quot;ID_MENAGE&quot;) %&gt;%
@@ -2843,151 +3310,17 @@ menage_2002 &lt;- menage_2002 %&gt;%
 # Renaming the &#39;ID_MENAGE_corrige&#39; column to &#39;ID_MENAGE&#39;
   rename(ID_MENAGE = ID_MENAGE_corrige) %&gt;%
   
-# Adding a new column &#39;nbr_deces&#39; by checking if it&#39;s missing and setting it to 0, with a label
-  mutate(nbr_deces = ifelse(is.na(nbr_deces), 0, nbr_deces) %&gt;% structure(label = &quot;Nombre de décès dans le ménage au cours des 12 derniers mois&quot;),
+# Adding a new column &#39;deces&#39; by checking if it&#39;s missing and setting it to 0, with a label
+  mutate(deces = ifelse(is.na(deces), 0, deces) %&gt;% structure(label = &quot;Nombre de décès dans le ménage au cours des 12 derniers mois&quot;),
          
          # Replace Na by 0
          
-         nbr_deces_under_five = ifelse(is.na(nbr_deces_under_five), 0, nbr_deces_under_five),
+         deces_under_five = ifelse(is.na(deces_under_five), 0, deces_under_five),
          
          deces_under_five_dim = as.factor(ifelse(is.na(deces_under_five_dim), 0, deces_under_five_dim)) %&gt;% structure(label = &quot;Health: child mortality&quot;))</code></pre>
-<pre class="r"><code>## In the following we merge the &quot;menage_2002&quot; with the individual dataset
-menage_2002 &lt;- menage_2002 %&gt;% 
-  left_join(
-    
-    individus_2002 %&gt;% 
-      
-      # Filtering to get only individuals marked as &quot;Chef de menage&quot; in QB03
-      filter(QB03== 1) %&gt;% #&quot;Chef de menage&quot;
-      
-      # Creating the &quot;niveau_instruction_cm&quot; variable from QB15 column
-      mutate(niveau_instruction_cm = QB15 %&gt;% structure(label=paste0(Hmisc::label(individus_2002$QB15), &quot; CM&quot;)),
-      
-             # Creating the &quot;sexe_cm&quot; variable from QB04 column
-          sexe_cm = QB04 %&gt;% structure(label= paste0(Hmisc::label(individus_2002$QB04), &quot; CM&quot;)),
-          
-          # Creating the &quot;age_cm&quot; variable from QB06 column
-          age_cm = QB06 %&gt;% structure(label=paste0(Hmisc::label(individus_2002$QB06), &quot; CM&quot;))) %&gt;% 
-  
-      # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, num_men, DR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim, years_schooling_dim),
-      
-      # Merging by matching columns in both datasets
-      by = c(&quot;ID_MENAGE&quot; = &quot;ID_MENAGE&quot;, 
-             &quot;id_dr&quot; = &quot;DR&quot;)
-    
-  )
-
-
-## In the following we merge the &quot;menage_2013&quot; with the individual dataset
-menage_2013 &lt;- menage_2013 %&gt;% 
-  left_join(
-    
-    individus_2013 %&gt;% 
-      
-      # Filtering to get only individuals marked as &quot;Chef de menage&quot; in B04
-      filter(B04==1) %&gt;% #&quot;Chef de ménage&quot;
-      
-      # Renaming the B32 column to &quot;niveau_instruction_cm&quot;
-      mutate(niveau_instruction_cm = B32 %&gt;% structure(label=paste0(Hmisc::label(individus_2013$B32),&quot; CM&quot;)), 
-      
-      # Creating the &quot;sexe_cm&quot; variable from B06 column
-          sexe_cm = B06 %&gt;% structure(label= paste0(Hmisc::label(individus_2013$B06), &quot; CM&quot;)),
-          
-          # Creating the &quot;age_cm&quot; variable from QB08 column
-          age_cm = B08 %&gt;% structure(label=paste0(Hmisc::label(individus_2013$B08), &quot; CM&quot;))) %&gt;% 
-      # Selecting specific columns from the filtered dataset
-      select(ID_MENAGE, IDDR, niveau_instruction_cm, sexe_cm, age_cm, school_attendance_dim, years_schooling_dim),
-      
-      # Merging by matching columns in both datasets
-      by = c(&quot;ID_MENAGE&quot; = &quot;ID_MENAGE&quot;, &quot;id_dr&quot; = &quot;IDDR&quot;)
-    
-  )</code></pre>
 <pre class="r"><code># Filtering the &#39;menage_2013&#39; dataset to exclude specific values in the &#39;id_dr&#39; column
 menage_2013 &lt;- menage_2013 %&gt;% 
   filter(!(id_dr %in% c(&quot;014301140124&quot;, &quot;014301140125&quot;)))</code></pre>
-</div>
-</div>
-</div>
-<div id="study-variables" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Study Variables</h1>
-<div id="socio-demographic-variables" class="section level2" number="4.1">
-<h2><span class="header-section-number">4.1</span> Socio-demographic
-variables</h2>
-<div id="sexgender" class="section level3" number="4.1.1">
-<h3><span class="header-section-number">4.1.1</span> Sex/gender</h3>
-</div>
-<div id="age" class="section level3" number="4.1.2">
-<h3><span class="header-section-number">4.1.2</span> Age</h3>
-</div>
-<div id="marital-status" class="section level3" number="4.1.3">
-<h3><span class="header-section-number">4.1.3</span> Marital Status</h3>
-</div>
-<div id="fertility" class="section level3" number="4.1.4">
-<h3><span class="header-section-number">4.1.4</span> Fertility</h3>
-</div>
-<div id="educational-level" class="section level3" number="4.1.5">
-<h3><span class="header-section-number">4.1.5</span> Educational
-level</h3>
-</div>
-<div id="literacy-level" class="section level3" number="4.1.6">
-<h3><span class="header-section-number">4.1.6</span> Literacy level</h3>
-</div>
-<div id="migration-variable" class="section level3" number="4.1.7">
-<h3><span class="header-section-number">4.1.7</span> Migration
-variable</h3>
-</div>
-<div id="maternal-death-variable" class="section level3" number="4.1.8">
-<h3><span class="header-section-number">4.1.8</span> Maternal death
-variable</h3>
-</div>
-</div>
-<div id="socio-economic-variables" class="section level2" number="4.2">
-<h2><span class="header-section-number">4.2</span> Socio-economic
-variables</h2>
-<div id="employed-variable" class="section level3" number="4.2.1">
-<h3><span class="header-section-number">4.2.1</span> Employed
-variable</h3>
-</div>
-<div id="occupational-status-variable" class="section level3" number="4.2.2">
-<h3><span class="header-section-number">4.2.2</span> Occupational status
-variable</h3>
-</div>
-<div id="income-variable" class="section level3" number="4.2.3">
-<h3><span class="header-section-number">4.2.3</span> Income
-variable</h3>
-</div>
-</div>
-<div id="household-variables" class="section level2" number="4.3">
-<h2><span class="header-section-number">4.3</span> Household
-variables</h2>
-<div id="capital-goods-variable" class="section level3" number="4.3.1">
-<h3><span class="header-section-number">4.3.1</span> Capital goods
-variable</h3>
-</div>
-<div id="access-to-basic-equipment" class="section level3" number="4.3.2">
-<h3><span class="header-section-number">4.3.2</span> Access to basic
-equipment</h3>
-</div>
-<div id="household-size" class="section level3" number="4.3.3">
-<h3><span class="header-section-number">4.3.3</span> Household size</h3>
-</div>
-<div id="head-of-household" class="section level3" number="4.3.4">
-<h3><span class="header-section-number">4.3.4</span> Head of
-household</h3>
-</div>
-<div id="household-composition" class="section level3" number="4.3.5">
-<h3><span class="header-section-number">4.3.5</span> Household
-composition</h3>
-<pre class="r"><code># Ranking variables
-
-## For RGPH 2013
-menage_2013 &lt;- menage_2013 %&gt;%
- select(id_dr, ID_MENAGE, RGPH, everything())
-
-## For RGPH 2002
-menage_2002 &lt;- menage_2002 %&gt;%
- select(id_dr, ID_MENAGE, RGPH, everything())</code></pre>
 </div>
 </div>
 </div>
@@ -2996,11 +3329,11 @@ menage_2002 &lt;- menage_2002 %&gt;%
 datasets</h1>
 <pre class="r"><code>## For RGPH 2013
 individus_2002 &lt;- individus_2002 %&gt;%
- select(ID_MENAGE, RGPH, everything())#id_dr, 
+ select(id_dr,ID_MENAGE, RGPH, everything())# 
 
 ## For RGPH 2002
 individus_2013 &lt;- individus_2013 %&gt;%
- select(ID_MENAGE, RGPH, everything())#id_dr, 
+ select(id_dr,ID_MENAGE, RGPH, everything())# 
 # Saving in SPSS format
 haven::write_sav(individus_2002,paste0(here::here(), &quot;/output/output_data/individus_2002.sav&quot;))
 # Saving in SPSS format

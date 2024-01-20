@@ -1,7 +1,7 @@
 ---
 title: "Computing the MPI using the Senegal Census data and visualization"
 author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
-date: "2023-12-29"
+date: "2024-01-13"
 output: 
   html_document:
     toc: true
@@ -56,11 +56,39 @@ menage_2013 %>% janitor::get_dupes()
 
 # Read shapefile data for 2002 and 2013
 sp_rgph_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/EAs_2002_new.shp"))
-sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/data/SHAPEFILE/EAs_2013.shp"))
+sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/data/EAs_2013_2002_SHP/EAs_2013.shp"))
 
 
 # Importing the crosswalk
 #crosswalk_table_dr <- readxl::read_excel(paste0(here::here(),"/data/TABLE_CORRESPONDANCE_SPATIALE_DR.xls"))
+```
+
+```r
+edu_var = c("Primaire","Moyen","Secondaire","Superieur")
+#educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
+# For the 2002 individus data  
+
+menage_2002 <- 
+  menage_2002 %>% 
+  
+# Calculate a binary variable 'school_attendance' for each household.
+# If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
+# otherwise, it means no one is attending school (1).
+  mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
+    years_schooling_dim = 
+           as.factor(ifelse(years_schooling_dim > 0, 0, 1)) %>% structure(label = "Education: years of schooling"))
+  
+# For the 2013 individus data  
+
+menage_2013 <- 
+  menage_2013 %>% 
+  
+# Calculate a binary variable 'school_attendance' for each household.
+# If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
+# otherwise, it means no one is attending school (1).
+  mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
+    years_schooling_dim = 
+           as.factor(ifelse(years_schooling_dim > 0, 0, 1)) %>% structure(label = "Education: years of schooling"))
 ```
 
 
@@ -140,23 +168,23 @@ menage_2002 %>%
 ```
 
 ```{=html}
-<div id="naensetrbj" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#naensetrbj table {
+<div id="twmuftnsrg" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#twmuftnsrg table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#naensetrbj thead, #naensetrbj tbody, #naensetrbj tfoot, #naensetrbj tr, #naensetrbj td, #naensetrbj th {
+#twmuftnsrg thead, #twmuftnsrg tbody, #twmuftnsrg tfoot, #twmuftnsrg tr, #twmuftnsrg td, #twmuftnsrg th {
   border-style: none;
 }
 
-#naensetrbj p {
+#twmuftnsrg p {
   margin: 0;
   padding: 0;
 }
 
-#naensetrbj .gt_table {
+#twmuftnsrg .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -182,12 +210,12 @@ menage_2002 %>%
   border-left-color: #D3D3D3;
 }
 
-#naensetrbj .gt_caption {
+#twmuftnsrg .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#naensetrbj .gt_title {
+#twmuftnsrg .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -199,7 +227,7 @@ menage_2002 %>%
   border-bottom-width: 0;
 }
 
-#naensetrbj .gt_subtitle {
+#twmuftnsrg .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -211,7 +239,7 @@ menage_2002 %>%
   border-top-width: 0;
 }
 
-#naensetrbj .gt_heading {
+#twmuftnsrg .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -223,13 +251,13 @@ menage_2002 %>%
   border-right-color: #D3D3D3;
 }
 
-#naensetrbj .gt_bottom_border {
+#twmuftnsrg .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#naensetrbj .gt_col_headings {
+#twmuftnsrg .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -244,7 +272,7 @@ menage_2002 %>%
   border-right-color: #D3D3D3;
 }
 
-#naensetrbj .gt_col_heading {
+#twmuftnsrg .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -264,7 +292,7 @@ menage_2002 %>%
   overflow-x: hidden;
 }
 
-#naensetrbj .gt_column_spanner_outer {
+#twmuftnsrg .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -276,15 +304,15 @@ menage_2002 %>%
   padding-right: 4px;
 }
 
-#naensetrbj .gt_column_spanner_outer:first-child {
+#twmuftnsrg .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#naensetrbj .gt_column_spanner_outer:last-child {
+#twmuftnsrg .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#naensetrbj .gt_column_spanner {
+#twmuftnsrg .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -296,11 +324,11 @@ menage_2002 %>%
   width: 100%;
 }
 
-#naensetrbj .gt_spanner_row {
+#twmuftnsrg .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#naensetrbj .gt_group_heading {
+#twmuftnsrg .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -326,7 +354,7 @@ menage_2002 %>%
   text-align: left;
 }
 
-#naensetrbj .gt_empty_group_heading {
+#twmuftnsrg .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -341,15 +369,15 @@ menage_2002 %>%
   vertical-align: middle;
 }
 
-#naensetrbj .gt_from_md > :first-child {
+#twmuftnsrg .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#naensetrbj .gt_from_md > :last-child {
+#twmuftnsrg .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#naensetrbj .gt_row {
+#twmuftnsrg .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -368,7 +396,7 @@ menage_2002 %>%
   overflow-x: hidden;
 }
 
-#naensetrbj .gt_stub {
+#twmuftnsrg .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -381,7 +409,7 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#naensetrbj .gt_stub_row_group {
+#twmuftnsrg .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -395,15 +423,15 @@ menage_2002 %>%
   vertical-align: top;
 }
 
-#naensetrbj .gt_row_group_first td {
+#twmuftnsrg .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#naensetrbj .gt_row_group_first th {
+#twmuftnsrg .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#naensetrbj .gt_summary_row {
+#twmuftnsrg .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -413,16 +441,16 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#naensetrbj .gt_first_summary_row {
+#twmuftnsrg .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#naensetrbj .gt_first_summary_row.thick {
+#twmuftnsrg .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#naensetrbj .gt_last_summary_row {
+#twmuftnsrg .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -432,7 +460,7 @@ menage_2002 %>%
   border-bottom-color: #D3D3D3;
 }
 
-#naensetrbj .gt_grand_summary_row {
+#twmuftnsrg .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -442,7 +470,7 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#naensetrbj .gt_first_grand_summary_row {
+#twmuftnsrg .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -452,7 +480,7 @@ menage_2002 %>%
   border-top-color: #D3D3D3;
 }
 
-#naensetrbj .gt_last_grand_summary_row_top {
+#twmuftnsrg .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -462,11 +490,11 @@ menage_2002 %>%
   border-bottom-color: #D3D3D3;
 }
 
-#naensetrbj .gt_striped {
+#twmuftnsrg .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#naensetrbj .gt_table_body {
+#twmuftnsrg .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -475,7 +503,7 @@ menage_2002 %>%
   border-bottom-color: #D3D3D3;
 }
 
-#naensetrbj .gt_footnotes {
+#twmuftnsrg .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -489,7 +517,7 @@ menage_2002 %>%
   border-right-color: #D3D3D3;
 }
 
-#naensetrbj .gt_footnote {
+#twmuftnsrg .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -498,7 +526,7 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#naensetrbj .gt_sourcenotes {
+#twmuftnsrg .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -512,7 +540,7 @@ menage_2002 %>%
   border-right-color: #D3D3D3;
 }
 
-#naensetrbj .gt_sourcenote {
+#twmuftnsrg .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -520,63 +548,63 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#naensetrbj .gt_left {
+#twmuftnsrg .gt_left {
   text-align: left;
 }
 
-#naensetrbj .gt_center {
+#twmuftnsrg .gt_center {
   text-align: center;
 }
 
-#naensetrbj .gt_right {
+#twmuftnsrg .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#naensetrbj .gt_font_normal {
+#twmuftnsrg .gt_font_normal {
   font-weight: normal;
 }
 
-#naensetrbj .gt_font_bold {
+#twmuftnsrg .gt_font_bold {
   font-weight: bold;
 }
 
-#naensetrbj .gt_font_italic {
+#twmuftnsrg .gt_font_italic {
   font-style: italic;
 }
 
-#naensetrbj .gt_super {
+#twmuftnsrg .gt_super {
   font-size: 65%;
 }
 
-#naensetrbj .gt_footnote_marks {
+#twmuftnsrg .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#naensetrbj .gt_asterisk {
+#twmuftnsrg .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#naensetrbj .gt_indent_1 {
+#twmuftnsrg .gt_indent_1 {
   text-indent: 5px;
 }
 
-#naensetrbj .gt_indent_2 {
+#twmuftnsrg .gt_indent_2 {
   text-indent: 10px;
 }
 
-#naensetrbj .gt_indent_3 {
+#twmuftnsrg .gt_indent_3 {
   text-indent: 15px;
 }
 
-#naensetrbj .gt_indent_4 {
+#twmuftnsrg .gt_indent_4 {
   text-indent: 20px;
 }
 
-#naensetrbj .gt_indent_5 {
+#twmuftnsrg .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -616,44 +644,44 @@ menage_2002 %>%
 <td headers="estimate" class="gt_row gt_center"><br /></td>
 <td headers="ci" class="gt_row gt_center"><br /></td></tr>
     <tr><td headers="label" class="gt_row gt_left" style="font-weight: bold;">years_schooling_dim</td>
-<td headers="n" class="gt_row gt_center">45,377</td>
+<td headers="n" class="gt_row gt_center">78,388</td>
 <td headers="stat_0" class="gt_row gt_center"><br /></td>
 <td headers="stat_1" class="gt_row gt_center"><br /></td>
 <td headers="stat_2" class="gt_row gt_center"><br /></td>
-<td headers="estimate" class="gt_row gt_center">-0.08</td>
-<td headers="ci" class="gt_row gt_center">-0.12, -0.03</td></tr>
+<td headers="estimate" class="gt_row gt_center">0.11</td>
+<td headers="ci" class="gt_row gt_center">0.09, 0.12</td></tr>
     <tr><td headers="label" class="gt_row gt_left">    0</td>
 <td headers="n" class="gt_row gt_center"><br /></td>
-<td headers="stat_0" class="gt_row gt_center">40,418 (89%,40,418/45,377)</td>
-<td headers="stat_1" class="gt_row gt_center">2,175 (91%,2,175/2,385)</td>
-<td headers="stat_2" class="gt_row gt_center">38,243 (89%,38,243/42,992)</td>
+<td headers="stat_0" class="gt_row gt_center">68,732 (88%,68,732/78,388)</td>
+<td headers="stat_1" class="gt_row gt_center">30,347 (86%,30,347/35,396)</td>
+<td headers="stat_2" class="gt_row gt_center">38,385 (89%,38,385/42,992)</td>
 <td headers="estimate" class="gt_row gt_center"><br /></td>
 <td headers="ci" class="gt_row gt_center"><br /></td></tr>
     <tr><td headers="label" class="gt_row gt_left">    1</td>
 <td headers="n" class="gt_row gt_center"><br /></td>
-<td headers="stat_0" class="gt_row gt_center">4,959 (11%,4,959/45,377)</td>
-<td headers="stat_1" class="gt_row gt_center">210 (9%,210/2,385)</td>
-<td headers="stat_2" class="gt_row gt_center">4,749 (11%,4,749/42,992)</td>
+<td headers="stat_0" class="gt_row gt_center">9,656 (12%,9,656/78,388)</td>
+<td headers="stat_1" class="gt_row gt_center">5,049 (14%,5,049/35,396)</td>
+<td headers="stat_2" class="gt_row gt_center">4,607 (11%,4,607/42,992)</td>
 <td headers="estimate" class="gt_row gt_center"><br /></td>
 <td headers="ci" class="gt_row gt_center"><br /></td></tr>
     <tr><td headers="label" class="gt_row gt_left" style="font-weight: bold;">school_attendance_dim</td>
-<td headers="n" class="gt_row gt_center">45,377</td>
+<td headers="n" class="gt_row gt_center">78,388</td>
 <td headers="stat_0" class="gt_row gt_center"><br /></td>
 <td headers="stat_1" class="gt_row gt_center"><br /></td>
 <td headers="stat_2" class="gt_row gt_center"><br /></td>
-<td headers="estimate" class="gt_row gt_center">-0.59</td>
-<td headers="ci" class="gt_row gt_center">-0.63, -0.55</td></tr>
+<td headers="estimate" class="gt_row gt_center">-0.12</td>
+<td headers="ci" class="gt_row gt_center">-0.14, -0.11</td></tr>
     <tr><td headers="label" class="gt_row gt_left">    0</td>
 <td headers="n" class="gt_row gt_center"><br /></td>
-<td headers="stat_0" class="gt_row gt_center">33,928 (75%,33,928/45,377)</td>
-<td headers="stat_1" class="gt_row gt_center">2,252 (94%,2,252/2,385)</td>
+<td headers="stat_0" class="gt_row gt_center">59,593 (76%,59,593/78,388)</td>
+<td headers="stat_1" class="gt_row gt_center">27,917 (79%,27,917/35,396)</td>
 <td headers="stat_2" class="gt_row gt_center">31,676 (74%,31,676/42,992)</td>
 <td headers="estimate" class="gt_row gt_center"><br /></td>
 <td headers="ci" class="gt_row gt_center"><br /></td></tr>
     <tr><td headers="label" class="gt_row gt_left">    1</td>
 <td headers="n" class="gt_row gt_center"><br /></td>
-<td headers="stat_0" class="gt_row gt_center">11,449 (25%,11,449/45,377)</td>
-<td headers="stat_1" class="gt_row gt_center">133 (6%,133/2,385)</td>
+<td headers="stat_0" class="gt_row gt_center">18,795 (24%,18,795/78,388)</td>
+<td headers="stat_1" class="gt_row gt_center">7,479 (21%,7,479/35,396)</td>
 <td headers="stat_2" class="gt_row gt_center">11,316 (26%,11,316/42,992)</td>
 <td headers="estimate" class="gt_row gt_center"><br /></td>
 <td headers="ci" class="gt_row gt_center"><br /></td></tr>
@@ -883,530 +911,23 @@ menage_2013 <- menage_2013 %>%
 L'âge du décès n'est pas mentionné dans le recensement de 2013, nous ne pouvons donc pas calculer le nombre de décès pour les personnes de moins de 18 ans.
 
 
+
+
+
 ```r
-# We can then compute the number of poor 
-
-## For the RGPH 2002
-menage_2002 <- menage_2002 %>%
-  
-  ## Indicator for the being Poor
-  mutate(MPI_poor = as.factor(ifelse(MPI_index > 1/3, 1, 0)) %>%          
-          structure(label = "Multidimensional Poor Household"))
-
-## For the RGPH 2013
-menage_2013 <- menage_2013 %>%
-  
-  ## Indicator for the being Poor
-  mutate(MPI_poor = as.factor(ifelse(MPI_index > 1/2, 1, 0)) %>%          
-          structure(label = "Multidimensional Poor Household"))
-
-
-menage_2002 %>% 
-  
-  # Selecting relevant variables
-  select(RGPH, MPI_poor) %>% 
-  
-  plyr::rbind.fill(
-    
-    # Selecting relevant variables
-    menage_2013 %>% 
-      select(RGPH, MPI_poor)) %>% 
-
-# Generate a summary table using "tbl_summary" for the specified columns
-  tbl_summary(
-    by = RGPH,  # Group by "RGPH" column
-    label = list(MPI_poor ~ "Pauvre (Oui = 1, Non = 0)"),
-    type = c(MPI_poor~"dichotomous"),
-    statistic = list(
-                     all_categorical() ~ "{n} ({p}%)"
-                     ),
-    digits = everything() ~ c(0,0),
-    missing = "no"
-  ) %>% 
-
-  # Modify the table header to provide a descriptive label
-  modify_header(label ~ "Pauvreté multidimensionnelle entre les deux recensements") %>%
-  
-  # Add difference statistics to the table
-  add_difference() %>% 
-  bold_labels() 
-```
-
-```{=html}
-<div id="dokzcpnvzf" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#dokzcpnvzf table {
-  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-#dokzcpnvzf thead, #dokzcpnvzf tbody, #dokzcpnvzf tfoot, #dokzcpnvzf tr, #dokzcpnvzf td, #dokzcpnvzf th {
-  border-style: none;
-}
-
-#dokzcpnvzf p {
-  margin: 0;
-  padding: 0;
-}
-
-#dokzcpnvzf .gt_table {
-  display: table;
-  border-collapse: collapse;
-  line-height: normal;
-  margin-left: auto;
-  margin-right: auto;
-  color: #333333;
-  font-size: 16px;
-  font-weight: normal;
-  font-style: normal;
-  background-color: #FFFFFF;
-  width: auto;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #A8A8A8;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #A8A8A8;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_caption {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-#dokzcpnvzf .gt_title {
-  color: #333333;
-  font-size: 125%;
-  font-weight: initial;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-color: #FFFFFF;
-  border-bottom-width: 0;
-}
-
-#dokzcpnvzf .gt_subtitle {
-  color: #333333;
-  font-size: 85%;
-  font-weight: initial;
-  padding-top: 3px;
-  padding-bottom: 5px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-top-color: #FFFFFF;
-  border-top-width: 0;
-}
-
-#dokzcpnvzf .gt_heading {
-  background-color: #FFFFFF;
-  text-align: center;
-  border-bottom-color: #FFFFFF;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_bottom_border {
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_col_headings {
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_col_heading {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: normal;
-  text-transform: inherit;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: bottom;
-  padding-top: 5px;
-  padding-bottom: 6px;
-  padding-left: 5px;
-  padding-right: 5px;
-  overflow-x: hidden;
-}
-
-#dokzcpnvzf .gt_column_spanner_outer {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: normal;
-  text-transform: inherit;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 4px;
-  padding-right: 4px;
-}
-
-#dokzcpnvzf .gt_column_spanner_outer:first-child {
-  padding-left: 0;
-}
-
-#dokzcpnvzf .gt_column_spanner_outer:last-child {
-  padding-right: 0;
-}
-
-#dokzcpnvzf .gt_column_spanner {
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  vertical-align: bottom;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  overflow-x: hidden;
-  display: inline-block;
-  width: 100%;
-}
-
-#dokzcpnvzf .gt_spanner_row {
-  border-bottom-style: hidden;
-}
-
-#dokzcpnvzf .gt_group_heading {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: middle;
-  text-align: left;
-}
-
-#dokzcpnvzf .gt_empty_group_heading {
-  padding: 0.5px;
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  vertical-align: middle;
-}
-
-#dokzcpnvzf .gt_from_md > :first-child {
-  margin-top: 0;
-}
-
-#dokzcpnvzf .gt_from_md > :last-child {
-  margin-bottom: 0;
-}
-
-#dokzcpnvzf .gt_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  margin: 10px;
-  border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: middle;
-  overflow-x: hidden;
-}
-
-#dokzcpnvzf .gt_stub {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#dokzcpnvzf .gt_stub_row_group {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  padding-left: 5px;
-  padding-right: 5px;
-  vertical-align: top;
-}
-
-#dokzcpnvzf .gt_row_group_first td {
-  border-top-width: 2px;
-}
-
-#dokzcpnvzf .gt_row_group_first th {
-  border-top-width: 2px;
-}
-
-#dokzcpnvzf .gt_summary_row {
-  color: #333333;
-  background-color: #FFFFFF;
-  text-transform: inherit;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#dokzcpnvzf .gt_first_summary_row {
-  border-top-style: solid;
-  border-top-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_first_summary_row.thick {
-  border-top-width: 2px;
-}
-
-#dokzcpnvzf .gt_last_summary_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_grand_summary_row {
-  color: #333333;
-  background-color: #FFFFFF;
-  text-transform: inherit;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#dokzcpnvzf .gt_first_grand_summary_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-top-style: double;
-  border-top-width: 6px;
-  border-top-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_last_grand_summary_row_top {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-style: double;
-  border-bottom-width: 6px;
-  border-bottom-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_striped {
-  background-color: rgba(128, 128, 128, 0.05);
-}
-
-#dokzcpnvzf .gt_table_body {
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_footnotes {
-  color: #333333;
-  background-color: #FFFFFF;
-  border-bottom-style: none;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_footnote {
-  margin: 0px;
-  font-size: 90%;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#dokzcpnvzf .gt_sourcenotes {
-  color: #333333;
-  background-color: #FFFFFF;
-  border-bottom-style: none;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-}
-
-#dokzcpnvzf .gt_sourcenote {
-  font-size: 90%;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#dokzcpnvzf .gt_left {
-  text-align: left;
-}
-
-#dokzcpnvzf .gt_center {
-  text-align: center;
-}
-
-#dokzcpnvzf .gt_right {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-#dokzcpnvzf .gt_font_normal {
-  font-weight: normal;
-}
-
-#dokzcpnvzf .gt_font_bold {
-  font-weight: bold;
-}
-
-#dokzcpnvzf .gt_font_italic {
-  font-style: italic;
-}
-
-#dokzcpnvzf .gt_super {
-  font-size: 65%;
-}
-
-#dokzcpnvzf .gt_footnote_marks {
-  font-size: 75%;
-  vertical-align: 0.4em;
-  position: initial;
-}
-
-#dokzcpnvzf .gt_asterisk {
-  font-size: 100%;
-  vertical-align: 0;
-}
-
-#dokzcpnvzf .gt_indent_1 {
-  text-indent: 5px;
-}
-
-#dokzcpnvzf .gt_indent_2 {
-  text-indent: 10px;
-}
-
-#dokzcpnvzf .gt_indent_3 {
-  text-indent: 15px;
-}
-
-#dokzcpnvzf .gt_indent_4 {
-  text-indent: 20px;
-}
-
-#dokzcpnvzf .gt_indent_5 {
-  text-indent: 25px;
-}
-</style>
-<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
-  <thead>
-    
-    <tr class="gt_col_headings">
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Pauvreté multidimensionnelle entre les deux recensements">Pauvreté multidimensionnelle entre les deux recensements</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;2002&lt;/strong&gt;, N = 35,396&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/span&gt;"><strong>2002</strong>, N = 35,396<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>1</sup></span></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;2013&lt;/strong&gt;, N = 42,992&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/span&gt;"><strong>2013</strong>, N = 42,992<span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>1</sup></span></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;Difference&lt;/strong&gt;&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/span&gt;"><strong>Difference</strong><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>2</sup></span></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;95% CI&lt;/strong&gt;&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;2,3&lt;/sup&gt;&lt;/span&gt;"><strong>95% CI</strong><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>2,3</sup></span></th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="&lt;strong&gt;p-value&lt;/strong&gt;&lt;span class=&quot;gt_footnote_marks&quot; style=&quot;white-space:nowrap;font-style:italic;font-weight:normal;&quot;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/span&gt;"><strong>p-value</strong><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>2</sup></span></th>
-    </tr>
-  </thead>
-  <tbody class="gt_table_body">
-    <tr><td headers="label" class="gt_row gt_left" style="font-weight: bold;">Pauvre (Oui = 1, Non = 0)</td>
-<td headers="stat_1" class="gt_row gt_center">628 (2%)</td>
-<td headers="stat_2" class="gt_row gt_center">1,414 (3%)</td>
-<td headers="estimate" class="gt_row gt_center">-1.5%</td>
-<td headers="ci" class="gt_row gt_center">-1.7%, -1.3%</td>
-<td headers="p.value" class="gt_row gt_center"><0.001</td></tr>
-  </tbody>
-  
-  <tfoot class="gt_footnotes">
-    <tr>
-      <td class="gt_footnote" colspan="6"><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>1</sup></span> n (%)</td>
-    </tr>
-    <tr>
-      <td class="gt_footnote" colspan="6"><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>2</sup></span> Two sample test for equality of proportions</td>
-    </tr>
-    <tr>
-      <td class="gt_footnote" colspan="6"><span class="gt_footnote_marks" style="white-space:nowrap;font-style:italic;font-weight:normal;"><sup>3</sup></span> CI = Confidence Interval</td>
-    </tr>
-  </tfoot>
-</table>
-</div>
+mat_status_var = c("Monogame","Polygame","Celibataire","Veuf","Divorce")
+fertility_var = c("fertility")
+educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
+literacy_var = c("Literacy_French","Literacy_Arabic","Literacy_Wolof","Literacy_Pulaar","Literacy_Mandingo","Literacy_Diola","Literacy_Soninke")#"Literacy_Sereer",
+mig_var = c("resident_pres","resident_abs")#,"resident_vis"
+gender_var = c("homme","femme","hh_size")
+income_var = c("I_repas_saute","I_soins_medicaux")
+study_var = c(gender_var,
+              fertility_var,
+              educ_var,
+              literacy_var,
+              mig_var,
+              income_var)
 ```
 
 
@@ -1415,25 +936,24 @@ menage_2002 %>%
 # Grouping menage_2002 data by id_dr and summarizing relevant information
 plt_df_2002 <- menage_2002 %>% 
   group_by(id_dr) %>% 
-  summarise(nbr_menage = n(),  # Counting the number of households in each id_dr group
-            #nbr_poor = sum(MPI_poor == 1, na.rm = TRUE),# Counting the number of poor households in each id_dr group
-            nb_indiv = sum(nb_indiv, na.rm = TRUE),
-            MPI_index = mean(MPI_index, na.rm = TRUE),
-            nbr_educ_primaire = sum(niveau_instruction_cm == "elementaire", na.rm = TRUE),
-            nbr_educ_moyen = sum(niveau_instruction_cm == "moyen", na.rm = TRUE),
-            nbr_educ_secondaire = sum(niveau_instruction_cm == "secondaire", na.rm = TRUE),
-            nbr_educ_superieur = sum(niveau_instruction_cm == "superieur", na.rm = TRUE),
-            nbr_educ_aucune = sum(niveau_instruction_cm == "aucune", na.rm = TRUE),
+  summarise_at(study_var, sum, na.rm = TRUE) %>% 
+  left_join(
+    menage_2002 %>% 
+  group_by(id_dr) %>%
+    summarise(menage = n(),  # Counting the number of households in each id_dr group
+            MPI_mean = mean(MPI_index, na.rm = TRUE),
             median_cm_age = median(age_cm, na.rm =TRUE),
             mean_cm_age = mean(age_cm, na.rm =TRUE),
-            nbr_cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
-            nbr_cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
-            pct_cm_homme = nbr_cm_homme/(nbr_cm_homme + nbr_cm_femme)) %>%  
+            cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
+            cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
+            pct_cm_homme = cm_homme/(cm_homme + cm_femme),
+            pct_cm_femme = cm_femme/(cm_homme + cm_femme))
+  )%>%  
   # Ungrouping the data to avoid unintended side effects in subsequent operations
   ungroup() %>%
   
   # Calculating the proportion of poor households and adding the results as a new column
-  mutate(#prop_poor = nbr_poor / nbr_menage,
+  mutate(#prop_poor = poor / menage,
                   
          # The information on the survey
          RGPH = "2002") %>%
@@ -1442,38 +962,91 @@ plt_df_2002 <- menage_2002 %>%
   # Joining with the sp_rgph_2002 data frame based on the id_dr column
   left_join(sp_rgph_2002, by = "id_dr")
 
+
+
 # The RGPH 2013
 # Grouping menage_2013 data by id_dr and summarizing relevant information
 plt_df_2013 <- menage_2013 %>% 
   group_by(id_dr) %>% 
-  summarise(nbr_menage = n(),  # Counting the number of households in each id_dr group
-            #nbr_poor = sum(MPI_poor == 1, na.rm = TRUE),# Counting the number of poor households in each id_dr group
-            nb_indiv = sum(nb_indiv, na.rm = TRUE),
-            MPI_index = mean(MPI_index, na.rm = TRUE),
-            nbr_educ_primaire = sum(niveau_instruction_cm == "elementaire", na.rm = TRUE),
-            nbr_educ_moyen = sum(niveau_instruction_cm == "moyen", na.rm = TRUE),
-            nbr_educ_secondaire = sum(niveau_instruction_cm == "secondaire", na.rm = TRUE),
-            nbr_educ_superieur = sum(niveau_instruction_cm == "superieur", na.rm = TRUE),
-            median_cm_age = median(age_cm, na.rm =TRUE),
-            mean_cm_age = mean(age_cm, na.rm =TRUE),
-            nbr_cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
-            nbr_cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
-            pct_cm_homme = nbr_cm_homme/(nbr_cm_homme + nbr_cm_femme)) %>%  
+  summarise_at(study_var, sum, na.rm = TRUE) %>% 
+  left_join(
+    menage_2013 %>% 
+      group_by(id_dr) %>%
+      summarise(menage = n(),  # Counting the number of households in each id_dr group
+                MPI_mean = mean(MPI_index, na.rm = TRUE),
+                median_cm_age = median(age_cm, na.rm =TRUE),
+                mean_cm_age = mean(age_cm, na.rm =TRUE),
+                cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
+                cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
+                pct_cm_homme = cm_homme/(cm_homme + cm_femme),
+                pct_cm_femme = cm_femme/(cm_homme + cm_femme))
+  )%>%  
   # Ungrouping the data to avoid unintended side effects in subsequent operations
   ungroup() %>%
   
   # Calculating the proportion of poor households and adding the results as a new column
-  mutate(#prop_poor = nbr_poor / nbr_menage,
-         
-         # The information on the survey
-         RGPH = "2013") %>%
-
-
+  mutate(#prop_poor = poor / menage,
+    
+    # The information on the survey
+    RGPH = "2013") %>%
+  
+  
   # Joining with the sp_rgph_2013 data frame based on the id_dr column
   left_join(
     sp_rgph_2013 %>%
   rename(id_dr=COD_DR2012), by = "id_dr")
 ```
+
+
+
+```r
+plt_df_2013 = plt_df_2013 %>% 
+  dplyr::rename(REGION=REG,
+                NOM_ARRDT=CAV,
+                NOM_CA=CCRCA
+                )
+
+other_var = c(
+              "MPI_mean",
+              "menage",
+              "median_cm_age",
+              "mean_cm_age",
+              "cm_homme",
+              "cm_femme",
+              "pct_cm_homme",
+              "pct_cm_femme",
+              "geometry"
+              )
+```
+
+
+```r
+plt_df_2002 = plt_df_2002 %>% 
+  dplyr::select(#"OBJECTID",
+              "id_dr",
+              "REGION",
+              "DEPT",
+              "NOM_ARRDT",
+              "NOM_CA",
+              "RGPH",
+              study_var,
+              other_var)
+
+
+plt_df_2013 = plt_df_2013 %>% 
+  dplyr::select(#"OBJECTID",
+              "id_dr",
+              "REGION",
+              "DEPT",
+              "NOM_ARRDT",
+              "NOM_CA",
+              "RGPH",
+              study_var,
+              other_var)
+```
+
+
+
 
 
 
@@ -1484,6 +1057,13 @@ df_2002=plt_df_2002 %>%
 df_2013=plt_df_2013 %>%
   # Convert the resulting data frame to a spatial data frame using st_as_sf()
   st_as_sf()
+
+
+
+# lookup <- c(ID = "id_dr")
+# df_2002=plt_df_2002 %>% dplyr::rename(all_of(lookup))
+# df_2013=plt_df_2013 %>% dplyr::rename(all_of(lookup))
+
 # Saving the merged dataset in the sf format (for the household data)
 sf::st_write(obj = df_2002, paste0(here::here(), "/output/output_data/MPI_data_dr_2002.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
 ```
@@ -1492,7 +1072,7 @@ sf::st_write(obj = df_2002, paste0(here::here(), "/output/output_data/MPI_data_d
 ## Deleting layer `MPI_data_dr_2002' using driver `ESRI Shapefile'
 ## Writing layer `MPI_data_dr_2002' to data source 
 ##   `C:/Users/AHema/OneDrive - CGIAR/Desktop/These Pape Djiby/Analysing Senegal Census Data/output/output_data/MPI_data_dr_2002.shp' using driver `ESRI Shapefile'
-## Writing 268 features with 29 fields and geometry type Polygon.
+## Writing 268 features with 34 fields and geometry type Polygon.
 ```
 
 ```r
@@ -1504,7 +1084,7 @@ sf::st_write(obj = df_2013, paste0(here::here(), "/output/output_data/MPI_data_d
 ## Deleting layer `MPI_data_dr_2013' using driver `ESRI Shapefile'
 ## Writing layer `MPI_data_dr_2013' to data source 
 ##   `C:/Users/AHema/OneDrive - CGIAR/Desktop/These Pape Djiby/Analysing Senegal Census Data/output/output_data/MPI_data_dr_2013.shp' using driver `ESRI Shapefile'
-## Writing 435 features with 37 fields and geometry type Polygon.
+## Writing 435 features with 34 fields and geometry type Polygon.
 ```
 
 
@@ -1517,22 +1097,22 @@ MPI_data_dr <- plt_df_2002 %>%
 
 
 
-  # Mutate columns and add labels using structure() for better readability
-  mutate(
-    id_dr = id_dr %>% structure(label = "DR identifier"),
-    MPI_index = MPI_index %>% structure(label = "Multidimensional Poverty Index (MPI)"),
-    #prop_poor = prop_poor %>% structure(label = "Proportion of poor in the DR"),
-    #nbr_poor = nbr_poor %>% structure(label = "Number of poor households in the DR"),
-    nbr_menage = nbr_menage %>% structure(label = "Number of households in the DR"),
-    nb_indiv = nb_indiv %>% structure(label = "Number of household members"),
-    RGPH = RGPH %>% structure(label = "RGPH year"),
-    Shape_Area = Shape_Area %>% structure(label = "Shape Area"),
-    Shape_Leng = Shape_Leng %>% structure(label = "Shape Length"),
-    REGION = REGION %>% structure(label = "Region"), 
-    DEPT = DEPT %>% structure(label = "Department"),
-    NOM_ARRDT = NOM_ARRDT %>% structure(label = "Name district"), 
-    NOM_CA = NOM_CA %>% structure(label = "Name CA")
-  ) %>%
+  # # Mutate columns and add labels using structure() for better readability
+  # mutate(
+  #   id_dr = id_dr %>% structure(label = "DR identifier"),
+  #   MPI_mean = MPI_mean %>% structure(label = "Multidimensional Poverty Index (MPI)"),
+  #   #prop_poor = prop_poor %>% structure(label = "Proportion of poor in the DR"),
+  #   #poor = poor %>% structure(label = "Number of poor households in the DR"),
+  #   menage = menage %>% structure(label = "Number of households in the DR"),
+  #   hh_size = hh_size %>% structure(label = "Number of household members"),
+  #   RGPH = RGPH %>% structure(label = "RGPH year"),
+  #   Shape_Area = Shape_Area %>% structure(label = "Shape Area"),
+  #   Shape_Leng = Shape_Leng %>% structure(label = "Shape Length"),
+  #   REGION = REGION %>% structure(label = "Region"), 
+  #   DEPT = DEPT %>% structure(label = "Department"),
+  #   NOM_ARRDT = NOM_ARRDT %>% structure(label = "Name district"), 
+  #   NOM_CA = NOM_CA %>% structure(label = "Name CA")
+  # ) %>%
 
 
   # Convert the resulting data frame to a spatial data frame using st_as_sf()
@@ -1541,7 +1121,7 @@ MPI_data_dr <- plt_df_2002 %>%
 # Creating a ggplot object, mapping the fill color to the MPI
 MPI_data_dr %>% 
     
-      ggplot(aes(fill = MPI_index)) + 
+      ggplot(aes(fill = MPI_mean)) + 
       
       # Adding spatial features to the plot
       geom_sf() +
@@ -1561,22 +1141,18 @@ MPI_data_dr %>%
             axis.text = element_blank(),
             legend.position = c(.92, .03), 
             text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8)) +
-      
-      # Adding plot titles, caption and saving the plot
-      labs(
-        title = "Indice Multidimensionnel de Pauvreté au Sénégal par année et district (en %)",
-        caption = "Données : RGPH, Indicateur: Indice Multidimensionnel de Pauvreté (IMP).")
+            panel.grid = element_line(color = "white", size = 0.8))
 ```
 
-![](03_MPI-Senegal-Census-data_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](03_MPI-Senegal-Census-data_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 ```r
+      # Adding plot titles, caption and saving the plot
+      #  + labs(
+      #   title = "Indice Multidimensionnel de Pauvreté au Sénégal par année et district (en %)",
+      #   caption = "Données : RGPH, Indicateur: Indice Multidimensionnel de Pauvreté (IMP).")
     ggsave(paste0(here::here(),"/output/output_img/MPI_rgph.pdf"), width = 8, height = 5)
 ```
-
-
-
 
 
 

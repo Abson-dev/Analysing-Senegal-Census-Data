@@ -1,5 +1,5 @@
 ---
-title: "Spatial analysis using the Senegal Census data"
+title: "Spatial analysis using the Guediawaye Census data"
 author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
 date: "`r Sys.Date()`"
 output: 
@@ -102,34 +102,34 @@ weights_2002 <- nb2listw(neighbors_2002, style = "W")
 
 
 ```{r}
-MPI_data_dr_2013$lag_MPI_ndx <- lag.listw(weights_2013, MPI_data_dr_2013$MPI_ndx)
-MPI_data_dr_2002$lag_MPI_ndx <- lag.listw(weights_2002, MPI_data_dr_2002$MPI_ndx)
+MPI_data_dr_2013$lag_MPI_men <- lag.listw(weights_2013, MPI_data_dr_2013$MPI_men)
+MPI_data_dr_2002$lag_MPI_men <- lag.listw(weights_2002, MPI_data_dr_2002$MPI_men)
 ```
 
 ```{r}
-ggplot(MPI_data_dr_2013, aes(x = MPI_ndx, y = lag_MPI_ndx)) + 
+ggplot(MPI_data_dr_2013, aes(x = MPI_men, y = lag_MPI_men)) + 
   geom_point(alpha = 0.3) + 
   geom_abline(color = "red") + 
   theme_minimal() + 
-  labs(title = " Scatterplot of MPI relative to its spatial lag for Senegal census 2013",
+  labs(title = " Scatterplot of MPI relative to its spatial lag for Guediawaye census 2013",
        x = "MPI",
        y = "Spatial lag, MPI", 
        caption = "")
 ggsave(paste0(here::here(),"/output/output_img/mpi_spatialLag_rgph_2013.pdf"), width = 8, height = 5)
 
-ggplot(MPI_data_dr_2002, aes(x = MPI_ndx, y = lag_MPI_ndx)) + 
+ggplot(MPI_data_dr_2002, aes(x = MPI_men, y = lag_MPI_men)) + 
   geom_point(alpha = 0.3) + 
   geom_abline(color = "red") + 
   theme_minimal() + 
-  labs(title = " Scatterplot of MPI relative to its spatial lag for Senegal census 2002",
+  labs(title = " Scatterplot of MPI relative to its spatial lag for Guediawaye census 2002",
        x = "MPI",
        y = "Spatial lag, MPI", 
        caption = "")
 ggsave(paste0(here::here(),"/output/output_img/mpi_spatialLag_rgph_2002.pdf"), width = 8, height = 5)
 ```
 ```{r}
-moran.test(MPI_data_dr_2013$MPI_ndx, weights_2013)
-moran.test(MPI_data_dr_2002$MPI_ndx, weights_2002)
+moran.test(MPI_data_dr_2013$MPI_men, weights_2013)
+moran.test(MPI_data_dr_2002$MPI_men, weights_2002)
 ```
 
 
@@ -152,11 +152,11 @@ Given that the returned results are z-scores, an analyst can choose hot spot thr
 ```{r echo=TRUE}
 # For Gi*, re-compute the weights with `include.self()`
 localg_weights_2013 <- nb2listw(include.self(neighbors_2013))
-MPI_data_dr_2013$localG <- localG(MPI_data_dr_2013$MPI_ndx, localg_weights_2013)
+MPI_data_dr_2013$localG <- localG(MPI_data_dr_2013$MPI_men, localg_weights_2013)
 MPI_data_dr_2013$localG <- as.numeric(MPI_data_dr_2013$localG)
 #
 localg_weights_2002 <- nb2listw(include.self(neighbors_2002))
-MPI_data_dr_2002$localG <- localG(MPI_data_dr_2002$MPI_ndx, localg_weights_2002)
+MPI_data_dr_2002$localG <- localG(MPI_data_dr_2002$MPI_men, localg_weights_2002)
 MPI_data_dr_2002$localG <- as.numeric(MPI_data_dr_2002$localG)
 ```
 
@@ -166,7 +166,7 @@ ggplot(MPI_data_dr_2013) +
   scale_fill_distiller(palette = "RdYlBu") + 
   theme_void() + 
   labs(fill = "Local Gi* statistic") +
-labs(title = "Map of local Gi* scores for Senegal Census 2013")
+labs(title = "Map of local Gi* scores for Guediawaye Census 2013")
 ggsave(paste0(here::here(),"/output/output_img/localgi_rgph_2013.pdf"), width = 8, height = 5)
 
 #
@@ -175,7 +175,7 @@ ggplot(MPI_data_dr_2002) +
   scale_fill_distiller(palette = "RdYlBu") + 
   theme_void() + 
   labs(fill = "Local Gi* statistic") +
-labs(title = "Map of local Gi* scores for Senegal Census 2002")
+labs(title = "Map of local Gi* scores for Guediawaye Census 2002")
 ggsave(paste0(here::here(),"/output/output_img/localgi_rgph_2002.pdf"), width = 8, height = 5)
 ```
 
@@ -193,7 +193,7 @@ ggplot(MPI_data_dr_2013) +
   geom_sf(aes(fill = hotspot), color = "grey90", size = 0.1) + 
   scale_fill_manual(values = c("red", "blue", "grey")) + 
   theme_void() +
-labs(title = "Map of local Gi* scores with significant clusters highlighted for Senegal Census 2013")
+labs(title = "Map of local Gi* scores with significant clusters highlighted for Guediawaye Census 2013")
 ggsave(paste0(here::here(),"/output/output_img/localgicluster_rgph_2013.pdf"), width = 8, height = 5)
 ###
 MPI_data_dr_2002 <- MPI_data_dr_2002 %>%
@@ -207,7 +207,7 @@ ggplot(MPI_data_dr_2002) +
   geom_sf(aes(fill = hotspot), color = "grey90", size = 0.1) + 
   scale_fill_manual(values = c("red", "blue", "grey")) + 
   theme_void() +
-labs(title = "Map of local Gi* scores with significant clusters highlighted for Senegal Census 2002")
+labs(title = "Map of local Gi* scores with significant clusters highlighted for Guediawaye Census 2002")
 ggsave(paste0(here::here(),"/output/output_img/localgicluster_rgph_2002.pdf"), width = 8, height = 5)
 ```
 
@@ -216,11 +216,11 @@ ggsave(paste0(here::here(),"/output/output_img/localgicluster_rgph_2002.pdf"), w
 ```{r}
 set.seed(1994)
 
-MPI_data_dr_2013$scaled_MPI_ndx <- as.numeric(scale(MPI_data_dr_2013$MPI_ndx))
-MPI_data_dr_2002$scaled_MPI_ndx <- as.numeric(scale(MPI_data_dr_2002$MPI_ndx))
+MPI_data_dr_2013$scaled_MPI_men <- as.numeric(scale(MPI_data_dr_2013$MPI_men))
+MPI_data_dr_2002$scaled_MPI_men <- as.numeric(scale(MPI_data_dr_2002$MPI_men))
 
 dfw_lisa_2013 <- localmoran_perm(
-  MPI_data_dr_2013$scaled_MPI_ndx, 
+  MPI_data_dr_2013$scaled_MPI_men, 
   weights_2013, 
   nsim = 999L, 
   alternative = "two.sided"
@@ -230,13 +230,13 @@ dfw_lisa_2013 <- localmoran_perm(
               "p_i_sim", "pi_sim_folded", "skewness", "kurtosis"))
 
 dfw_lisa_2013_df <- MPI_data_dr_2013 %>%
-  select(id_dr, scaled_MPI_ndx) %>%
-  mutate(lagged_estimate = lag.listw(weights_2013, scaled_MPI_ndx)) %>%
+  select(id_dr, scaled_MPI_men) %>%
+  mutate(lagged_estimate = lag.listw(weights_2013, scaled_MPI_men)) %>%
   bind_cols(dfw_lisa_2013)
 
 ##
 dfw_lisa_2002 <- localmoran_perm(
-  MPI_data_dr_2002$scaled_MPI_ndx, 
+  MPI_data_dr_2002$scaled_MPI_men, 
   weights_2002, 
   nsim = 999L, 
   alternative = "two.sided"
@@ -246,8 +246,8 @@ dfw_lisa_2002 <- localmoran_perm(
               "p_i_sim", "pi_sim_folded", "skewness", "kurtosis"))
 
 dfw_lisa_2002_df <- MPI_data_dr_2002 %>%
-  select(id_dr, scaled_MPI_ndx) %>%
-  mutate(lagged_estimate = lag.listw(weights_2002, scaled_MPI_ndx)) %>%
+  select(id_dr, scaled_MPI_men) %>%
+  mutate(lagged_estimate = lag.listw(weights_2002, scaled_MPI_men)) %>%
   bind_cols(dfw_lisa_2002)
 ```
 
@@ -263,10 +263,10 @@ The LISA data frame is attached to the Census tract shapes after computing the l
 dfw_lisa_2013_clusters <- dfw_lisa_2013_df %>%
   mutate(lisa_cluster = case_when(
     p_i >= 0.05 ~ "Not significant",
-    scaled_MPI_ndx > 0 & local_i > 0 ~ "High-high",
-    scaled_MPI_ndx > 0 & local_i < 0 ~ "High-low",
-    scaled_MPI_ndx < 0 & local_i > 0 ~ "Low-low",
-    scaled_MPI_ndx < 0 & local_i < 0 ~ "Low-high"
+    scaled_MPI_men > 0 & local_i > 0 ~ "High-high",
+    scaled_MPI_men > 0 & local_i < 0 ~ "High-low",
+    scaled_MPI_men < 0 & local_i > 0 ~ "Low-low",
+    scaled_MPI_men < 0 & local_i < 0 ~ "Low-high"
   ))
 
 
@@ -274,10 +274,10 @@ dfw_lisa_2013_clusters <- dfw_lisa_2013_df %>%
 dfw_lisa_2002_clusters <- dfw_lisa_2002_df %>%
   mutate(lisa_cluster = case_when(
     p_i >= 0.05 ~ "Not significant",
-    scaled_MPI_ndx > 0 & local_i > 0 ~ "High-high",
-    scaled_MPI_ndx > 0 & local_i < 0 ~ "High-low",
-    scaled_MPI_ndx < 0 & local_i > 0 ~ "Low-low",
-    scaled_MPI_ndx < 0 & local_i < 0 ~ "Low-high"
+    scaled_MPI_men > 0 & local_i > 0 ~ "High-high",
+    scaled_MPI_men > 0 & local_i < 0 ~ "High-low",
+    scaled_MPI_men < 0 & local_i > 0 ~ "Low-low",
+    scaled_MPI_men < 0 & local_i < 0 ~ "Low-high"
   ))
 ```
 
@@ -290,7 +290,7 @@ color_values <- c(`High-high` = "red",
                   `Low-high` = "lightblue", 
                   `Not significant` = "white")
 
-ggplot(dfw_lisa_2013_clusters, aes(x = scaled_MPI_ndx, 
+ggplot(dfw_lisa_2013_clusters, aes(x = scaled_MPI_men, 
                               y = lagged_estimate,
                               fill = lisa_cluster)) + 
   geom_point(color = "black", shape = 21, size = 2) + 
@@ -301,11 +301,11 @@ ggplot(dfw_lisa_2013_clusters, aes(x = scaled_MPI_ndx,
   labs(x = "MPI (z-score)",
        y = "Spatial lag of MPI (z-score)",
        fill = "Cluster type") + 
-  labs(title = "LISA quadrant scatterplot for Senegal Census 2013")
+  labs(title = "LISA quadrant scatterplot for Guediawaye Census 2013")
 ggsave(paste0(here::here(),"/output/output_img/lisaquadrant_rgph_2013.pdf"), width = 8, height = 5)
 
 ##
-ggplot(dfw_lisa_2002_clusters, aes(x = scaled_MPI_ndx, 
+ggplot(dfw_lisa_2002_clusters, aes(x = scaled_MPI_men, 
                                    y = lagged_estimate,
                                    fill = lisa_cluster)) + 
   geom_point(color = "black", shape = 21, size = 2) + 
@@ -316,14 +316,14 @@ ggplot(dfw_lisa_2002_clusters, aes(x = scaled_MPI_ndx,
   labs(x = "MPI (z-score)",
        y = "Spatial lag of MPI (z-score)",
        fill = "Cluster type") + 
-  labs(title = "LISA quadrant scatterplot for Senegal Census 2002")
+  labs(title = "LISA quadrant scatterplot for Guediawaye Census 2002")
 ggsave(paste0(here::here(),"/output/output_img/lisaquadrant_rgph_2002.pdf"), width = 8, height = 5)
 ```
 
 ```{r}
 
 ggplot(dfw_lisa_2013_clusters, aes(fill = lisa_cluster)) + 
-  labs(title = " LISA cluster map for Senegal Census 2013") +
+  labs(title = " LISA cluster map for Guediawaye Census 2013") +
   geom_sf(size = 0.1) + 
   theme_void() + 
   scale_fill_manual(values = color_values) + 
@@ -332,7 +332,7 @@ ggsave(paste0(here::here(),"/output/output_img/lisacluster_rgph_2013.pdf"), widt
 
 ###
 ggplot(dfw_lisa_2002_clusters, aes(fill = lisa_cluster)) + 
-  labs(title = " LISA cluster map for Senegal Census 2002") +
+  labs(title = " LISA cluster map for Guediawaye Census 2002") +
   geom_sf(size = 0.1) + 
   theme_void() + 
   scale_fill_manual(values = color_values) + 

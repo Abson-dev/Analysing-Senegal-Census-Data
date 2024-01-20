@@ -104,7 +104,7 @@ MPI_data_dr %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -124,7 +124,7 @@ ggplot(MPI_data_dr, aes(x = MPI_men)) +
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -167,7 +167,7 @@ MPI_data_dr %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -294,11 +294,11 @@ pca_2013_tibble<-pca_2013_tibble %>%
   pivot_longer(PC1:PC5, names_to = "component", values_to = "value")
 
 
-pca_2013_tibble$RGPH<-"2013"
+pca_2013_tibble$RGPH<-"Census 2013"
 pca_2002_tibble<-pca_2002_tibble %>% 
   select(predictor:PC5) %>%
   pivot_longer(PC1:PC5, names_to = "component", values_to = "value")
-pca_2002_tibble$RGPH<-"2002"
+pca_2002_tibble$RGPH<-"Census 2002"
 
 pca_tibble <- pca_2013_tibble %>%
   plyr::rbind.fill(pca_2002_tibble)
@@ -316,7 +316,7 @@ pca_tibble %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -360,8 +360,8 @@ ggplot(dfw_pca_2002, aes(fill = PC1)) +
   scale_fill_viridis_c()
 ```
 ```{r}
-dfw_pca_2002$RGPH<-"2002"
-dfw_pca_2013$RGPH<-"2013"
+dfw_pca_2002$RGPH<-"Census 2002"
+dfw_pca_2013$RGPH<-"Census 2013"
 dfw_pca <- dfw_pca_2002 %>%
   plyr::rbind.fill(dfw_pca_2013) %>% 
   st_as_sf()
@@ -382,7 +382,7 @@ dfw_pca %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -403,7 +403,7 @@ dfw_pca %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -452,9 +452,9 @@ ggplot(MPI_data_dr_2002_for_model, aes(x = residuals)) +
 
 ```{r}
 MPI_data_dr_for_model <- MPI_data_dr_2002_for_model %>%
-  dplyr::mutate(RGPH = "2002") %>% 
+  dplyr::mutate(RGPH = "Census 2002") %>% 
   plyr::rbind.fill(MPI_data_dr_2013_for_model %>%
-  dplyr::mutate(RGPH = "2013"))
+  dplyr::mutate(RGPH = "Census 2013"))
 
 ggplot(MPI_data_dr_for_model, aes(x = residuals)) + 
       geom_histogram(bins = 100, alpha = 0.5, color = "navy",
@@ -468,7 +468,7 @@ ggplot(MPI_data_dr_for_model, aes(x = residuals)) +
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -513,9 +513,9 @@ ggplot(MPI_data_dr_2002_for_model, aes(x = residuals, y = lagged_residuals)) +
 ```
 ```{r}
 MPI_data_dr_for_model <- MPI_data_dr_2002_for_model %>%
-  dplyr::mutate(RGPH = "2002") %>% 
+  dplyr::mutate(RGPH = "Census 2002") %>% 
   plyr::rbind.fill(MPI_data_dr_2013_for_model %>%
-  dplyr::mutate(RGPH = "2013"))
+  dplyr::mutate(RGPH = "Census 2013"))
 
 ggplot(MPI_data_dr_for_model, aes(x = residuals, y = lagged_residuals)) + 
   geom_point(alpha = 0.5) + 
@@ -528,7 +528,7 @@ ggplot(MPI_data_dr_for_model, aes(x = residuals, y = lagged_residuals)) +
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -622,9 +622,9 @@ ggplot(gw_model_2002_results, aes(fill = Local_R2)) +
 
 ```{r}
 gw_model_results <- gw_model_2002_results %>%
-  dplyr::mutate(RGPH = "2002") %>% 
+  dplyr::mutate(RGPH = "Census 2002") %>% 
   plyr::rbind.fill(gw_model_2013_results %>%
-  dplyr::mutate(RGPH = "2013")) %>% 
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
   st_as_sf()
 
 
@@ -645,7 +645,7 @@ gw_model_results %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -673,9 +673,9 @@ ggplot(gw_model_2002_results, aes(fill = menage)) +
 
 ```{r}
 gw_model_results <- gw_model_2002_results %>%
-  dplyr::mutate(RGPH = "2002") %>% 
+  dplyr::mutate(RGPH = "Census 2002") %>% 
   plyr::rbind.fill(gw_model_2013_results %>%
-  dplyr::mutate(RGPH = "2013")) %>% 
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
   st_as_sf()
 
 
@@ -696,7 +696,7 @@ gw_model_results %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -722,9 +722,9 @@ ggplot(gw_model_2002_results, aes(fill = pop_density)) +
 
 ```{r}
 gw_model_results <- gw_model_2002_results %>%
-  dplyr::mutate(RGPH = "2002") %>% 
+  dplyr::mutate(RGPH = "Census 2002") %>% 
   plyr::rbind.fill(gw_model_2013_results %>%
-  dplyr::mutate(RGPH = "2013")) %>% 
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
   st_as_sf()
 
 
@@ -745,7 +745,7 @@ gw_model_results %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -801,9 +801,9 @@ ggplot(dfw_clusters_2002, aes(fill = cluster)) +
 ```
 ```{r}
 dfw_clusters <- dfw_clusters_2002 %>%
-  dplyr::mutate(RGPH = "2002") %>% 
+  dplyr::mutate(RGPH = "Census 2002") %>% 
   plyr::rbind.fill(dfw_clusters_2013 %>%
-  dplyr::mutate(RGPH = "2013")) %>% 
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
   st_as_sf()
 
 
@@ -821,7 +821,7 @@ dfw_clusters %>%
             legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
 ```
@@ -924,11 +924,13 @@ ggplot(dfw_clusters_2002, aes(fill = region)) +
   scale_fill_brewer(palette = "Set1") + 
   theme_void()
 ```
+
+
 ```{r}
 dfw_clusters <- dfw_clusters_2002 %>%
-  dplyr::mutate(RGPH = "2002") %>% 
+  dplyr::mutate(RGPH = "Census 2002") %>% 
   plyr::rbind.fill(dfw_clusters_2013 %>%
-  dplyr::mutate(RGPH = "2013")) %>% 
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
   st_as_sf()
 
 
@@ -937,17 +939,33 @@ dfw_clusters %>%
       ggplot(aes(fill = region)) + 
       
   geom_sf(size = 0.1) + 
-  scale_fill_brewer(palette = "Set1") + 
+  scale_fill_brewer(palette = "Set2") + 
       facet_wrap(~RGPH) +
       
       # Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
+            #legend.background = element_blank(),
             axis.ticks = element_blank(),
             axis.text = element_blank(),
-            legend.position = c(.92, .03), 
+            legend.position = "bottom", 
             text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+            #panel.grid = element_line(color = "white", size = 0.8),
+            legend.box.background = element_rect(),
+            legend.box.margin = margin(6, 6, 6, 6),
+            plot.background = element_rect(fill = "white"))+
+  ggspatial::annotation_scale(
+    location = "br",
+    bar_cols = c("grey60", "white"),
+    text_family = "ArcherPro Book"
+  ) +
+  ggspatial::annotation_north_arrow(
+    location = "tl", which_north = "true",
+    #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+    #which_north = "grid",
+  height = unit(1, "cm"),
+  width = unit(1, "cm"),
+  )
 ```
+
 
