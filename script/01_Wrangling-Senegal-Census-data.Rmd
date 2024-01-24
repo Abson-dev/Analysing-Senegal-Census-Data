@@ -1095,7 +1095,7 @@ menage_2013 <- menage_2013 %>%
 
 ```{r echo=TRUE, eval=TRUE, include=TRUE}
 #For the RGPH 2002 dataset
-QB03 
+#QB03 
      # 1       Chef de menage
      # 2               Epouse
      # 3               Enfant
