@@ -405,7 +405,7 @@ menage_2002 <- menage_2002 %>%
     Veuf = as.numeric(Veuf) %>%
            structure(label = "Nombre de veuf/veuve dans le ménage"),
     Divorce = as.numeric(Divorce) %>%
-           structure(label = "Nombre de divorce dans le ménage")
+           structure(label = "Nombre de divorcé dans le ménage")
     ),
       
       # Merging by matching columns in both datasets
@@ -1075,13 +1075,13 @@ menage_2013 <- menage_2013 %>%
       filter(B04==1) %>% #"Chef de ménage"
       
       # Renaming the B32 column to "niveau_instruction_cm"
-      mutate(niveau_instruction_cm = B32 %>% structure(label=paste0(Hmisc::label(individus_2013$B32)," CM")), 
+      mutate(niveau_instruction_cm = B32 %>% structure(label=paste0(Hmisc::label(individus_2013$B32),"du CM")), 
       
       # Creating the "sexe_cm" variable from B06 column
-          sexe_cm = B06 %>% structure(label= paste0(Hmisc::label(individus_2013$B06), "Sexe CM")),
+          sexe_cm = B06 %>% structure(label= paste0(Hmisc::label(individus_2013$B06), "du CM")),
           
           # Creating the "age_cm" variable from QB08 column
-          age_cm = B08 %>% structure(label=paste0(Hmisc::label(individus_2013$B08), "Age CM")))%>% 
+          age_cm = B08 %>% structure(label=paste0(Hmisc::label(individus_2013$B08), " du CM")))%>% 
       # Selecting specific columns from the filtered dataset
       select(ID_MENAGE, niveau_instruction_cm, sexe_cm, age_cm),
       
@@ -1089,6 +1089,8 @@ menage_2013 <- menage_2013 %>%
       by = c("ID_MENAGE")# = "ID_MENAGE", "id_dr" = "IDDR"
     
   )
+
+cm_var=c("niveau_instruction_cm","sexe_cm","age_cm")
 ```
 
 ### Household composition
@@ -1199,6 +1201,7 @@ menage_2013 <- menage_2013 %>%
     by = c("ID_MENAGE")
   )
 
+liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_frere","liencm_petit_fils","liencm_cm_sans_lien")
 ```
 
 
@@ -2004,6 +2007,9 @@ saveRDS(menage_2013,file=paste0(here::here(), "/output/output_data/menage_2013.r
 # For the "sp_rgph_2002"
 # Saving in the sf format
 sf::st_write(obj=sp_rgph_2002, paste0(here::here(), "/output/output_data/EAs_2002_new.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) # we change the id_dr
+
+# For the "sp_rgph_2013"
+sf::st_write(obj=sp_rgph_2013, paste0(here::here(), "/output/output_data/EAs_2013.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) # we change the id_dr
 
 
 ```

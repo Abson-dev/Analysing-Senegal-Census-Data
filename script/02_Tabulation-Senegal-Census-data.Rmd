@@ -1,0 +1,831 @@
+---
+title: "02_Tabulation-Senegal-Census-data"
+author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error=FALSE)
+```
+
+# Preambule: 
+
+```{r}
+# Clear the current workspace by removing all objects.
+# This is useful to start with a clean slate and avoid potential conflicts or unexpected behavior.
+rm(list=ls())
+```
+
+## Importing library
+```{r Package needed, results = "hide"}
+
+
+## Importing library
+### List of required packages
+required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf",
+                       "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot")
+
+# Check if packages are installed
+missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
+
+### Install missing packages
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+### Load all packages
+lapply(required_packages, library, character.only = TRUE)
+
+```
+
+
+## Importing the datasets an checking for duplicated row
+
+### Importing the shapefile data
+
+```{r, results='hide'}
+# Read shapefile data for 2002 and 2013
+sp_rgph_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/EAs_2002_new.shp"))
+# Mutating the 'sp_rgph_2002' dataset to create a new 'id_dr' column based on conditions
+
+sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/output/output_data/EAs_2013.shp"))
+
+# Display the first 10 rows of the 2002 and 2013 shapefiles
+head(sp_rgph_2002, 10L)
+head(sp_rgph_2013, 10L)
+```
+
+### Importing the census datasets 
+
+**For the 2002 census data**
+
+```{r, results='hide'}
+
+# Read and check for duplicated rows in the "menage_2002" dataset
+menage_2002 <- haven::read_sav(paste0(here::here(),"/output/output_data/menage_2002.sav"))
+menage_2002 %>% janitor::get_dupes()
+menage_2002 %>% janitor::get_dupes(ID_MENAGE)
+
+```
+
+
+**For the 2013 census dataset**
+
+```{r}
+
+# Read and check for duplicated rows in the "menage_2013" dataset
+menage_2013 <- haven::read_sav(paste0(here::here(),"/output/output_data/menage_2013.sav"))
+menage_2013 %>% janitor::get_dupes() 
+menage_2013 %>% janitor::get_dupes(ID_MENAGE)
+```
+
+
+
+# Study Variables
+
+## Socio-demographic variables
+
+### Sex/gender
+
+```{r echo=TRUE}
+
+gender_var = c("homme","femme","hh_size")
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,homme,femme,hh_size) %>% 
+  
+  plyr::rbind.fill(
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+        # Selecting relevant variables
+      select(RGPH, homme,femme,hh_size)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    type = c(gender_var~"continuous"),
+    label = list(homme ~ "Hommes",
+      femme ~ "Femmes",hh_size ~ "Taille du ménage"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Composition des ménages") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+```
+
+
+
+
+### Age
+```{r echo=TRUE, eval=TRUE, include=TRUE}
+#For babies under one year old, write “0” years. For people aged 98 and over, the instruction was to write 98 for age.
+
+age_var = c("nbr_babies","nbr_under_14","nbr_young_people","nbr_adult", "nbr_elder_adult", "nbr_senior")
+
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,nbr_babies,nbr_under_14,nbr_young_people,nbr_adult, nbr_elder_adult, nbr_senior) %>% 
+  
+  plyr::rbind.fill(
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+       # Selecting relevant variables
+      select(RGPH,nbr_babies,nbr_under_14,nbr_young_people,nbr_adult, nbr_elder_adult, nbr_senior)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+
+    type = c(age_var~"continuous"),
+    
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Composition des ménages par age") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+```
+
+
+
+### Marital Status
+
+```{r}
+
+mat_status_var = c("Monogame","Polygame","Celibataire","Veuf","Divorce")
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,Monogame,Polygame,Celibataire,Veuf,Divorce) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,Monogame,Polygame,Celibataire,Veuf,Divorce)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+
+    type = c(mat_status_var~"continuous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "situation matrimoniale") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+```
+
+### Fertility
+
+
+```{r}
+#Changer les labels
+fertility_var = c("fertility")
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,fertility) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,fertility)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+
+    type = c(fertility_var~"continuous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Fertilité") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+```
+
+### Educational level
+
+```{r}
+
+educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,Aucun,Primaire,Moyen,Secondaire,Superieur) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,Aucun,Primaire,Moyen,Secondaire,Superieur)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    label = list(Aucun ~ "Aucun",
+      Primaire ~ "Primaire",
+      Moyen ~ "Moyen",
+      Secondaire ~ "Sécondaire",
+      Superieur ~ "Supérieur"),
+    type = c(educ_var~"continuous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Niveau d'instruction") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+```
+
+
+### Literacy level
+
+```{r}
+#For the RGPH 2002 dataset
+literacy_var = c("Literacy_French","Literacy_Arabic","Literacy_Wolof","Literacy_Pulaar","Literacy_Sereer","Literacy_Mandingo","Literacy_Diola","Literacy_Soninke")
+
+
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,Literacy_French,Literacy_Arabic,Literacy_Wolof,Literacy_Pulaar,Literacy_Sereer,Literacy_Mandingo,Literacy_Diola,Literacy_Soninke) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,Literacy_French,Literacy_Arabic,Literacy_Wolof,Literacy_Pulaar,Literacy_Sereer,Literacy_Mandingo,Literacy_Diola,Literacy_Soninke)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    
+    label = list(Literacy_French ~ "Français",
+      Literacy_Arabic ~ "Arabe",
+      Literacy_Wolof ~ "Wolof",
+      Literacy_Pulaar ~ "Pulaar",
+      Literacy_Sereer ~ "Sereer",
+      Literacy_Mandingo ~ "Mandingo",
+      Literacy_Diola ~ "Diola",
+      Literacy_Soninke ~ "Sononké"
+      ),
+    
+    type = c(literacy_var~"continuous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Alphabétisation dans le ménage") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+```
+### Migration variable
+
+```{r}
+
+mig_var = c("resident_pres","resident_abs","resident_vis")
+
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,resident_pres,resident_abs,resident_vis) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,resident_pres,resident_abs,resident_vis)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    
+    label = list(resident_pres ~ "Présent",
+      resident_abs ~ "Absent",
+      resident_vis ~ "Visiteur"
+      ),
+    
+    type = c(mig_var~"continuous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Résidence dans le ménage") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+
+
+```
+
+### Maternal death variable
+
+```{r echo=TRUE, eval=TRUE, include=TRUE}
+
+deces_mat_var = c("deces_mat_oui","deces_mat_non","deces_mat_nsp")
+
+# Pas collecter and 2013
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,deces_mat_oui,deces_mat_non,deces_mat_nsp) %>% 
+  
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+   # by = RGPH,  # Group by "RGPH" column
+
+    type = c(deces_mat_var~"continuous"),
+    
+    label = list(deces_mat_oui ~ "Oui",
+      deces_mat_non ~ "Non",
+      deces_mat_nsp ~ "NSP"
+      ),
+    
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%)",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Déces maternelle dans le ménage") %>%
+  #add_overall() %>%
+  add_n()
+  # Add difference statistics to the table
+  #add_difference() %>% 
+
+
+```
+## Socio-economic variables
+
+
+### Employed variable
+
+```{r echo=TRUE, eval=TRUE, include=TRUE}
+
+occup_var=c("occup_independant","occup_employeur","occup_salarie","occup_apprenti","occup_aideFamilial","occup_autre")   
+
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,occup_independant,occup_employeur,occup_salarie,occup_apprenti,occup_aideFamilial,occup_autre) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,occup_independant,occup_employeur,occup_salarie,occup_apprenti,occup_aideFamilial,occup_autre)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    
+    label = list(occup_independant ~ "Indépendant",
+      occup_employeur ~ "Employeur",
+      occup_salarie ~ "Salarié",
+      occup_apprenti ~ "Apprenti",
+      occup_aideFamilial ~ "Aide familial",
+      occup_autre ~ "Autre"
+      ),
+    
+    type = c(occup_var~"continuous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Occupation des membres du ménage") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+
+
+```
+
+### Occupational status variable
+
+```{r echo=TRUE, eval=TRUE, include=TRUE}
+
+sit_occup_var=c("sit_occup_occup","sit_occup_chomeur","sit_occup_foyer","sit_occup_etudiant","sit_occup_rentier","sit_occup_retraite","sit_occup_autre")  
+
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,sit_occup_occup,sit_occup_chomeur,sit_occup_foyer,sit_occup_etudiant,sit_occup_rentier,sit_occup_retraite,sit_occup_autre) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,sit_occup_occup,sit_occup_chomeur,sit_occup_foyer,sit_occup_etudiant,sit_occup_rentier,sit_occup_retraite,sit_occup_autre)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+
+    type = c(sit_occup_var~"continuous"),
+    
+    label = list(sit_occup_occup ~ "Occupé",
+      sit_occup_chomeur ~ "Chomeur",
+      sit_occup_foyer ~ "Foyer",
+      sit_occup_etudiant ~ "Étudiant",
+      sit_occup_rentier ~ "Rentier",
+      sit_occup_retraite ~ "Retraité",
+      sit_occup_autre ~ "Autre"
+      ),
+    
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Situation dans l'occupation principale des membres du ménage") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+```
+
+### Income variable
+
+
+```{r}
+
+income_var = c("I_repas_saute","I_soins_medicaux")
+
+# Il faut revoir les labels dans cette region
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,I_repas_saute,I_soins_medicaux) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,I_repas_saute,I_soins_medicaux)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    
+    label = list(I_repas_saute ~ "Repas sauté",
+      I_soins_medicaux ~ "Soins médicaux"
+      ),
+    
+    type = c(income_var~"continuous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%,{n}/{N})",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Sauté") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+
+```
+
+## Household variables
+
+### Capital goods variable
+
+```{r}
+#For the RGPH 2002 dataset
+#OK
+# 1. Radio, 2. Television, 3. Video/VCD/DVD, 4. Refrigerator/freezer, 5. Telephone, 6. Improved fireplace, 7. Air conditioner, 8. Sewing machine, 9. Water heater, 10. Stove
+
+#For the RGPH 2013 dataset
+```
+
+### Access to basic equipment
+
+```{r}
+#For the RGPH 2002 dataset
+#OK
+# 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
+#For the RGPH 2013 dataset
+```
+
+### Household size
+
+```{r}
+#For the RGPH 2002 dataset
+#OK
+#For the RGPH 2013 dataset
+```
+
+### Head of household
+
+```{r}
+cm_var=c("niveau_instruction_cm","sexe_cm","age_cm")
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,niveau_instruction_cm,sexe_cm,age_cm) %>%
+  
+  mutate(sexe_cm = as.factor(ifelse(sexe_cm ==2, 0, 1)) %>% 
+           structure(label = Hmisc::label(menage_2002$sexe_cm))) %>% 
+
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,niveau_instruction_cm,sexe_cm,age_cm) %>%
+      
+      mutate(sexe_cm = as.factor(ifelse(sexe_cm ==2, 0, 1)) %>% 
+               structure(label = Hmisc::label(menage_2013$sexe_cm))))%>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    label = list(sexe_cm ~ "Sexe (Masculin = 1, Féminin = 0)",
+      age_cm ~ "Age (en année)",
+      niveau_instruction_cm ~ "Nbr d'années d'éducation"),
+    type = c(c("age_cm","niveau_instruction_cm")~"continuous",
+             c("sexe_cm")~"dichotomous"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%)",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Charactéristiques du CM") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+```
+
+### Household composition
+
+```{r echo=TRUE, eval=TRUE, include=TRUE}
+
+
+liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_frere","liencm_petit_fils","liencm_cm_sans_lien")
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,liencm_cm,liencm_epous,liencm_enf,liencm_parent,liencm_frere,liencm_petit_fils,liencm_cm_sans_lien) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,liencm_cm,liencm_epous,liencm_enf,liencm_parent,liencm_frere,liencm_petit_fils,liencm_cm_sans_lien)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    
+    label = list(liencm_cm ~ "CM",
+      liencm_epous ~ "Épouse",
+      liencm_enf ~ "Enfant",
+      liencm_parent ~ "Parent/Grand parent",
+      liencm_frere ~ "Frére/soeur",
+      liencm_petit_fils ~ "Pétit fils/fille",
+      liencm_cm_sans_lien ~ "Sans lien"),
+    
+    type = c(liencm_var~"categorical"),
+    
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%)",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Lien avec le CM") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
+```
+
+
+
+# Multivariate calculation for poverty indices (MPI)
+
+
+
+```{r}
+
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,school_attendance_dim,deces_under_five_dim) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,school_attendance_dim,deces_under_five_dim)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    
+    label = list(school_attendance_dim ~ " School Attendance",
+                 deces_under_five_dim ~ "Under five mortality"),
+    
+    type = c(liencm_var~"categorical"),
+    
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%)",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "MPI Dimension") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+```
+
+
+## Standard of Living dimension
+
+**Data source**: 
+
+* *For the Sanitation*: [link](https://www.who.int/data/gho/data/indicators/indicator-details/GHO/population-using-improved-sanitation-facilities-(-))
+
+* *For water*:
+[link](https://data.unicef.org/topic/water-and-sanitation/drinking-water/)
+ 
+
+*Additionnal cleaning*
+
+
+## Health dimension
+
+
+
+```{r}
+## Removing all objects
+rm(list=ls())
+```
