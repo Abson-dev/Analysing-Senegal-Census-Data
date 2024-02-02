@@ -113,8 +113,10 @@ menage_2002 %>%
   tbl_summary(
     by = RGPH,  # Group by "RGPH" column
     type = c(gender_var~"continuous"),
-    label = list(homme ~ "Hommes",
-      femme ~ "Femmes",hh_size ~ "Taille du ménage"),
+    label = list(
+      homme ~ "Hommes",
+      femme ~ "Femmes",
+      hh_size ~ "Taille du ménage"),
     statistic = list(
                      all_categorical() ~ "{n} ({p}%,{n}/{N})",
                      all_continuous() ~ "{mean} ({sd})"
@@ -248,6 +250,8 @@ menage_2002 %>%
     by = RGPH,  # Group by "RGPH" column
 
     type = c(fertility_var~"continuous"),
+    label = list(
+      fertility ~ "Label fertilité"),
     statistic = list(
                      all_categorical() ~ "{n} ({p}%,{n}/{N})",
                      all_continuous() ~ "{mean} ({sd})"
@@ -600,7 +604,8 @@ menage_2002 %>%
   tbl_summary(
     by = RGPH,  # Group by "RGPH" column
     
-    label = list(I_repas_saute ~ "Repas sauté",
+    label = list(
+      I_repas_saute ~ "Repas sauté",
       I_soins_medicaux ~ "Soins médicaux"
       ),
     
@@ -634,6 +639,9 @@ menage_2002 %>%
 # 1. Radio, 2. Television, 3. Video/VCD/DVD, 4. Refrigerator/freezer, 5. Telephone, 6. Improved fireplace, 7. Air conditioner, 8. Sewing machine, 9. Water heater, 10. Stove
 
 #For the RGPH 2013 dataset
+
+
+
 ```
 
 ### Access to basic equipment
@@ -643,6 +651,50 @@ menage_2002 %>%
 #OK
 # 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
 #For the RGPH 2013 dataset
+
+equipment_var <- c("soins_medicaux","repas_saute","evacut_eaux_usees","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","piece_occup","type_log")
+
+
+#For the RGPH 2002 dataset
+menage_2002 %>% 
+  
+  # Selecting relevant variables
+  select(RGPH,soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log) %>% 
+  
+  plyr::rbind.fill(
+    
+    #For the RGPH 2013 dataset 
+    menage_2013 %>% 
+      
+      # Selecting relevant variables
+      select(RGPH,soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log)) %>% 
+
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+    by = RGPH,  # Group by "RGPH" column
+    
+    # label = list(
+    #   I_repas_saute ~ "Repas sauté",
+    #   I_soins_medicaux ~ "Soins médicaux"
+    #   ),
+    
+    type = c(equipment_var~"categorical"),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%)",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Access aux equipements") %>%
+  add_overall() %>%
+  add_n()%>% 
+  # Add difference statistics to the table
+  add_difference() 
+
 ```
 
 ### Household size
@@ -710,7 +762,7 @@ menage_2002 %>%
 ```{r echo=TRUE, eval=TRUE, include=TRUE}
 
 
-liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_frere","liencm_petit_fils","liencm_cm_sans_lien")
+liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_frere","liencm_petit_fils","liencm_sans_lien")
 
 #For the RGPH 2002 dataset
 menage_2002 %>% 
@@ -724,7 +776,7 @@ menage_2002 %>%
     menage_2013 %>% 
       
       # Selecting relevant variables
-      select(RGPH,liencm_cm,liencm_epous,liencm_enf,liencm_parent,liencm_frere,liencm_petit_fils,liencm_cm_sans_lien)) %>% 
+      select(RGPH,liencm_cm,liencm_epous,liencm_enf,liencm_parent,liencm_frere,liencm_petit_fils,liencm_sans_lien)) %>% 
 
 # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
@@ -736,7 +788,7 @@ menage_2002 %>%
       liencm_parent ~ "Parent/Grand parent",
       liencm_frere ~ "Frére/soeur",
       liencm_petit_fils ~ "Pétit fils/fille",
-      liencm_cm_sans_lien ~ "Sans lien"),
+      liencm_sans_lien ~ "Sans lien"),
     
     type = c(liencm_var~"categorical"),
     
@@ -766,12 +818,13 @@ menage_2002 %>%
 
 ```{r}
 
+mpi_var=c("cooking_fuel_dim","sanitation_dim","drinking_water_dim","electricity_dim","housing_dim","assets_dim","school_attendance_dim","years_schooling_dim","deces_under_five_dim")
 
 #For the RGPH 2002 dataset
 menage_2002 %>% 
   
   # Selecting relevant variables
-  select(RGPH,school_attendance_dim,deces_under_five_dim) %>% 
+  select(RGPH,cooking_fuel_dim,sanitation_dim,drinking_water_dim,electricity_dim,housing_dim,assets_dim,school_attendance_dim,years_schooling_dim,deces_under_five_dim) %>% 
   
   plyr::rbind.fill(
     
@@ -779,7 +832,7 @@ menage_2002 %>%
     menage_2013 %>% 
       
       # Selecting relevant variables
-      select(RGPH,school_attendance_dim,deces_under_five_dim)) %>% 
+      select(RGPH,cooking_fuel_dim,sanitation_dim,drinking_water_dim,electricity_dim,housing_dim,assets_dim,school_attendance_dim,years_schooling_dim,deces_under_five_dim)) %>% 
 
 # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
@@ -788,7 +841,7 @@ menage_2002 %>%
     label = list(school_attendance_dim ~ " School Attendance",
                  deces_under_five_dim ~ "Under five mortality"),
     
-    type = c(liencm_var~"categorical"),
+    type = c(mpi_var~"categorical"),
     
     statistic = list(
                      all_categorical() ~ "{n} ({p}%)",

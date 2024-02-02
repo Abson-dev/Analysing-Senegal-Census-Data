@@ -245,20 +245,128 @@ gender_var = c("homme","femme","hh_size")
 
 ### Age
 
-```{r eval=FALSE, include=FALSE}
+```{r echo=TRUE, eval=TRUE, include=TRUE}
 #For babies under one year old, write “0” years. For people aged 98 and over, the instruction was to write 98 for age.
 
-## Look if it range from 0 to 98
-## change to numeric values
-## 
 
-#For the RGPH 2002 dataset
+
+# For the RGPH 2002 dataset
+
+## Look if it range for individual data is from 0 to 98
+
+individus_2002 %>% 
+  summarise(n_individus=n() %>%
+           structure(label = "Nombre des individus"),
+           # 273939
+           n_nan = sum(is.na(QB06))  %>%
+           structure(label = "Nombre de valeurs manquantes"),
+           # 0
+            min_age=min(QB06, na.rm = TRUE) %>%
+           structure(label = "Minimun âge des individus"),
+           # 0
+            mean_age = mean(QB06, na.rm = TRUE) %>%
+           structure(label = "Moyenne âge des individus"),
+           # 23.26
+            max_age=max(QB06, na.rm = TRUE) %>%
+           structure(label = "Max âge des individus")
+           # 98
+            )
+## Count the number of nbr_babies (aged 0), nbr_under_14 (number of children between 0 - 14), nbr_young_people (number of individuals aged between 15-29), nbr_adult (number of individuals aged between 30-44), nbr_elder_adult (number of individuals aged between 45-59), nbr_senior (number of individuals aged more than 60)
+
+# Left join the 'menage_2002' dataframe with a summarized version of 'individus_2002'
+menage_2002 <- menage_2002 %>% 
+  left_join(
+    individus_2002 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing various counts based on age (QB06 column)
+      summarise(
+        nbr_babies = sum(QB06 == 0, na.rm = TRUE),  # Count of babies aged 0
+        nbr_under_14 = sum(QB06 <= 14, na.rm = TRUE),  # Count of individuals under 14
+        nbr_young_people = sum(QB06 > 14 & QB06 <= 29, na.rm = TRUE),  # Count of individuals aged 15-29
+        nbr_adult = sum(QB06 > 29 & QB06 <= 44, na.rm = TRUE),  # Count of individuals aged 30-44
+        nbr_elder_adult = sum(QB06 > 44 & QB06 <= 59, na.rm = TRUE),  # Count of individuals aged 45-59
+        nbr_senior = sum(QB06 > 59, na.rm = TRUE)  # Count of individuals aged 60 and above
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        nbr_babies = as.numeric(nbr_babies) %>%
+          structure(label = "Nombre d'enfant agée de moins d'un an"),
+        nbr_under_14 = as.numeric(nbr_under_14) %>%
+          structure(label = "Nombre d'enfant agée de moins de 14 ans"),
+        nbr_young_people = as.numeric(nbr_young_people) %>%
+          structure(label = "Nombre d'individus agée entre 15 et 29 ans"),
+        nbr_adult = as.numeric(nbr_adult) %>%
+          structure(label = "Nombre d'individus agées entre 30 et 44 ans"),
+        nbr_elder_adult = as.numeric(nbr_elder_adult) %>%
+          structure(label = "Nombre d'individus agées entre 45 et 59 ans"),
+        nbr_senior = as.numeric(nbr_senior) %>%
+          structure(label = "Nombre d'individus agée de plus de 60 ans")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
 
 #For the RGPH 2013 dataset
-B08
 
-age_var = c("babies","femme","hh_size")
-group_age_var = c("babies","adults","oldery")
+## Look if it range for individual data is from 0 to 98
+individus_2013 %>% 
+  summarise(n_individus=n() %>%
+           structure(label = "Nombre des individus"),
+           # 315908
+           n_nan = sum(is.na(B08))  %>%
+           structure(label = "Nombre de valeurs manquantes"),
+           # 0
+            min_age=min(B08, na.rm = TRUE) %>%
+           structure(label = "Minimun âge des individus"),
+           # 0
+            mean_age = mean(B08, na.rm = TRUE) %>%
+           structure(label = "Moyenne âge des individus"), #25.5258
+            max_age=max(B08, na.rm = TRUE) %>%
+           structure(label = "Maximun âge des individus") #  114
+            )
+
+
+
+# Left join the 'menage_2013' dataframe with a summarized version of 'individus_2013'
+menage_2013 <- menage_2013 %>% 
+  left_join(
+    individus_2013 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing various counts based on age (B08 column)
+      summarise(
+        nbr_babies = sum(B08 == 0, na.rm = TRUE),  # Count of babies aged 0
+        nbr_under_14 = sum(B08 <= 14, na.rm = TRUE),  # Count of individuals under 14
+        nbr_young_people = sum(B08 > 14 & B08 <= 29, na.rm = TRUE),  # Count of individuals aged 15-29
+        nbr_adult = sum(B08 > 29 & B08 <= 44, na.rm = TRUE),  # Count of individuals aged 30-44
+        nbr_elder_adult = sum(B08 > 44 & B08 <= 59, na.rm = TRUE),  # Count of individuals aged 45-59
+        nbr_senior = sum(B08 > 59, na.rm = TRUE)  # Count of individuals aged 60 and above
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        nbr_babies = as.numeric(nbr_babies) %>%
+          structure(label = "Nombre d'enfant agée de moins d'un an"),
+        nbr_under_14 = as.numeric(nbr_under_14) %>%
+          structure(label = "Nombre d'enfant agée de moins de 14 ans"),
+        nbr_young_people = as.numeric(nbr_young_people) %>%
+          structure(label = "Nombre d'individus agée entre 15 et 29 ans"),
+        nbr_adult = as.numeric(nbr_adult) %>%
+          structure(label = "Nombre d'individus agées entre 30 et 44 ans"),
+        nbr_elder_adult = as.numeric(nbr_elder_adult) %>%
+          structure(label = "Nombre d'individus agées entre 45 et 59 ans"),
+        nbr_senior = as.numeric(nbr_senior) %>%
+          structure(label = "Nombre d'individus agée de plus de 60 ans")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
+
+age_var = c("nbr_babies","nbr_under_14","nbr_young_people","nbr_adult", "nbr_elder_adult", "nbr_senior")
 ```
 
 
@@ -623,19 +731,45 @@ menage_2013 <- menage_2013 %>%
     
     # Merging by matching columns in both datasets
     by = c("ID_MENAGE"))
+
 mig_var = c("resident_pres","resident_abs","resident_vis")
 ```
 
 ### Maternal death variable
 
-```{r eval=FALSE, include=FALSE}
-#For the RGPH 2002 dataset, deces
-C06
-# Oui......1
-# Non.....2
-# NSP.....3
+```{r echo=TRUE, eval=TRUE, include=TRUE}
+
+# For the RGPH 2002 dataset, 'deces'
+menage_2002 <- menage_2002 %>% 
+  # Left join 'menage_2002' with a summarized version of 'deces_2002' based on household ID
+  left_join(
+    deces_2002 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing counts of maternal deaths (C06 column) in the household
+      summarise(
+        deces_mat_oui = sum(C06 == 1, na.rm = TRUE),  # Count of maternal deaths: Yes
+        deces_mat_non = sum(C06 == 2, na.rm = TRUE),  # Count of maternal deaths: No
+        deces_mat_nsp = sum(C06 == 3, na.rm = TRUE)   # Count of maternal deaths: NSP (Not Specified)
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        deces_mat_oui = as.numeric(deces_mat_oui) %>%
+          structure(label = "Nombre de décès maternels dans le ménage: Oui."),
+        deces_mat_non = as.numeric(deces_mat_non) %>%
+          structure(label = "Nombre de décès maternels dans le ménage: Non."),
+        deces_mat_nsp = as.numeric(deces_mat_nsp) %>%
+          structure(label = "Nombre de décès maternels dans le ménage: NSP.")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
 #For the RGPH 2013 dataset
 #No variable
+
+deces_mat_var = c("deces_mat_oui","deces_mat_non","deces_mat_nsp")
 ```
 
 ## Socio-economic variables
@@ -643,7 +777,7 @@ C06
 
 ### Employed variable
 
-```{r eval=FALSE, include=FALSE}
+```{r echo=TRUE, eval=TRUE, include=TRUE}
 #For the RGPH 2002 dataset
      # 1      Employeur
      # 2   Indépendant
@@ -652,9 +786,43 @@ C06
      # 5 Aide familaile
      # 6       Apprenti
      # 7          Autre
-QB19
+
+menage_2002 <- menage_2002 %>% 
+  # Left join 'menage_2013' with a summarized version of 'individus_2013' based on household ID
+  left_join(
+    individus_2002 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing counts of individuals based on their primary occupation (QB19 column) in the household
+      summarise(
+        occup_independant = sum(QB19 == 2, na.rm = TRUE),  # Count of individuals who are independent workers
+        occup_employeur = sum(QB19 == 1, na.rm = TRUE),    # Count of individuals who are employers/bosses
+        occup_salarie = sum(QB19 == 3 | QB19 == 4, na.rm = TRUE),  # Count of individuals who are employees
+        occup_apprenti = sum(QB19 == 6, na.rm = TRUE),     # Count of individuals who are apprentices
+        occup_aideFamilial = sum(QB19 == 5, na.rm = TRUE),  # Count of individuals who are family aides
+        occup_autre = sum(QB19 == 7, na.rm = TRUE)          # Count of individuals with other primary occupations
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        occup_independant = as.numeric(occup_independant) %>%
+          structure(label = "Nombre d'individus qui sont des travailleurs indépendants dans leur occupation principale dans le ménage."),
+        occup_employeur = as.numeric(occup_employeur) %>%
+          structure(label = "Nombre d'individus qui sont des employeurs/patrons dans leur occupation principale dans le ménage."),
+        occup_salarie = as.numeric(occup_salarie) %>%
+          structure(label = "Nombre d'individus qui sont des salariés/stagiaires dans leur occupation principale dans le ménage."),
+        occup_apprenti = as.numeric(occup_apprenti) %>%
+          structure(label = "Nombre d'individus qui sont des apprentis dans leur occupation principale dans le ménage."),
+        occup_aideFamilial = as.numeric(occup_aideFamilial) %>%
+          structure(label = "Nombre d'individus qui sont des aides familiaux dans leur occupation principale dans le ménage."),
+        occup_autre = as.numeric(occup_autre) %>%
+          structure(label = "Nombre d'individus qui ont d'autres activités comme occupation principale dans le ménage.")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
 #For the RGPH 2013 dataset
-B38
      # 1     Travailleur indépendant
      # 2             Employeur/Patron
      # 3  Salarié/Employé permanent
@@ -662,14 +830,51 @@ B38
      # 5                     Apprenti
      # 6                Aide familial
      # 7                       Autres
-     
+
+# For the 2013 household dataset, 'menage_2013'
+menage_2013 <- menage_2013 %>% 
+  # Left join 'menage_2013' with a summarized version of 'individus_2013' based on household ID
+  left_join(
+    individus_2013 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing counts of individuals based on their primary occupation (B38 column) in the household
+      summarise(
+        occup_independant = sum(B38 == 1, na.rm = TRUE),  # Count of individuals who are independent workers
+        occup_employeur = sum(B38 == 2, na.rm = TRUE),    # Count of individuals who are employers/bosses
+        occup_salarie = sum(B38 == 3 | B38 == 4, na.rm = TRUE),  # Count of individuals who are employees
+        occup_apprenti = sum(B38 == 5, na.rm = TRUE),     # Count of individuals who are apprentices
+        occup_aideFamilial = sum(B38 == 6, na.rm = TRUE),  # Count of individuals who are family aides
+        occup_autre = sum(B38 == 7, na.rm = TRUE)          # Count of individuals with other primary occupations
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        occup_independant = as.numeric(occup_independant) %>%
+          structure(label = "Nombre d'individus qui sont des travailleurs indépendants dans leur occupation principale dans le ménage."),
+        occup_employeur = as.numeric(occup_employeur) %>%
+          structure(label = "Nombre d'individus qui sont des employeurs/patrons dans leur occupation principale dans le ménage."),
+        occup_salarie = as.numeric(occup_salarie) %>%
+          structure(label = "Nombre d'individus qui sont des salariés/stagiaires dans leur occupation principale dans le ménage."),
+        occup_apprenti = as.numeric(occup_apprenti) %>%
+          structure(label = "Nombre d'individus qui sont des apprentis dans leur occupation principale dans le ménage."),
+        occup_aideFamilial = as.numeric(occup_aideFamilial) %>%
+          structure(label = "Nombre d'individus qui sont des aides familiaux dans leur occupation principale dans le ménage."),
+        occup_autre = as.numeric(occup_autre) %>%
+          structure(label = "Nombre d'individus qui ont d'autres activités comme occupation principale dans le ménage.")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
+occup_var=c("occup_independant","occup_employeur","occup_salarie","occup_apprenti","occup_aideFamilial","occup_autre")     
 ```
 
 ### Occupational status variable
 
-```{r eval=FALSE, include=FALSE}
+```{r echo=TRUE, eval=TRUE, include=TRUE}
 #For the RGPH 2002 dataset
-QB17
+##QB17
      # 1          Occupé
      # 2          Chomeur
      # 3   Eleve_etudiant
@@ -679,8 +884,51 @@ QB17
      # 7 Accident/maladie
      # 8         Mendiant
      # 9            Autre
+
+# For the 2013 household dataset, 'menage_2013'
+menage_2002 <- menage_2002 %>% 
+  # Left join 'menage_2013' with a summarized version of 'individus_2013' based on household ID
+  left_join(
+    individus_2002 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing counts of individuals based on their main activity status (B36 column) in the household
+      summarise(
+        sit_occup_occup = sum(QB17 == 1, na.rm = TRUE),  # Count of individuals who are occupied in their primary activity
+        sit_occup_chomeur = sum(QB17 == 2, na.rm = TRUE),  # Count of individuals who are unemployed or seeking their first job
+        sit_occup_etudiant = sum(QB17 == 3, na.rm = TRUE),  # Count of individuals who are students/pupils
+        sit_occup_foyer = sum(QB17 == 4, na.rm = TRUE),  # Count of individuals who are occupied at home
+        sit_occup_retraite = sum(QB17 == 5 | QB17 == 6, na.rm = TRUE),  # Count of individuals who are retired or elderly
+
+        sit_occup_rentier = 0,  # Count of individuals who are retirees
+        
+        sit_occup_autre = sum(QB17 == 7 | QB17 == 8 | QB17 == 9, na.rm = TRUE)  # Count of individuals with other main activity status
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        sit_occup_occup = as.numeric(sit_occup_occup) %>%
+          structure(label = "Nombre d'individus qui sont occupés dans leur occupation principale dans le ménage."),
+        sit_occup_chomeur = as.numeric(sit_occup_chomeur) %>%
+          structure(label = "Nombre d'individus qui sont au chômage ou à la recherche d'un premier emploi dans leur occupation principale dans le ménage."),
+        sit_occup_foyer = as.numeric(sit_occup_foyer) %>%
+          structure(label = "Nombre d'individus qui sont occupés au foyer dans leur occupation principale dans le ménage."),
+        sit_occup_etudiant = as.numeric(sit_occup_etudiant) %>%
+          structure(label = "Nombre d'individus qui sont étudiants/élèves dans leur occupation principale dans le ménage."),
+        sit_occup_rentier = as.numeric(sit_occup_rentier) %>%
+          structure(label = "Nombre d'individus qui sont rentiers dans leur occupation principale dans le ménage."),
+        sit_occup_retraite = as.numeric(sit_occup_retraite) %>%
+          structure(label = "Nombre d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale dans le ménage."),
+        sit_occup_autre = as.numeric(sit_occup_autre) %>%
+          structure(label = "Nombre d'individus qui ont d'autres situations dans leur occupation principale dans le ménage.")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
+
 #For the RGPH 2013 dataset
-B36
+##B36
      # 1                              Occupé
      # 2            Chômeur ayant travaillé
      # 3   A la recherche d'un premier emploi
@@ -689,6 +937,47 @@ B36
      # 6                              Rentier
      # 7 Retraités et personne du 3ème âge
      # 8                      Autres inactifs
+
+# For the 2013 household dataset, 'menage_2013'
+menage_2013 <- menage_2013 %>% 
+  # Left join 'menage_2013' with a summarized version of 'individus_2013' based on household ID
+  left_join(
+    individus_2013 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing counts of individuals based on their main activity status (B36 column) in the household
+      summarise(
+        sit_occup_occup = sum(B36 == 1, na.rm = TRUE),  # Count of individuals who are occupied in their primary activity
+        sit_occup_chomeur = sum(B36 == 2 | B36 == 3, na.rm = TRUE),  # Count of individuals who are unemployed or seeking their first job
+        sit_occup_foyer = sum(B36 == 4, na.rm = TRUE),  # Count of individuals who are occupied at home
+        sit_occup_etudiant = sum(B36 == 5, na.rm = TRUE),  # Count of individuals who are students/pupils
+        sit_occup_rentier = sum(B36 == 6, na.rm = TRUE),  # Count of individuals who are retirees
+        sit_occup_retraite = sum(B36 == 7, na.rm = TRUE),  # Count of individuals who are retired or elderly
+        sit_occup_autre = sum(B36 == 8, na.rm = TRUE)  # Count of individuals with other main activity status
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        sit_occup_occup = as.numeric(sit_occup_occup) %>%
+          structure(label = "Nombre d'individus qui sont occupés dans leur occupation principale dans le ménage."),
+        sit_occup_chomeur = as.numeric(sit_occup_chomeur) %>%
+          structure(label = "Nombre d'individus qui sont au chômage ou à la recherche d'un premier emploi dans leur occupation principale dans le ménage."),
+        sit_occup_foyer = as.numeric(sit_occup_foyer) %>%
+          structure(label = "Nombre d'individus qui sont occupés au foyer dans leur occupation principale dans le ménage."),
+        sit_occup_etudiant = as.numeric(sit_occup_etudiant) %>%
+          structure(label = "Nombre d'individus qui sont étudiants/élèves dans leur occupation principale dans le ménage."),
+        sit_occup_rentier = as.numeric(sit_occup_rentier) %>%
+          structure(label = "Nombre d'individus qui sont rentiers dans leur occupation principale dans le ménage."),
+        sit_occup_retraite = as.numeric(sit_occup_retraite) %>%
+          structure(label = "Nombre d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale dans le ménage."),
+        sit_occup_autre = as.numeric(sit_occup_autre) %>%
+          structure(label = "Nombre d'individus qui ont d'autres situations dans leur occupation principale dans le ménage.")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
+sit_occup_var=c("sit_occup_occup","sit_occup_chomeur","sit_occup_foyer","sit_occup_etudiant","sit_occup_rentier","sit_occup_retraite","sit_occup_autre")  
 ```
 
 ### Income variable
@@ -804,7 +1093,7 @@ menage_2013 <- menage_2013 %>%
 
 ### Household composition
 
-```{r eval=FALSE, include=FALSE}
+```{r echo=TRUE, eval=TRUE, include=TRUE}
 #For the RGPH 2002 dataset
 QB03 
      # 1       Chef de menage
@@ -816,8 +1105,48 @@ QB03
      # 7    Petit-fils/-fille
      # 8       Autres parents
      # 9 Sans lien de parente
+
+# For the 2002 household dataset, 'menage_2002'
+menage_2002 <- menage_2002 %>% 
+  # Left join 'menage_2002' with a summarized version of 'individus_2002' based on household ID
+  left_join(
+    individus_2002 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing counts of individuals based on their relationship to the head of the household (QB03 column)
+      summarise(
+        liencm_cm = sum(QB03 == 1, na.rm = TRUE),  # Count of individuals who are the head of the household (Chef de Ménage - CM)
+        liencm_epous = sum(QB03 == 2, na.rm = TRUE),  # Count of individuals who are spouses of the head
+        liencm_enf = sum(QB03 == 3, na.rm = TRUE),   # Count of individuals who are children, nephew or children in law of the head
+        liencm_parent = sum(QB03 == 4 | QB03 == 5| QB03 == 8, na.rm = TRUE),  # Count of individuals who are parents/grandparents or other relatives of the head
+        liencm_frere = sum(QB03 == 6, na.rm = TRUE),  # Count of individuals who are siblings of the head
+        liencm_petit_fils = sum(QB03 == 7, na.rm = TRUE),  # Count of individuals who are grandchildren of the head
+        liencm_sans_lien = sum(QB03 == 9, na.rm = TRUE)   # Count of individuals without any familial relationship/maid to the head
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        liencm_cm = as.numeric(liencm_cm) %>%
+          structure(label = "Nombre de Chefs de Ménage résidant dans le ménage."),
+        liencm_epous = as.numeric(liencm_epous) %>%
+          structure(label = "Nombre d'épouses des Chefs de Ménage résidant dans le ménage."),
+        liencm_enf = as.numeric(liencm_enf) %>%
+          structure(label = "Nombre d'enfants des Chefs de Ménage résidant dans le ménage."),
+        liencm_parent = as.numeric(liencm_parent) %>%
+          structure(label = "Nombre de parents/grands-parents ou autres parents des Chefs de Ménage résidant dans le ménage."),
+        liencm_frere = as.numeric(liencm_frere) %>%
+          structure(label = "Nombre de frères et sœurs des Chefs de Ménage résidant dans le ménage."),
+        liencm_petit_fils = as.numeric(liencm_petit_fils) %>%
+          structure(label = "Nombre de petits-fils/petites-filles des Chefs de Ménage résidant dans le ménage."), 
+        liencm_sans_lien = as.numeric(liencm_sans_lien) %>%
+          structure(label = "Nombre d'individus sans lien de parenté avec les Chefs de Ménage vivant dans le ménage.")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
 #For the RGPH 2013 dataset
-B04
+#B04
     #  0 Sans lien de parenté avec le CM
     #  1                  Chef de ménage
     #  2         Epouse (ou époux) du CM
@@ -830,6 +1159,47 @@ B04
     #  9            Belle fille/Beau-fils
     # 10             Autres parents du CM
     # 11                       Domestique
+
+# For the 2013 household dataset, 'menage_2013'
+menage_2013 <- menage_2013 %>% 
+  # Left join 'menage_2013' with a summarized version of 'individus_2013' based on household ID
+  left_join(
+    individus_2013 %>% 
+      # Grouping by household ID
+      group_by(ID_MENAGE) %>% 
+      # Summarizing counts of individuals based on their relationship to the head of the household (QB03 column)
+      summarise(
+        liencm_cm = sum(B04 == 1, na.rm = TRUE),  # Count of individuals who are the head of the household (Chef de Ménage - CM)
+        liencm_epous = sum(B04 == 2, na.rm = TRUE),  # Count of individuals who are spouses of the head
+        liencm_enf = sum(B04 == 3 | B04 == 7| B04 == 9 , na.rm = TRUE),  # Count of individuals who are children, nephew or children in law of the head
+        liencm_parent = sum(B04 == 5 | B04 == 8| B04 == 10, na.rm = TRUE),  # Count of individuals who are parents/grandparents or other relatives of the head
+        liencm_frere = sum(B04 == 4, na.rm = TRUE),  # Count of individuals who are siblings of the head
+        liencm_petit_fils = sum(B04 == 6, na.rm = TRUE),  # Count of individuals who are grandchildren of the head
+        liencm_sans_lien = sum(B04 == 0 | B04 == 11, na.rm = TRUE)  # Count of individuals without any familial relationship/maid to the head
+      ) %>% 
+      ungroup() %>% 
+      # Adding labels to the counts for better readability
+      mutate(
+        liencm_cm = as.numeric(liencm_cm) %>%
+          structure(label = "Nombre de Chefs de Ménage résidant dans le ménage."),
+        liencm_epous = as.numeric(liencm_epous) %>%
+          structure(label = "Nombre d'épouses des Chefs de Ménage résidant dans le ménage."),
+        liencm_enf = as.numeric(liencm_enf) %>%
+          structure(label = "Nombre d'enfants des Chefs de Ménage résidant dans le ménage."),
+        liencm_parent = as.numeric(liencm_parent) %>%
+          structure(label = "Nombre de parents/grands-parents ou autres parents des Chefs de Ménage résidant dans le ménage."),
+        liencm_frere = as.numeric(liencm_frere) %>%
+          structure(label = "Nombre de frères et sœurs des Chefs de Ménage résidant dans le ménage."),
+        liencm_petit_fils = as.numeric(liencm_petit_fils) %>%
+          structure(label = "Nombre de petits-fils/petites-filles des Chefs de Ménage résidant dans le ménage."), 
+        liencm_sans_lien = as.numeric(liencm_sans_lien) %>%
+          structure(label = "Nombre d'individus sans lien de parenté avec les Chefs de Ménage vivant dans le ménage.")
+      ),
+    # Merging by matching columns in both datasets
+    by = c("ID_MENAGE")
+  )
+
+liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_frere","liencm_petit_fils","liencm_sans_lien")
 ```
 
 

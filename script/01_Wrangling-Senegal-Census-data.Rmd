@@ -1201,7 +1201,7 @@ menage_2013 <- menage_2013 %>%
     by = c("ID_MENAGE")
   )
 
-liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_frere","liencm_petit_fils","liencm_cm_sans_lien")
+liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_frere","liencm_petit_fils","liencm_sans_lien")
 ```
 
 
