@@ -1,22 +1,32 @@
 ---
-title: "02_Tabulation-Senegal-Census-data"
-author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
-date: "`r Sys.Date()`"
-output: 
-  html_document:
-    toc: true
-    toc_depth: 3
-    toc_float: true
-    number_sections: true
-    code_folding: show
-    keep_md: true
+title: "Tabulation of Covariates and Outcomes for the Senegal census"
+author: "Habibe Ibrahim"
+date: '`r format (Sys.Date(), "%d %B %Y")`'
+output: officedown::rdocx_document
+  #  mapstyles:
+  #    Normal: ['First Paragraph']
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error=FALSE)
+```{r setup, include = FALSE, warning=FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+# library(officedown)
+# library(officer)
+
+# fp <- fp_par(
+#   text.align = "center", 
+#   padding.bottom = 20, padding.top = 120, 
+#   border.bottom = fp_border())
+
+#ft <- fp_text(shading.color='#EFEFEF', bold = F)
 ```
 
-# Preambule: 
+# Table of content
+
+<!---BLOCK_TOC--->
+
+\newpage
+
 
 ```{r}
 # Clear the current workspace by removing all objects.
@@ -44,6 +54,12 @@ if (length(missing_packages) > 0) {
 ### Load all packages
 lapply(required_packages, library, character.only = TRUE)
 
+```
+
+```{r}
+# We set the theme to compact to ensure table fit the landscape page
+# This theme will apply to all the other tables in this Rmd
+set_gtsummary_theme(theme_gtsummary_compact())
 ```
 
 
@@ -251,7 +267,7 @@ menage_2002 %>%
 
     type = c(fertility_var~"continuous"),
     label = list(
-      fertility ~ "Label fertilité"),
+      fertility ~ "Fertilité"),
     statistic = list(
                      all_categorical() ~ "{n} ({p}%,{n}/{N})",
                      all_continuous() ~ "{mean} ({sd})"
@@ -646,39 +662,42 @@ menage_2002 %>%
 
 ### Access to basic equipment
 
+#### For the RGPH 2002 dataset 
 ```{r}
 #For the RGPH 2002 dataset
 #OK
 # 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
 #For the RGPH 2013 dataset
 
-equipment_var <- c("soins_medicaux","repas_saute","evacut_eaux_usees","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","piece_occup","type_log")
+equipment_var_cat <- c("repas_saute","evacut_eaux_usees","terrain_bat","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","type_log")
 
+
+equipment_var_dicho <- c("soins_medicaux","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio")
+
+equipment_var_num <- c("piece_occup")
+
+#,""
 
 #For the RGPH 2002 dataset
 menage_2002 %>% 
   
   # Selecting relevant variables
-  select(RGPH,soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log) %>% 
+  select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log) %>% 
   
-  plyr::rbind.fill(
-    
-    #For the RGPH 2013 dataset 
-    menage_2013 %>% 
-      
-      # Selecting relevant variables
-      select(RGPH,soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log)) %>% 
+  labelled::unlabelled() %>% 
 
 # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
-    by = RGPH,  # Group by "RGPH" column
+    #by = RGPH,  # Group by "RGPH" column
     
     # label = list(
     #   I_repas_saute ~ "Repas sauté",
     #   I_soins_medicaux ~ "Soins médicaux"
     #   ),
     
-    type = c(equipment_var~"categorical"),
+    type = c(equipment_var_cat~"categorical",
+             equipment_var_num~"continuous",
+             equipment_var_dicho~"dichotomous"),
     statistic = list(
                      all_categorical() ~ "{n} ({p}%)",
                      all_continuous() ~ "{mean} ({sd})"
@@ -689,13 +708,130 @@ menage_2002 %>%
   ) %>% 
 
   # Modify the table header to provide a descriptive label
-  modify_header(label ~ "Access aux equipements") %>%
-  add_overall() %>%
-  add_n()%>% 
+  modify_header(label ~ "Access aux equipements for the RGPH 2002") %>%
+  #add_overall() %>%
+  add_n()#%>% 
   # Add difference statistics to the table
-  add_difference() 
+  #add_difference() 
 
 ```
+
+
+#### For the RGPH 2013 dataset 
+```{r}
+#For the RGPH 2013 dataset
+#OK
+# 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
+#For the RGPH 2013 dataset
+
+equipment_var_cat <- c("evacut_eaux_usees","terrain_bat","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","type_log","terrain_bat")
+
+
+equipment_var_dicho <- c("soins_medicaux","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","repas_saute","terrain_bat")
+
+equipment_var_num <- c("piece_occup")
+
+
+#For the RGPH 2013 dataset 
+menage_2013 %>% 
+      
+# Selecting relevant variables
+select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log) %>% 
+  
+  mutate(
+
+    soins_medicaux = labelled::remove_labels(soins_medicaux) %>% structure(label=Hmisc::label(menage_2013$soins_medicaux)),
+    
+    repas_saute = labelled::remove_labels(repas_saute) %>% structure(label=Hmisc::label(menage_2013$repas_saute)),
+    
+    terrain_bat = labelled::remove_labels(terrain_bat) %>% structure(label=Hmisc::label(menage_2013$terrain_bat)),
+    
+    appareil_photo = labelled::remove_labels(appareil_photo) %>% structure(label=Hmisc::label(menage_2013$appareil_photo)),
+    
+    moulin = labelled::remove_labels(moulin) %>% structure(label=Hmisc::label(menage_2013$moulin)),
+    
+    ordinateur = labelled::remove_labels(ordinateur) %>% structure(label=Hmisc::label(menage_2013$ordinateur)),
+    
+    photocopieuse = labelled::remove_labels(photocopieuse) %>% structure(label=Hmisc::label(menage_2013$photocopieuse)),
+    
+    telephone_tele = labelled::remove_labels(telephone_tele) %>% structure(label=Hmisc::label(menage_2013$telephone_tele)),
+    
+    chaise_bache = labelled::remove_labels(chaise_bache) %>% structure(label=Hmisc::label(menage_2013$chaise_bache)),
+    
+    materiel_musique = labelled::remove_labels(materiel_musique) %>% structure(label=Hmisc::label(menage_2013$materiel_musique)),
+    
+    machine_coudre = labelled::remove_labels(machine_coudre) %>% structure(label=Hmisc::label(menage_2013$machine_coudre)),
+    
+    refriger_congelat = labelled::remove_labels(refriger_congelat) %>% structure(label=Hmisc::label(menage_2013$refriger_congelat)),
+
+    mobylette_bicycl = labelled::remove_labels(mobylette_bicycl) %>% structure(label=Hmisc::label(menage_2013$mobylette_bicycl)),
+    
+    voiture_cam = labelled::remove_labels(voiture_cam) %>% structure(label=Hmisc::label(menage_2013$voiture_cam)),
+    
+    tracteur = labelled::remove_labels(tracteur) %>% structure(label=Hmisc::label(menage_2013$tracteur)),
+    
+    animaux_traite = labelled::remove_labels(animaux_traite) %>% structure(label=Hmisc::label(menage_2013$animaux_traite)),
+    
+    caleche_char = labelled::remove_labels(caleche_char) %>% structure(label=Hmisc::label(menage_2013$caleche_char)),
+    
+    houe_charrue = labelled::remove_labels(houe_charrue) %>% structure(label=Hmisc::label(menage_2013$houe_charrue)),
+    
+    pirogue = labelled::remove_labels(pirogue) %>% structure(label=Hmisc::label(menage_2013$pirogue)),
+    
+    caleche_charette = labelled::remove_labels(caleche_charette) %>% structure(label=Hmisc::label(menage_2013$caleche_charette)),
+
+    bicyclette = labelled::remove_labels(bicyclette) %>% structure(label=Hmisc::label(menage_2013$bicyclette)),
+    
+    mobylette = labelled::remove_labels(mobylette) %>% structure(label=Hmisc::label(menage_2013$mobylette)),
+    
+    voiture = labelled::remove_labels(voiture) %>% structure(label=Hmisc::label(menage_2013$voiture)),
+    
+    machine_coudre = labelled::remove_labels(machine_coudre) %>% structure(label=Hmisc::label(menage_2013$machine_coudre)),
+
+    climatisateur = labelled::remove_labels(climatisateur) %>% structure(label=Hmisc::label(menage_2013$climatisateur)),
+    
+    foyer_ameli = labelled::remove_labels(foyer_ameli) %>% structure(label=Hmisc::label(menage_2013$foyer_ameli)),
+    
+    rechaud_cuis = labelled::remove_labels(rechaud_cuis) %>% structure(label=Hmisc::label(menage_2013$rechaud_cuis)),
+    
+    telephone = labelled::remove_labels(telephone) %>% structure(label=Hmisc::label(menage_2013$telephone)),
+
+    refri_conge = labelled::remove_labels(refri_conge) %>% structure(label=Hmisc::label(menage_2013$refri_conge)),
+    
+    video = labelled::remove_labels(video) %>% structure(label=Hmisc::label(menage_2013$video)),
+    
+    televiseur = labelled::remove_labels(televiseur) %>% structure(label=Hmisc::label(menage_2013$televiseur)),
+    
+    radio = labelled::remove_labels(radio) %>% structure(label=Hmisc::label(menage_2013$radio))
+
+  ) %>%
+    labelled::unlabelled() %>% 
+# Generate a summary table using "tbl_summary" for the specified columns
+  tbl_summary(
+
+    
+       type = c(equipment_var_cat~"categorical",
+                equipment_var_num~"continuous",
+                 equipment_var_dicho~"dichotomous"
+                ),
+    statistic = list(
+                     all_categorical() ~ "{n} ({p}%)",
+                     all_continuous() ~ "{mean} ({sd})"
+                     ),
+    missing_text = "(Missing)",
+    digits = everything() ~ c(2,2),
+    #missing = "no"
+  ) %>% 
+
+  # Modify the table header to provide a descriptive label
+  modify_header(label ~ "Access aux equipements for RGPH 2013") #%>%
+  #add_overall() #%>%
+  #add_n()%>% 
+  # Add difference statistics to the table
+  #add_difference() 
+
+```
+
 
 ### Household size
 
@@ -768,7 +904,7 @@ liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_fre
 menage_2002 %>% 
   
   # Selecting relevant variables
-  select(RGPH,liencm_cm,liencm_epous,liencm_enf,liencm_parent,liencm_frere,liencm_petit_fils,liencm_cm_sans_lien) %>% 
+  select(RGPH,liencm_cm,liencm_epous,liencm_enf,liencm_parent,liencm_frere,liencm_petit_fils,liencm_sans_lien) %>% 
   
   plyr::rbind.fill(
     
@@ -790,14 +926,14 @@ menage_2002 %>%
       liencm_petit_fils ~ "Pétit fils/fille",
       liencm_sans_lien ~ "Sans lien"),
     
-    type = c(liencm_var~"categorical"),
+    type = c(liencm_var~"continuous"),
     
     statistic = list(
                      all_categorical() ~ "{n} ({p}%)",
                      all_continuous() ~ "{mean} ({sd})"
                      ),
     missing_text = "(Missing)",
-    digits = everything() ~ c(2,2),
+    digits = everything() ~ c(0,0),
     #missing = "no"
   ) %>% 
 
@@ -818,7 +954,7 @@ menage_2002 %>%
 
 ```{r}
 
-mpi_var=c("cooking_fuel_dim","sanitation_dim","drinking_water_dim","electricity_dim","housing_dim","assets_dim","school_attendance_dim","years_schooling_dim","deces_under_five_dim")
+mpi_var=c("cooking_fuel_dim","sanitation_dim","drinking_water_dim","electricity_dim","housing_dim","assets_dim","school_attendance_dim","years_schooling_dim")
 
 #For the RGPH 2002 dataset
 menage_2002 %>% 
@@ -832,16 +968,20 @@ menage_2002 %>%
     menage_2013 %>% 
       
       # Selecting relevant variables
-      select(RGPH,cooking_fuel_dim,sanitation_dim,drinking_water_dim,electricity_dim,housing_dim,assets_dim,school_attendance_dim,years_schooling_dim,deces_under_five_dim)) %>% 
+      select(RGPH,cooking_fuel_dim,sanitation_dim,drinking_water_dim,electricity_dim,housing_dim,assets_dim,school_attendance_dim,years_schooling_dim
+             #, deces_under_five_dim
+             )) %>% 
 
 # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
     by = RGPH,  # Group by "RGPH" column
     
-    label = list(school_attendance_dim ~ " School Attendance",
-                 deces_under_five_dim ~ "Under five mortality"),
+    label = list(
+      
+      school_attendance_dim ~ "Education: School Attendance",
+      deces_under_five_dim ~ "Health: Number of under five mortality"),
     
-    type = c(mpi_var~"categorical"),
+    type = c(mpi_var~"dichotomous"),
     
     statistic = list(
                      all_categorical() ~ "{n} ({p}%)",

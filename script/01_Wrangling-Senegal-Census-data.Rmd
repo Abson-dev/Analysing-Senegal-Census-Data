@@ -1401,8 +1401,7 @@ menage_2002 <-
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
   mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
-    years_schooling_dim = 
-           as.factor(ifelse(years_schooling_dim > 0, 0, 1)) %>% structure(label = "Education: years of schooling"))
+    years_schooling_dim = ifelse(years_schooling_dim > 0, 0, 1) %>% structure(label = "Education: years of schooling"))
   
 # For the 2013 individus data  
 
@@ -1413,8 +1412,7 @@ menage_2013 <-
 # If the sum of education levels is greater than 0, it means at least one individual in the household is attending school (0), 
 # otherwise, it means no one is attending school (1).
   mutate(years_schooling_dim = rowSums(select(., .dots=all_of(edu_var)),na.rm = T),
-    years_schooling_dim = 
-           as.factor(ifelse(years_schooling_dim > 0, 0, 1)) %>% structure(label = "Education: years of schooling"))
+    years_schooling_dim = ifelse(years_schooling_dim > 0, 0, 1) %>% structure(label = "Education: years of schooling"))
 ```
 
 *School Attendance indicator*
@@ -1440,7 +1438,7 @@ menage_2002 <-
       
     # Computing a dimension for school attendance in the household
     mutate(
-      school_attendance_dim = as.factor(ifelse(school_attendance == children_hh, 1, 0))%>% structure(label = "Education: school attendance")
+      school_attendance_dim = ifelse(school_attendance == children_hh, 1, 0)%>% structure(label = "Education: school attendance")
     ) %>%
       
     # Selecting relevant columns for the join
@@ -1467,7 +1465,7 @@ menage_2013 <-
       
     # Computing a dimension for school attendance in the household
     mutate(
-      school_attendance_dim = as.factor(ifelse(school_attendance == children_hh, 1, 0)) %>% structure(label = "Education: school attendance")
+      school_attendance_dim = ifelse(school_attendance == children_hh, 1, 0) %>% structure(label = "Education: school attendance")
     ) %>%
       
     # Selecting relevant columns for the join
@@ -1500,111 +1498,111 @@ menage_2002 <- menage_2002 %>%
     id_dr = DR %>% structure(label=Hmisc::label(menage_2002$DR)),
     
     # Create a new variable "type_log" as a factor with labels from the "menage_2002" dataset
-    type_log = as.factor(E01) %>% structure(label=Hmisc::label(menage_2002$E01)),
+    type_log = E01 %>% structure(label=Hmisc::label(menage_2002$E01)),
     
     # Create a new variable "piece_occup" as a factor with labels from the "menage_2002" dataset
-    piece_occup = as.factor(E02) %>% structure(label=Hmisc::label(menage_2002$E02)),
+    piece_occup = E02 %>% structure(label=Hmisc::label(menage_2002$E02)),
     
     # Create a new variable "stat_occupation" as a factor with labels from the "menage_2002" dataset
-    stat_occupation = as.factor(E03) %>% structure(label=Hmisc::label(menage_2002$E03)),
+    stat_occupation = E03 %>% structure(label=Hmisc::label(menage_2002$E03)),
     
     # Create a new variable "type_aisance" as a factor with labels from the "menage_2002" dataset
-    type_aisance = as.factor(E04) %>% structure(label=Hmisc::label(menage_2002$E04)),
+    type_aisance = E04 %>% structure(label=Hmisc::label(menage_2002$E04)),
     
     # Create a new variable "approv_eau" as a factor with labels from the "menage_2002" dataset
-    approv_eau = as.factor(E05) %>% structure(label=Hmisc::label(menage_2002$E05)),
+    approv_eau = E05 %>% structure(label=Hmisc::label(menage_2002$E05)),
     
     # Create a new variable "eclairage" as a factor with labels from the "menage_2002" dataset
-    eclairage = as.factor(E06) %>% structure(label=Hmisc::label(menage_2002$E06)),
+    eclairage = E06 %>% structure(label=Hmisc::label(menage_2002$E06)),
     
     # Create a new variable "combustible_cuisine" as a factor with labels from the "menage_2002" dataset
-    combustible_cuisine = as.factor(E07) %>% structure(label=Hmisc::label(menage_2002$E07)),
+    combustible_cuisine = E07 %>% structure(label=Hmisc::label(menage_2002$E07)),
     
     # Create new variables "nature_mur," "nature_toit," and "nature_sol" as factors with labels from the "menage_2002" dataset
-    nature_mur = as.factor(E08) %>% structure(label=Hmisc::label(menage_2002$E08)),
-    nature_toit = as.factor(E09) %>% structure(label=Hmisc::label(menage_2002$E09)),
-    nature_sol = as.factor(E10) %>% structure(label=Hmisc::label(menage_2002$E10)),
+    nature_mur = E08 %>% structure(label=Hmisc::label(menage_2002$E08)),
+    nature_toit = E09 %>% structure(label=Hmisc::label(menage_2002$E09)),
+    nature_sol = E10 %>% structure(label=Hmisc::label(menage_2002$E10)),
     
     # Create new variables "radio," "televiseur," "video," and "refri_conge" as factors with labels from the "menage_2002" dataset
-    radio = as.factor(E11B) %>% structure(label=Hmisc::label(menage_2002$E11B)),
-    televiseur = as.factor(E11C) %>% structure(label=Hmisc::label(menage_2002$E11C)),
-    video = as.factor(E11D) %>% structure(label=Hmisc::label(menage_2002$E11D)),
-    refri_conge = as.factor(E11E) %>% structure(label=Hmisc::label(menage_2002$E11E)),
+    radio = E11B %>% structure(label=Hmisc::label(menage_2002$E11B)),
+    televiseur = E11C %>% structure(label=Hmisc::label(menage_2002$E11C)),
+    video = E11D %>% structure(label=Hmisc::label(menage_2002$E11D)),
+    refri_conge = E11E %>% structure(label=Hmisc::label(menage_2002$E11E)),
     
     # Create new variables "telephone," "rechaud_cuis," "foyer_ameli," and "climatisateur" as factors with labels from the "menage_2002" dataset
-    telephone = as.factor(E11F) %>% structure(label=Hmisc::label(menage_2002$E11F)),
-    rechaud_cuis = as.factor(E11G) %>% structure(label=Hmisc::label(menage_2002$E11G)),
-    foyer_ameli = as.factor(E11H) %>% structure(label=Hmisc::label(menage_2002$E11H)),
-    climatisateur = as.factor(E11I) %>% structure(label=Hmisc::label(menage_2002$E11I)),
+    telephone = E11F %>% structure(label=Hmisc::label(menage_2002$E11F)),
+    rechaud_cuis = E11G %>% structure(label=Hmisc::label(menage_2002$E11G)),
+    foyer_ameli = E11H %>% structure(label=Hmisc::label(menage_2002$E11H)),
+    climatisateur = E11I %>% structure(label=Hmisc::label(menage_2002$E11I)),
     
     # Create new variables "machine_coudre," "voiture," "mobylette," "bicyclette," "caleche_charette," and "pirogue" as factors with labels from the "menage_2002" dataset
-    machine_coudre = as.factor(E11J) %>% structure(label=Hmisc::label(menage_2002$E11J)),
-    voiture = as.factor(E12B) %>% structure(label=Hmisc::label(menage_2002$E12B)),
-    mobylette = as.factor(E12C) %>% structure(label=Hmisc::label(menage_2002$E12C)),
-    bicyclette = as.factor(E12E) %>% structure(label=Hmisc::label(menage_2002$E12E)),
-    caleche_charette = as.factor(E12F) %>% structure(label=Hmisc::label(menage_2002$E12F)),
-    pirogue = as.factor(E12G) %>% structure(label=Hmisc::label(menage_2002$E12G)),
+    machine_coudre = E11J %>% structure(label=Hmisc::label(menage_2002$E11J)),
+    voiture = E12B %>% structure(label=Hmisc::label(menage_2002$E12B)),
+    mobylette = E12C %>% structure(label=Hmisc::label(menage_2002$E12C)),
+    bicyclette = E12E %>% structure(label=Hmisc::label(menage_2002$E12E)),
+    caleche_charette = E12F %>% structure(label=Hmisc::label(menage_2002$E12F)),
+    pirogue = E12G %>% structure(label=Hmisc::label(menage_2002$E12G)),
     
     
 # Create a new variable "houe_charrue" as a factor with labels from the "menage_2002" dataset
-houe_charrue = as.factor(E13B) %>% structure(label=Hmisc::label(menage_2002$E13B)),
+houe_charrue = E13B %>% structure(label=Hmisc::label(menage_2002$E13B)),
 
 # Create a new variable "caleche_char" as a factor with labels from the "menage_2002" dataset
-caleche_char = as.factor(E13C) %>% structure(label=Hmisc::label(menage_2002$E13C)),
+caleche_char = E13C %>% structure(label=Hmisc::label(menage_2002$E13C)),
 
 # Create a new variable "animaux_traite" as a factor with labels from the "menage_2002" dataset
-animaux_traite = as.factor(E13D) %>% structure(label=Hmisc::label(menage_2002$E13D)),
+animaux_traite = E13D %>% structure(label=Hmisc::label(menage_2002$E13D)),
 
 # Create a new variable "tracteur" as a factor with labels from the "menage_2002" dataset
-tracteur = as.factor(E13E) %>% structure(label=Hmisc::label(menage_2002$E13E)),
+tracteur = E13E %>% structure(label=Hmisc::label(menage_2002$E13E)),
 
 # Create a new variable "voiture_cam" as a factor with labels from the "menage_2002" dataset
-voiture_cam = as.factor(E13F) %>% structure(label=Hmisc::label(menage_2002$E13F)),
+voiture_cam = E13F %>% structure(label=Hmisc::label(menage_2002$E13F)),
 
 # Create a new variable "mobylette_bicycl" as a factor with labels from the "menage_2002" dataset
-mobylette_bicycl = as.factor(E13G) %>% structure(label=Hmisc::label(menage_2002$E13G)),
+mobylette_bicycl = E13G %>% structure(label=Hmisc::label(menage_2002$E13G)),
 
 # Create a new variable "refriger_congelat" as a factor with labels from the "menage_2002" dataset
-refriger_congelat = as.factor(E13I) %>% structure(label=Hmisc::label(menage_2002$E13I)),
+refriger_congelat = E13I %>% structure(label=Hmisc::label(menage_2002$E13I)),
 
 # Create a new variable "machine_coudre" as a factor with labels from the "menage_2002" dataset
-machine_coudre = as.factor(E13J) %>% structure(label=Hmisc::label(menage_2002$E13J)),
+machine_coudre = E13J %>% structure(label=Hmisc::label(menage_2002$E13J)),
 
 # Create a new variable "materiel_musique" as a factor with labels from the "menage_2002" dataset
-materiel_musique = as.factor(E13K) %>% structure(label=Hmisc::label(menage_2002$E13K)),
+materiel_musique = E13K %>% structure(label=Hmisc::label(menage_2002$E13K)),
 
 # Create a new variable "chaise_bache" as a factor with labels from the "menage_2002" dataset
-chaise_bache = as.factor(E13L) %>% structure(label=Hmisc::label(menage_2002$E13L)),
+chaise_bache = E13L %>% structure(label=Hmisc::label(menage_2002$E13L)),
 
 # Create a new variable "telephone_tele" as a factor with labels from the "menage_2002" dataset
-telephone_tele = as.factor(E13M) %>% structure(label=Hmisc::label(menage_2002$E13M)),
+telephone_tele = E13M %>% structure(label=Hmisc::label(menage_2002$E13M)),
 
 # Create a new variable "photocopieuse" as a factor with labels from the "menage_2002" dataset
-photocopieuse = as.factor(E13N) %>% structure(label=Hmisc::label(menage_2002$E13N)),
+photocopieuse = E13N %>% structure(label=Hmisc::label(menage_2002$E13N)),
 
 # Create a new variable "ordinateur" as a factor with labels from the "menage_2002" dataset
-ordinateur = as.factor(E13O) %>% structure(label=Hmisc::label(menage_2002$E13O)),
+ordinateur = E13O %>% structure(label=Hmisc::label(menage_2002$E13O)),
 
 # Create a new variable "moulin" as a factor with labels from the "menage_2002" dataset
-moulin = as.factor(E13P) %>% structure(label=Hmisc::label(menage_2002$E13P)),
+moulin = E13P %>% structure(label=Hmisc::label(menage_2002$E13P)),
 
 # Create a new variable "appareil_photo" as a factor with labels from the "menage_2002" dataset
-appareil_photo = as.factor(E13Q) %>% structure(label=Hmisc::label(menage_2002$E13Q)),
+appareil_photo = E13Q %>% structure(label=Hmisc::label(menage_2002$E13Q)),
 
 # Create a new variable "terrain_bat" as a factor with labels from the "menage_2002" dataset
-terrain_bat = as.factor(E13R) %>% structure(label=Hmisc::label(menage_2002$E13R)),
+terrain_bat = E13R %>% structure(label=Hmisc::label(menage_2002$E13R)),
 
 # Create a new variable "evacut_ordures" as a factor with labels from the "menage_2002" dataset
-evacut_ordures = as.factor(E14) %>% structure(label=Hmisc::label(menage_2002$E14)),
+evacut_ordures = E14 %>% structure(label=Hmisc::label(menage_2002$E14)),
 
 # Create a new variable "evacut_eaux_usees" as a factor with labels from the "menage_2002" dataset
-evacut_eaux_usees = as.factor(E15) %>% structure(label=Hmisc::label(menage_2002$E15)),
+evacut_eaux_usees = E15 %>% structure(label=Hmisc::label(menage_2002$E15)),
 
 # Create a new variable "repas_saute" as a factor with labels from the "menage_2002" dataset
-repas_saute = as.factor(E16) %>% structure(label=Hmisc::label(menage_2002$E16)),
+repas_saute = E16 %>% structure(label=Hmisc::label(menage_2002$E16)),
 
 # Create a new variable "soins_medicaux" as a factor with labels from the "menage_2002" dataset
-soins_medicaux = as.factor(E17) %>% structure(label=Hmisc::label(menage_2002$E17))
+soins_medicaux = E17 %>% structure(label=Hmisc::label(menage_2002$E17))
   )
 
 
@@ -1619,135 +1617,135 @@ id_dr = IDDR %>% structure(label=Hmisc::label(menage_2013$IDDR)),
 #nb_indiv = Nbre_indiv %>% structure(label=Hmisc::label(menage_2013$Nbre_indiv)),
 
 # Create a new variable "type_log" as a factor with labels from the "menage_2013" dataset
-type_log = as.factor(E01) %>% structure(label=Hmisc::label(menage_2013$E01)),
+type_log = E01 %>% structure(label=Hmisc::label(menage_2013$E01)),
 
 # Create a new variable "piece_occup" as a factor with labels from the "menage_2013" dataset
-piece_occup = as.factor(E02) %>% structure(label=Hmisc::label(menage_2013$E02)),
+piece_occup = E02 %>% structure(label=Hmisc::label(menage_2013$E02)),
 
 # Create a new variable "stat_occupation" as a factor with labels from the "menage_2013" dataset
-stat_occupation = as.factor(E03) %>% structure(label=Hmisc::label(menage_2013$E03)),
+stat_occupation = E03 %>% structure(label=Hmisc::label(menage_2013$E03)),
 
 # Create a new variable "type_aisance" as a factor with labels from the "menage_2013" dataset
-type_aisance = as.factor(E08) %>% structure(label=Hmisc::label(menage_2013$E08)),
+type_aisance = E08 %>% structure(label=Hmisc::label(menage_2013$E08)),
 
 # Create a new variable "approv_eau" as a factor with labels from the "menage_2013" dataset
-approv_eau = as.factor(E09) %>% structure(label=Hmisc::label(menage_2013$E09)),
+approv_eau = E09 %>% structure(label=Hmisc::label(menage_2013$E09)),
 
 # Create a new variable "eclairage" as a factor with labels from the "menage_2013" dataset
-eclairage = as.factor(E11) %>% structure(label=Hmisc::label(menage_2013$E11)),
+eclairage = E11 %>% structure(label=Hmisc::label(menage_2013$E11)),
 
 # Create a new variable "combustible_cuisine" as a factor with labels from the "menage_2013" dataset
-combustible_cuisine = as.factor(E12) %>% structure(label=Hmisc::label(menage_2013$E12)),
+combustible_cuisine = E12 %>% structure(label=Hmisc::label(menage_2013$E12)),
 
 # Create a new variable "nature_mur" as a factor with labels from the "menage_2013" dataset
-nature_mur = as.factor(E05) %>% structure(label=Hmisc::label(menage_2013$E05)),
+nature_mur = E05 %>% structure(label=Hmisc::label(menage_2013$E05)),
 
 # Create a new variable "nature_toit" as a factor with labels from the "menage_2013" dataset
-nature_toit = as.factor(E06) %>% structure(label=Hmisc::label(menage_2013$E06)),
+nature_toit = E06 %>% structure(label=Hmisc::label(menage_2013$E06)),
 
 # Create a new variable "nature_sol" as a factor with labels from the "menage_2013" dataset
-nature_sol = as.factor(E07) %>% structure(label=Hmisc::label(menage_2013$E07)),
+nature_sol = E07 %>% structure(label=Hmisc::label(menage_2013$E07)),
 
 # Create a new variable "radio" as a factor with labels from the "menage_2013" dataset
-radio = as.factor(E13_1) %>% structure(label=Hmisc::label(menage_2013$E13_1)),
+radio = E13_1 %>% structure(label=Hmisc::label(menage_2013$E13_1)),
 
 # Create a new variable "televiseur" as a factor with labels from the "menage_2013" dataset
-televiseur = as.factor(E13_2) %>% structure(label=Hmisc::label(menage_2013$E13_2)),
+televiseur = E13_2 %>% structure(label=Hmisc::label(menage_2013$E13_2)),
 
 # Create a new variable "video" as a factor with labels from the "menage_2013" dataset
-video = as.factor(E13_3) %>% structure(label=Hmisc::label(menage_2013$E13_3)),
+video = E13_3 %>% structure(label=Hmisc::label(menage_2013$E13_3)),
 
 # Create a new variable "refri_conge" as a factor with labels from the "menage_2013" dataset
-refri_conge = as.factor(E13_4) %>% structure(label=Hmisc::label(menage_2013$E13_4)),
+refri_conge = E13_4 %>% structure(label=Hmisc::label(menage_2013$E13_4)),
 
 # Create a new variable "telephone" as a factor with labels from the "menage_2013" dataset
-telephone = as.factor(E13_6) %>% structure(label=Hmisc::label(menage_2013$E13_6)),
+telephone = E13_6 %>% structure(label=Hmisc::label(menage_2013$E13_6)),
 
 # Create a new variable "rechaud_cuis" as a factor with labels from the "menage_2013" dataset
-rechaud_cuis = as.factor(E13_18) %>% structure(label=Hmisc::label(menage_2013$E13_18)),
+rechaud_cuis = E13_18 %>% structure(label=Hmisc::label(menage_2013$E13_18)),
 
 # Create a new variable "foyer_ameli" as a factor with labels from the "menage_2013" dataset
-foyer_ameli = as.factor(E13_7) %>% structure(label=Hmisc::label(menage_2013$E13_7)),
+foyer_ameli = E13_7 %>% structure(label=Hmisc::label(menage_2013$E13_7)),
 
 # Create a new variable "climatisateur" as a factor with labels from the "menage_2013" dataset
-climatisateur = as.factor(E13_8) %>% structure(label=Hmisc::label(menage_2013$E13_8)),
+climatisateur = E13_8 %>% structure(label=Hmisc::label(menage_2013$E13_8)),
 
 # Create a new variable "machine_coudre" as a factor with labels from the "menage_2013" dataset
-machine_coudre = as.factor(E13_9) %>% structure(label=Hmisc::label(menage_2013$E13_9)),
+machine_coudre = E13_9 %>% structure(label=Hmisc::label(menage_2013$E13_9)),
     # Create a new variable "voiture" as a factor with labels from the "menage_2013" dataset
-voiture = as.factor(E15_5) %>% structure(label=Hmisc::label(menage_2013$E15_5)),
+voiture = E15_5 %>% structure(label=Hmisc::label(menage_2013$E15_5)),
 
 # Create a new variable "mobylette" as a factor with labels from the "menage_2013" dataset
-mobylette = as.factor(E15_6) %>% structure(label=Hmisc::label(menage_2013$E15_6)),
+mobylette = E15_6 %>% structure(label=Hmisc::label(menage_2013$E15_6)),
 
 # Create a new variable "bicyclette" as a factor with labels from the "menage_2013" dataset
-bicyclette = as.factor(E14_3) %>% structure(label=Hmisc::label(menage_2013$E14_3)),
+bicyclette = E14_3 %>% structure(label=Hmisc::label(menage_2013$E14_3)),
 
 # Create a new variable "caleche_charette" as a factor with labels from the "menage_2013" dataset
-caleche_charette = as.factor(E14_4) %>% structure(label=Hmisc::label(menage_2013$E14_4)),
+caleche_charette = E14_4 %>% structure(label=Hmisc::label(menage_2013$E14_4)),
 
 # Create a new variable "pirogue" as a factor with labels from the "menage_2013" dataset
-pirogue = as.factor(E15_7) %>% structure(label=Hmisc::label(menage_2013$E15_7)),
+pirogue = E15_7 %>% structure(label=Hmisc::label(menage_2013$E15_7)),
 
 # Create a new variable "houe_charrue" as a factor with labels from the "menage_2013" dataset
-houe_charrue = as.factor(E15_1) %>% structure(label=Hmisc::label(menage_2013$E15_1)),
+houe_charrue = E15_1 %>% structure(label=Hmisc::label(menage_2013$E15_1)),
 
 # Create a new variable "caleche_char" as a factor with labels from the "menage_2013" dataset
-caleche_char = as.factor(E15_2) %>% structure(label=Hmisc::label(menage_2013$E15_2)),
+caleche_char = E15_2 %>% structure(label=Hmisc::label(menage_2013$E15_2)),
 
 # Create a new variable "animaux_traite" as a factor with labels from the "menage_2013" dataset
-animaux_traite = as.factor(E15_3) %>% structure(label=Hmisc::label(menage_2013$E15_3)),
+animaux_traite = E15_3 %>% structure(label=Hmisc::label(menage_2013$E15_3)),
 
 # Create a new variable "tracteur" as a factor with labels from the "menage_2013" dataset
-tracteur = as.factor(E15_4) %>% structure(label=Hmisc::label(menage_2013$E15_4)),
+tracteur = E15_4 %>% structure(label=Hmisc::label(menage_2013$E15_4)),
 
 # Create a new variable "voiture_cam" as a factor with labels from the "menage_2013" dataset
-voiture_cam = as.factor(E15_5) %>% structure(label=Hmisc::label(menage_2013$E15_5)),
+voiture_cam = E15_5 %>% structure(label=Hmisc::label(menage_2013$E15_5)),
 
 # Create a new variable "mobylette_bicycl" as a factor with labels from the "menage_2013" dataset
-mobylette_bicycl = as.factor(E15_6) %>% structure(label=Hmisc::label(menage_2013$E15_6)),
+mobylette_bicycl = E15_6 %>% structure(label=Hmisc::label(menage_2013$E15_6)),
 
 # Create a new variable "refriger_congelat" as a factor with labels from the "menage_2013" dataset
-refriger_congelat = as.factor(E15_8) %>% structure(label=Hmisc::label(menage_2013$E15_8)),
+refriger_congelat = E15_8 %>% structure(label=Hmisc::label(menage_2013$E15_8)),
 
 # Create a new variable "machine_coudre" as a factor with labels from the "menage_2013" dataset
-machine_coudre = as.factor(E15_9) %>% structure(label=Hmisc::label(menage_2013$E15_9)),
+machine_coudre = E15_9 %>% structure(label=Hmisc::label(menage_2013$E15_9)),
 
 # Create a new variable "materiel_musique" as a factor with labels from the "menage_2013" dataset
-materiel_musique = as.factor(E15_10) %>% structure(label=Hmisc::label(menage_2013$E15_10)),
+materiel_musique = E15_10 %>% structure(label=Hmisc::label(menage_2013$E15_10)),
 
 # Create a new variable "chaise_bache" as a factor with labels from the "menage_2013" dataset
-chaise_bache = as.factor(E15_11) %>% structure(label=Hmisc::label(menage_2013$E15_11)),
+chaise_bache = E15_11 %>% structure(label=Hmisc::label(menage_2013$E15_11)),
 
 # Create a new variable "telephone_tele" as a factor with labels from the "menage_2013" dataset
-telephone_tele = as.factor(E15_12) %>% structure(label=Hmisc::label(menage_2013$E15_12)),
+telephone_tele = E15_12 %>% structure(label=Hmisc::label(menage_2013$E15_12)),
 
 # Create a new variable "photocopieuse" as a factor with labels from the "menage_2013" dataset
-photocopieuse = as.factor(E15_13) %>% structure(label=Hmisc::label(menage_2013$E15_13)),
+photocopieuse = E15_13 %>% structure(label=Hmisc::label(menage_2013$E15_13)),
 
 # Create a new variable "ordinateur" as a factor with labels from the "menage_2013" dataset
-ordinateur = as.factor(E15_14) %>% structure(label=Hmisc::label(menage_2013$E15_14)),
+ordinateur = E15_14 %>% structure(label=Hmisc::label(menage_2013$E15_14)),
 
 # Create a new variable "moulin" as a factor with labels from the "menage_2013" dataset
-moulin = as.factor(E15_15) %>% structure(label=Hmisc::label(menage_2013$E15_15)),
+moulin = E15_15 %>% structure(label=Hmisc::label(menage_2013$E15_15)),
 
 # Create a new variable "appareil_photo" as a factor with labels from the "menage_2013" dataset
-appareil_photo = as.factor(E15_16) %>% structure(label=Hmisc::label(menage_2013$E15_16)),
+appareil_photo = E15_16 %>% structure(label=Hmisc::label(menage_2013$E15_16)),
 
 # Create a new variable "terrain_bat" as a factor with labels from the "menage_2013" dataset
-terrain_bat = as.factor(E15_17) %>% structure(label=Hmisc::label(menage_2013$E15_17)),
+terrain_bat = E15_17 %>% structure(label=Hmisc::label(menage_2013$E15_17)),
 
 # Create a new variable "evacut_ordures" as a factor with labels from the "menage_2013" dataset
-evacut_ordures = as.factor(E16) %>% structure(label=Hmisc::label(menage_2013$E16)),
+evacut_ordures = E16 %>% structure(label=Hmisc::label(menage_2013$E16)),
 
 # Create a new variable "evacut_eaux_usees" as a factor with labels from the "menage_2013" dataset
-evacut_eaux_usees = as.factor(E17) %>% structure(label=Hmisc::label(menage_2013$E17)),
+evacut_eaux_usees = E17 %>% structure(label=Hmisc::label(menage_2013$E17)),
 
 # Create a new variable "repas_saute" as a factor with labels from the "menage_2013" dataset
-repas_saute = as.factor(E18) %>% structure(label=Hmisc::label(menage_2013$E18)),
+repas_saute = E18 %>% structure(label=Hmisc::label(menage_2013$E18)),
 
 # Create a new variable "soins_medicaux" as a factor with labels from the "menage_2013" dataset
-soins_medicaux = as.factor(E20) %>% structure(label=Hmisc::label(menage_2013$E20))
+soins_medicaux = E20 %>% structure(label=Hmisc::label(menage_2013$E20))
     )
 
 
@@ -1770,30 +1768,30 @@ soins_medicaux = as.factor(E20) %>% structure(label=Hmisc::label(menage_2013$E20
 menage_2002 <- menage_2002 %>% 
   # Creating a dimension for cooking fuel, checking if it's wood or charcoal
   # Bois=1, Charbon = 2 and Autre=5
-  mutate(cooking_fuel_dim = as.factor(ifelse(combustible_cuisine == 1 | combustible_cuisine == 2| combustible_cuisine == 5, 1, 0)) %>% structure(label = "Standard of living: cooking fuel"), 
+  mutate(cooking_fuel_dim = ifelse(combustible_cuisine == 1 | combustible_cuisine == 2| combustible_cuisine == 5, 1, 0) %>% structure(label = "Standard of living: cooking fuel"), 
          
   # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
   # Edicule public==4, Dans la nature==4, Autre==6
-         sanitation_dim = as.factor(ifelse(type_aisance %in% seq(4, 6), 1, 0)) %>% structure(label = "Standard of living: sanitation"),
+         sanitation_dim = ifelse(type_aisance %in% seq(4, 6), 1, 0) %>% structure(label = "Standard of living: sanitation"),
          
   # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
   # Puits interieur = 1, Puits exterieur = 2, cours d'eau = 7 et autre = 8
-         drinking_water_dim = as.factor(ifelse(approv_eau %in% c(1, 2, 7, 8), 1, 0)) %>% structure(label = "Standard of living: drinking water"),
+         drinking_water_dim = ifelse(approv_eau %in% c(1, 2, 7, 8), 1, 0) %>% structure(label = "Standard of living: drinking water"),
          
   # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
   # Lampe tempête = 6, Bougie = 7, Bois=8, Autre= 9,
-         electricity_dim = as.factor(ifelse(eclairage %in% c(6, 7, 8, 9), 1, 0))%>% structure(label = "Standard of living: electricity"),
+         electricity_dim = ifelse(eclairage %in% c(6, 7, 8, 9), 1, 0)%>% structure(label = "Standard of living: electricity"),
          
   # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
         # For nature_mur, 3 is "Banco", 4 is "Paille/tige" and 5 is 'autre".
          # For nature_sol, 3 is 'Argile/banco", 4 is Sable and 5 is "autre".
          # For nature_toit, 4 is "Chaume" and 5 is "autre"
-         housing_dim = as.factor(ifelse(nature_mur %in% c(3, 4, 5) & nature_sol %in% c(3, 4, 5) & nature_toit %in% c(4, 5), 1, 0))%>% structure(label = "Standard of living: housing"),
+         housing_dim = ifelse(nature_mur %in% c(3, 4, 5) & nature_sol %in% c(3, 4, 5) & nature_toit %in% c(4, 5), 1, 0)%>% structure(label = "Standard of living: housing"),
          
   # Creating a dimension for household assets, checking if various assets are absent in the household
   
-         assets_dim = as.factor(ifelse(radio == 0 & televiseur == 0 & telephone == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
-                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0)) %>% structure(label = "Standard of living: assets")
+         assets_dim = ifelse(radio == 0 & televiseur == 0 & telephone == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
+                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0) %>% structure(label = "Standard of living: assets")
   )
 
 
@@ -1802,30 +1800,30 @@ menage_2002 <- menage_2002 %>%
 menage_2013 <- menage_2013 %>% 
   # Creating a dimension for cooking fuel, checking if it's wood or charcoal
   # Bois=1, Charbon = 2, Bouse de vache=5 and Autre=8
-  mutate(cooking_fuel_dim = as.factor(ifelse(combustible_cuisine %in% c(1,2,5,8), 1, 0))%>% structure(label = "Standard of living: cooking fuel"), 
+  mutate(cooking_fuel_dim = ifelse(combustible_cuisine %in% c(1,2,5,8), 1, 0)%>% structure(label = "Standard of living: cooking fuel"), 
          
   # Creating a dimension for sanitation, checking for specific types (public edifice, nature, other)
   # Non couverte =22, Edicule public==31, Dans la nature==41, Autre==88
-         sanitation_dim = as.factor(ifelse(type_aisance %in% c(22, 31, 41, 88), 1, 0))%>% structure(label = "Standard of living: sanitation"),
+         sanitation_dim = ifelse(type_aisance %in% c(22, 31, 41, 88), 1, 0)%>% structure(label = "Standard of living: sanitation"),
          
   # Creating a dimension for drinking water, considering specific sources (indoor well, outdoor well, watercourse, other)
   # Puits non protégés = 6, Eau de pluie = 9, Source, cour d'eau = 10 and autre = 98
-         drinking_water_dim = as.factor(ifelse(approv_eau %in% c(6, 9, 10, 98), 1, 0))%>% structure(label = "Standard of living: drinking water"),
+         drinking_water_dim = ifelse(approv_eau %in% c(6, 9, 10, 98), 1, 0)%>% structure(label = "Standard of living: drinking water"),
          
   # Creating a dimension for electricity, considering different sources (storm lamp, candle, wood, other)
   # Lampe à pétrole artisanale=5, Lampe tempête = 6, Bougie = 7, Bois=8, Lampe rechargeable= 9, Autre=98
-         electricity_dim = as.factor(ifelse(eclairage %in% c(5, 6, 7, 8, 9, 98), 1, 0))%>% structure(label = "Standard of living: electricity"),
+         electricity_dim = ifelse(eclairage %in% c(5, 6, 7, 8, 9, 98), 1, 0)%>% structure(label = "Standard of living: electricity"),
          
   # Creating a dimension for housing quality, checking specific types of construction materials for walls, floor, and roof
         # For nature_mur, 5 is Bois, 6 is "Banco", 7 is "Banco+ enduit ciment",  8 is 'Paille/Tige" and 9 is "Autre".
          # For nature_sol, 3 is 'Argile/banco", 4 is Sable and 7 is "Bois ciré" and 8 is "autre".
          # For nature_toit, 0 is "Autre" and 4 is "Chaume/paille"
-         housing_dim = as.factor(ifelse(nature_mur %in% c(5, 6, 7, 8, 9) & nature_sol %in% c(3, 4, 7, 8) & nature_toit %in% c(0, 4), 1, 0))%>% structure(label = "Standard of living: housing"),
+         housing_dim = ifelse(nature_mur %in% c(5, 6, 7, 8, 9) & nature_sol %in% c(3, 4, 7, 8) & nature_toit %in% c(0, 4), 1, 0)%>% structure(label = "Standard of living: housing"),
          
   # Creating a dimension for household assets, checking if various assets are absent in the household
   
-         assets_dim = as.factor(ifelse(radio == 0 & televiseur == 0 & telephone == 0 & telephone_tele == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
-                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0))%>% structure(label = "Standard of living: assets")
+         assets_dim = ifelse(radio == 0 & televiseur == 0 & telephone == 0 & telephone_tele == 0 & animaux_traite == 0 & bicyclette == 0 & mobylette == 0 & mobylette_bicycl == 0 & 
+                           refri_conge == 0 & refriger_congelat == 0 & voiture == 0 & voiture_cam == 0, 1, 0)%>% structure(label = "Standard of living: assets")
   )
 
 
@@ -1846,14 +1844,14 @@ menage_2013 <- menage_2013 %>%
   mutate(soins_medicaux = as.numeric(soins_medicaux),
             soins_medicaux = 
                 dplyr::recode(soins_medicaux,"2" = 0),
-            soins_medicaux = as.factor(soins_medicaux) %>% structure(label=Hmisc::label(menage_2002$E17))) 
+            soins_medicaux = soins_medicaux %>% structure(label=Hmisc::label(menage_2002$E17))) 
 
 # For the RGPH 2002 dataset, recode the "soins_medicaux" variable
 # This code modifies the "soins_medicaux" variable, replacing "2" with "0", "3" with NA, and "9" with NA
 menage_2002 <- menage_2002 %>%
   mutate(soins_medicaux = as.numeric(soins_medicaux),
            soins_medicaux = dplyr::recode(soins_medicaux, "2" = 0, "3" = NULL, "9" = NULL), 
-         soins_medicaux = as.factor(soins_medicaux) %>% structure(label=Hmisc::label(menage_2002$E17)))
+         soins_medicaux = soins_medicaux %>% structure(label=Hmisc::label(menage_2002$E17)))
 
 ```
 
@@ -1950,7 +1948,7 @@ menage_2002 <- menage_2002 %>%
          
          deces_under_five = ifelse(is.na(deces_under_five), 0, deces_under_five),
          
-         deces_under_five_dim = as.factor(ifelse(is.na(deces_under_five_dim), 0, deces_under_five_dim)) %>% structure(label = "Health: child mortality"))
+         deces_under_five_dim = ifelse(is.na(deces_under_five_dim), 0, deces_under_five_dim) %>% structure(label = "Health: child mortality"))
 
 ```
 
