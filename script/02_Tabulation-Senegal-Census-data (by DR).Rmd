@@ -1,5 +1,5 @@
 ---
-title: "Tabulation of Covariates and Outcomes for the Senegal census"
+title: "Tabulation of Covariates and Outcomes for the Senegal census (by DR)"
 author: "Habibou Ibrahim"
 date: '`r format (Sys.Date(), "%d %B %Y")`'
 output: 
@@ -104,6 +104,26 @@ menage_2013 %>% janitor::get_dupes()
 menage_2013 %>% janitor::get_dupes(ID_MENAGE)
 ```
 
+**Grouping by IDDR**
+
+```{r, results='hide', include = TRUE, warning=FALSE, echo = FALSE}
+
+# For the RGPH 2002
+dr_2002 <- menage_2002 %>% 
+    group_by(id_dr) %>% 
+    summarise_if(is.numeric, sum, na.rm = TRUE) %>% 
+    ungroup()%>% 
+    mutate(RGPH="2002")
+
+
+# For the RGPH 2013
+dr_2013 <- menage_2013 %>% 
+    group_by(id_dr) %>% 
+    summarise_if(is.numeric, sum, na.rm = TRUE)%>% 
+    ungroup() %>% 
+    mutate(RGPH="2013")
+```
+
 
 
 # Study Variables
@@ -115,14 +135,14 @@ menage_2013 %>% janitor::get_dupes(ID_MENAGE)
 ```{r, results='hold', include = TRUE, warning=FALSE, echo = FALSE}
 
 gender_var = c("homme","femme","hh_size")
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,homme,femme,hh_size) %>% 
   
   plyr::rbind.fill(
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
         # Selecting relevant variables
       select(RGPH, homme,femme,hh_size)) %>% 
 
@@ -160,14 +180,14 @@ menage_2002 %>%
 
 age_var = c("nbr_babies","nbr_under_14","nbr_young_people","nbr_adult", "nbr_elder_adult", "nbr_senior")
 
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,nbr_babies,nbr_under_14,nbr_young_people,nbr_adult, nbr_elder_adult, nbr_senior) %>% 
   
   plyr::rbind.fill(
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
        # Selecting relevant variables
       select(RGPH,nbr_babies,nbr_under_14,nbr_young_people,nbr_adult, nbr_elder_adult, nbr_senior)) %>% 
@@ -177,6 +197,15 @@ menage_2002 %>%
     by = RGPH,  # Group by "RGPH" column
 
     type = c(age_var~"continuous"),
+        
+    label = list(
+      nbr_babies ~ "Nombre d'enfant agée de moins d'un an",
+      nbr_under_14 ~ "Nombre d'enfant agée de moins de 14 ans",
+      nbr_young_people ~ "Nombre d'individus agée entre 15 et 29 ans",
+      nbr_adult ~ "Nombre d'individus agées entre 30 et 44 ans",
+      nbr_elder_adult ~ "Nombre d'individus agées entre 45 et 59 ans",
+      nbr_senior ~ "Nombre d'individus agée de plus de 60 ans"
+      ),
     
     statistic = list(
                      all_categorical() ~ "{n} ({p}%,{n}/{N})",
@@ -205,7 +234,7 @@ menage_2002 %>%
 mat_status_var = c("Monogame","Polygame","Celibataire","Veuf","Divorce")
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,Monogame,Polygame,Celibataire,Veuf,Divorce) %>% 
@@ -213,7 +242,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,Monogame,Polygame,Celibataire,Veuf,Divorce)) %>% 
@@ -221,7 +250,15 @@ menage_2002 %>%
 # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
     by = RGPH,  # Group by "RGPH" column
-
+    
+    label = list(
+      Monogame ~ "Nombre de monogame dans le ménage",
+      Polygame ~ "Nombre de polygame dans le ménage",
+      Celibataire ~ "Nombre de celibataire dans le ménage",
+      Veuf ~ "Nombre de veuf/veuve dans le ménage",
+      Divorce ~ "Nombre de divorcé dans le ménage"
+      ),
+    
     type = c(mat_status_var~"continuous"),
     statistic = list(
                      all_categorical() ~ "{n} ({p}%,{n}/{N})",
@@ -249,7 +286,7 @@ menage_2002 %>%
 fertility_var = c("fertility")
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,fertility) %>% 
@@ -257,7 +294,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,fertility)) %>% 
@@ -279,7 +316,7 @@ menage_2002 %>%
   ) %>% 
 
   # Modify the table header to provide a descriptive label
-  modify_header(label ~ "Fertilité") %>%
+  modify_header(label ~ "Table de Fertilité") %>%
   add_overall() %>%
   add_n()%>% 
   # Add difference statistics to the table
@@ -294,7 +331,7 @@ menage_2002 %>%
 educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,Aucun,Primaire,Moyen,Secondaire,Superieur) %>% 
@@ -302,7 +339,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,Aucun,Primaire,Moyen,Secondaire,Superieur)) %>% 
@@ -344,7 +381,7 @@ literacy_var = c("Literacy_French","Literacy_Arabic","Literacy_Wolof","Literacy_
 
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,Literacy_French,Literacy_Arabic,Literacy_Wolof,Literacy_Pulaar,Literacy_Sereer,Literacy_Mandingo,Literacy_Diola,Literacy_Soninke) %>% 
@@ -352,7 +389,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,Literacy_French,Literacy_Arabic,Literacy_Wolof,Literacy_Pulaar,Literacy_Sereer,Literacy_Mandingo,Literacy_Diola,Literacy_Soninke)) %>% 
@@ -397,7 +434,7 @@ mig_var = c("resident_pres","resident_abs","resident_vis")
 
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,resident_pres,resident_abs,resident_vis) %>% 
@@ -405,7 +442,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,resident_pres,resident_abs,resident_vis)) %>% 
@@ -448,7 +485,7 @@ deces_mat_var = c("deces_mat_oui","deces_mat_non","deces_mat_nsp")
 
 # Pas collecter and 2013
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,deces_mat_oui,deces_mat_non,deces_mat_nsp) %>% 
@@ -494,7 +531,7 @@ occup_var=c("occup_independant","occup_employeur","occup_salarie","occup_apprent
 
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,occup_independant,occup_employeur,occup_salarie,occup_apprenti,occup_aideFamilial,occup_autre) %>% 
@@ -502,7 +539,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,occup_independant,occup_employeur,occup_salarie,occup_apprenti,occup_aideFamilial,occup_autre)) %>% 
@@ -548,7 +585,7 @@ sit_occup_var=c("sit_occup_occup","sit_occup_chomeur","sit_occup_foyer","sit_occ
 
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,sit_occup_occup,sit_occup_chomeur,sit_occup_foyer,sit_occup_etudiant,sit_occup_rentier,sit_occup_retraite,sit_occup_autre) %>% 
@@ -556,7 +593,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,sit_occup_occup,sit_occup_chomeur,sit_occup_foyer,sit_occup_etudiant,sit_occup_rentier,sit_occup_retraite,sit_occup_autre)) %>% 
@@ -604,7 +641,7 @@ income_var = c("I_repas_saute","I_soins_medicaux")
 # Il faut revoir les labels dans cette region
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,I_repas_saute,I_soins_medicaux) %>% 
@@ -612,7 +649,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,I_repas_saute,I_soins_medicaux)) %>% 
@@ -664,7 +701,7 @@ menage_2002 %>%
 ### Access to basic equipment
 
 #### For the RGPH 2002 dataset 
-```{r, include = TRUE, warning=FALSE, echo = FALSE}
+```{r, include = FALSE, warning=FALSE, echo = FALSE, eval=FALSE}
 #For the RGPH 2002 dataset
 #OK
 # 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
@@ -672,33 +709,95 @@ menage_2002 %>%
 
 equipment_var_cat <- c("repas_saute","evacut_eaux_usees","terrain_bat","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","type_log")
 
+# 
+# equipment_var_dicho <- c("soins_medicaux","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio")
 
-equipment_var_dicho <- c("soins_medicaux","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio")
-
-equipment_var_num <- c("piece_occup")
+equipment_var_num <- c("piece_occup","soins_medicaux","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio")
 
 #,""
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log) %>% 
+  
+  mutate(
+
+    soins_medicaux = labelled::remove_labels(soins_medicaux) %>% structure(label=Hmisc::label(menage_2002$soins_medicaux)),
+    
+    repas_saute = labelled::remove_labels(repas_saute) %>% structure(label=Hmisc::label(menage_2002$repas_saute)),
+    
+    terrain_bat = labelled::remove_labels(terrain_bat) %>% structure(label=Hmisc::label(menage_2002$terrain_bat)),
+    
+    appareil_photo = labelled::remove_labels(appareil_photo) %>% structure(label=Hmisc::label(menage_2002$appareil_photo)),
+    
+    moulin = labelled::remove_labels(moulin) %>% structure(label=Hmisc::label(menage_2002$moulin)),
+    
+    ordinateur = labelled::remove_labels(ordinateur) %>% structure(label=Hmisc::label(menage_2002$ordinateur)),
+    
+    photocopieuse = labelled::remove_labels(photocopieuse) %>% structure(label=Hmisc::label(menage_2002$photocopieuse)),
+    
+    telephone_tele = labelled::remove_labels(telephone_tele) %>% structure(label=Hmisc::label(menage_2002$telephone_tele)),
+    
+    chaise_bache = labelled::remove_labels(chaise_bache) %>% structure(label=Hmisc::label(menage_2002$chaise_bache)),
+    
+    materiel_musique = labelled::remove_labels(materiel_musique) %>% structure(label=Hmisc::label(menage_2002$materiel_musique)),
+    
+    machine_coudre = labelled::remove_labels(machine_coudre) %>% structure(label=Hmisc::label(menage_2002$machine_coudre)),
+    
+    refriger_congelat = labelled::remove_labels(refriger_congelat) %>% structure(label=Hmisc::label(menage_2002$refriger_congelat)),
+
+    mobylette_bicycl = labelled::remove_labels(mobylette_bicycl) %>% structure(label=Hmisc::label(menage_2002$mobylette_bicycl)),
+    
+    voiture_cam = labelled::remove_labels(voiture_cam) %>% structure(label=Hmisc::label(menage_2002$voiture_cam)),
+    
+    tracteur = labelled::remove_labels(tracteur) %>% structure(label=Hmisc::label(menage_2002$tracteur)),
+    
+    animaux_traite = labelled::remove_labels(animaux_traite) %>% structure(label=Hmisc::label(menage_2002$animaux_traite)),
+    
+    caleche_char = labelled::remove_labels(caleche_char) %>% structure(label=Hmisc::label(menage_2002$caleche_char)),
+    
+    houe_charrue = labelled::remove_labels(houe_charrue) %>% structure(label=Hmisc::label(menage_2002$houe_charrue)),
+    
+    pirogue = labelled::remove_labels(pirogue) %>% structure(label=Hmisc::label(menage_2002$pirogue)),
+    
+    caleche_charette = labelled::remove_labels(caleche_charette) %>% structure(label=Hmisc::label(menage_2002$caleche_charette)),
+
+    bicyclette = labelled::remove_labels(bicyclette) %>% structure(label=Hmisc::label(menage_2002$bicyclette)),
+    
+    mobylette = labelled::remove_labels(mobylette) %>% structure(label=Hmisc::label(menage_2002$mobylette)),
+    
+    voiture = labelled::remove_labels(voiture) %>% structure(label=Hmisc::label(menage_2002$voiture)),
+    
+    machine_coudre = labelled::remove_labels(machine_coudre) %>% structure(label=Hmisc::label(menage_2002$machine_coudre)),
+
+    climatisateur = labelled::remove_labels(climatisateur) %>% structure(label=Hmisc::label(menage_2002$climatisateur)),
+    
+    foyer_ameli = labelled::remove_labels(foyer_ameli) %>% structure(label=Hmisc::label(menage_2002$foyer_ameli)),
+    
+    rechaud_cuis = labelled::remove_labels(rechaud_cuis) %>% structure(label=Hmisc::label(menage_2002$rechaud_cuis)),
+    
+    telephone = labelled::remove_labels(telephone) %>% structure(label=Hmisc::label(menage_2002$telephone)),
+
+    refri_conge = labelled::remove_labels(refri_conge) %>% structure(label=Hmisc::label(menage_2002$refri_conge)),
+    
+    video = labelled::remove_labels(video) %>% structure(label=Hmisc::label(menage_2002$video)),
+    
+    televiseur = labelled::remove_labels(televiseur) %>% structure(label=Hmisc::label(menage_2002$televiseur)),
+    
+    radio = labelled::remove_labels(radio) %>% structure(label=Hmisc::label(menage_2002$radio))
+
+  ) %>%  
   
   labelled::unlabelled() %>% 
 
 # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
-    #by = RGPH,  # Group by "RGPH" column
-    
-    # label = list(
-    #   I_repas_saute ~ "Repas sauté",
-    #   I_soins_medicaux ~ "Soins médicaux"
-    #   ),
-    
+
     type = c(equipment_var_cat~"categorical",
              equipment_var_num~"continuous",
-             equipment_var_dicho~"dichotomous"),
+             equipment_var_dicho~"continuous"),
     statistic = list(
                      all_categorical() ~ "{n} ({p}%)",
                      all_continuous() ~ "{mean} ({sd})"
@@ -710,16 +809,13 @@ menage_2002 %>%
 
   # Modify the table header to provide a descriptive label
   modify_header(label ~ "Access aux equipements for the RGPH 2002") %>%
-  #add_overall() %>%
-  add_n()#%>% 
-  # Add difference statistics to the table
-  #add_difference() 
+  add_n()
 
 ```
 
 
 #### For the RGPH 2013 dataset 
-```{r, include = TRUE, warning=FALSE, echo = FALSE}
+```{r, include = FALSE, warning=FALSE, echo = FALSE, eval=FALSE}
 #For the RGPH 2013 dataset
 #OK
 # 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
@@ -727,14 +823,14 @@ menage_2002 %>%
 
 equipment_var_cat <- c("evacut_eaux_usees","terrain_bat","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","type_log","terrain_bat")
 
+# 
+# equipment_var_dicho <- c("soins_medicaux","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","repas_saute","terrain_bat")
 
-equipment_var_dicho <- c("soins_medicaux","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","repas_saute","terrain_bat")
-
-equipment_var_num <- c("piece_occup")
+equipment_var_num <- c("piece_occup","soins_medicaux","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","repas_saute","terrain_bat")
 
 
 #For the RGPH 2013 dataset 
-menage_2013 %>% 
+dr_2013 %>% 
       
 # Selecting relevant variables
 select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log) %>% 
@@ -812,8 +908,8 @@ select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,m
 
     
        type = c(equipment_var_cat~"categorical",
-                equipment_var_num~"continuous",
-                 equipment_var_dicho~"dichotomous"
+                equipment_var_num~"continuous"#,
+                 #equipment_var_dicho~"dichotomous"
                 ),
     statistic = list(
                      all_categorical() ~ "{n} ({p}%)",
@@ -825,11 +921,8 @@ select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,m
   ) %>% 
 
   # Modify the table header to provide a descriptive label
-  modify_header(label ~ "Access aux equipements for RGPH 2013") #%>%
-  #add_overall() #%>%
-  #add_n()%>% 
-  # Add difference statistics to the table
-  #add_difference() 
+  modify_header(label ~ "Access aux equipements for RGPH 2013") %>%
+  add_n()
 
 ```
 
@@ -848,25 +941,25 @@ select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,m
 cm_var=c("niveau_instruction_cm","sexe_cm","age_cm")
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,niveau_instruction_cm,sexe_cm,age_cm) %>%
   
   mutate(sexe_cm = as.factor(ifelse(sexe_cm ==2, 0, 1)) %>% 
-           structure(label = Hmisc::label(menage_2002$sexe_cm))) %>% 
+           structure(label = Hmisc::label(dr_2002$sexe_cm))) %>% 
 
   
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,niveau_instruction_cm,sexe_cm,age_cm) %>%
       
       mutate(sexe_cm = as.factor(ifelse(sexe_cm ==2, 0, 1)) %>% 
-               structure(label = Hmisc::label(menage_2013$sexe_cm))))%>% 
+               structure(label = Hmisc::label(dr_2013$sexe_cm))))%>% 
 
 # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
@@ -902,7 +995,7 @@ menage_2002 %>%
 liencm_var=c("liencm_cm","liencm_epous","liencm_enf","liencm_parent","liencm_frere","liencm_petit_fils","liencm_sans_lien")
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,liencm_cm,liencm_epous,liencm_enf,liencm_parent,liencm_frere,liencm_petit_fils,liencm_sans_lien) %>% 
@@ -910,7 +1003,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,liencm_cm,liencm_epous,liencm_enf,liencm_parent,liencm_frere,liencm_petit_fils,liencm_sans_lien)) %>% 
@@ -958,7 +1051,7 @@ menage_2002 %>%
 mpi_var=c("cooking_fuel_dim","sanitation_dim","drinking_water_dim","electricity_dim","housing_dim","assets_dim","school_attendance_dim","years_schooling_dim")
 
 #For the RGPH 2002 dataset
-menage_2002 %>% 
+dr_2002 %>% 
   
   # Selecting relevant variables
   select(RGPH,cooking_fuel_dim,sanitation_dim,drinking_water_dim,electricity_dim,housing_dim,assets_dim,school_attendance_dim,years_schooling_dim,deces_under_five_dim) %>% 
@@ -966,7 +1059,7 @@ menage_2002 %>%
   plyr::rbind.fill(
     
     #For the RGPH 2013 dataset 
-    menage_2013 %>% 
+    dr_2013 %>% 
       
       # Selecting relevant variables
       select(RGPH,cooking_fuel_dim,sanitation_dim,drinking_water_dim,electricity_dim,housing_dim,assets_dim,school_attendance_dim,years_schooling_dim
@@ -982,7 +1075,7 @@ menage_2002 %>%
       school_attendance_dim ~ "Education: School Attendance",
       deces_under_five_dim ~ "Health: Number of under five mortality"),
     
-    type = c(mpi_var~"dichotomous"),
+    type = c(mpi_var~"continuous"),
     
     statistic = list(
                      all_categorical() ~ "{n} ({p}%)",
