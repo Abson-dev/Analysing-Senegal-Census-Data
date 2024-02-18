@@ -270,7 +270,7 @@ dr_2002 %>%
   ) %>% 
 
   # Modify the table header to provide a descriptive label
-  modify_header(label ~ "situation matrimoniale") %>%
+  modify_header(label ~ "Situation matrimoniale") %>%
   add_overall() %>%
   add_n()%>% 
   # Add difference statistics to the table
@@ -316,7 +316,7 @@ dr_2002 %>%
   ) %>% 
 
   # Modify the table header to provide a descriptive label
-  modify_header(label ~ "Table de Fertilité") %>%
+  modify_header(label ~ "Table de fertilité") %>%
   add_overall() %>%
   add_n()%>% 
   # Add difference statistics to the table
@@ -701,32 +701,34 @@ dr_2002 %>%
 ### Access to basic equipment
 
 #### For the RGPH 2002 dataset 
-```{r, include = FALSE, warning=FALSE, echo = FALSE, eval=FALSE}
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
 #For the RGPH 2002 dataset
 #OK
 # 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
 #For the RGPH 2013 dataset
-
-equipment_var_cat <- c("repas_saute","evacut_eaux_usees","terrain_bat","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","type_log")
+# 
+# equipment_var_cat <- c(paste0("repas_saute_", seq(1,2,1)), paste0("evacut_eaux_usees_",seq(1,9,1)),paste0("nature_sol_",seq(1,5,1)),paste0("nature_toit_",seq(1,5,1)),paste0("nature_mur_",seq(1,5,1)),paste0("combustible_cuisine_",seq(1,5,1)),paste0("eclairage_",seq(1,9,1)),paste0("approv_eau_",seq(1,8,1)),paste0("type_aisance_",seq(1,6,1)),paste0("stat_occupation_",seq(1,6,1)),paste0("type_log_",seq(1,6,1)))
 
 # 
 # equipment_var_dicho <- c("soins_medicaux","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio")
 
-equipment_var_num <- c("piece_occup","soins_medicaux","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio")
+equipment_var_num <- c("piece_occup","soins_medicaux","terrain_bat","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio", paste0("repas_saute_", seq(1,2,1)), paste0("evacut_eaux_usees_",seq(1,9,1)),paste0("nature_sol_",seq(1,5,1)),paste0("nature_toit_",seq(1,5,1)),paste0("nature_mur_",seq(1,5,1)),paste0("combustible_cuisine_",seq(1,5,1)),paste0("eclairage_",seq(1,9,1)),paste0("approv_eau_",seq(1,8,1)),paste0("type_aisance_",seq(1,6,1)),paste0("stat_occupation_",seq(1,6,1)),paste0("type_log_",seq(1,6,1)))
 
 #,""
+
+  # select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log)
 
 #For the RGPH 2002 dataset
 dr_2002 %>% 
   
   # Selecting relevant variables
-  select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log) %>% 
+  select(soins_medicaux,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,piece_occup,starts_with("repas_saute_"),starts_with("evacut_eaux_usees_"),starts_with("nature_sol_"),starts_with("nature_toit_"),starts_with("nature_mur_"),starts_with("combustible_cuisine_"),starts_with("eclairage_"),starts_with("approv_eau_"),starts_with("type_aisance"),starts_with("stat_occupation_"),starts_with("type_log_")) %>% 
   
   mutate(
 
     soins_medicaux = labelled::remove_labels(soins_medicaux) %>% structure(label=Hmisc::label(menage_2002$soins_medicaux)),
     
-    repas_saute = labelled::remove_labels(repas_saute) %>% structure(label=Hmisc::label(menage_2002$repas_saute)),
+    # repas_saute = labelled::remove_labels(repas_saute) %>% structure(label=Hmisc::label(menage_2002$repas_saute)),
     
     terrain_bat = labelled::remove_labels(terrain_bat) %>% structure(label=Hmisc::label(menage_2002$terrain_bat)),
     
@@ -786,7 +788,143 @@ dr_2002 %>%
     
     televiseur = labelled::remove_labels(televiseur) %>% structure(label=Hmisc::label(menage_2002$televiseur)),
     
-    radio = labelled::remove_labels(radio) %>% structure(label=Hmisc::label(menage_2002$radio))
+    radio = labelled::remove_labels(radio) %>% structure(label=Hmisc::label(menage_2002$radio)),
+    
+    piece_occup = labelled::remove_labels(piece_occup) %>% structure(label=Hmisc::label(menage_2002$piece_occup)),
+    
+    # Répas sauté
+    repas_saute_1 = as.numeric(repas_saute_1) %>% structure(label=paste0(Hmisc::label(menage_2002$repas_saute), ": Oui")),
+         
+         repas_saute_2 = as.numeric(repas_saute_2) %>% structure(label=paste0(Hmisc::label(menage_2002$repas_saute), ": Non")),
+         
+    # Evacuation des eaux usées
+         evacut_eaux_usees_1 = as.numeric(evacut_eaux_usees_1) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Réseau d'égout")), 
+                  
+         evacut_eaux_usees_2 = as.numeric(evacut_eaux_usees_2) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Canal fermé")),
+                  evacut_eaux_usees_3 = as.numeric(evacut_eaux_usees_3) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Canal ciel ouvert")),
+         
+                  evacut_eaux_usees_4 = as.numeric(evacut_eaux_usees_4) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Grille bouche avaloir")), 
+                  
+         evacut_eaux_usees_5 = as.numeric(evacut_eaux_usees_5) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Dans la mer/fleuve")),
+         
+                  evacut_eaux_usees_6 = as.numeric(evacut_eaux_usees_6) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Cours d'eau")),
+         
+          evacut_eaux_usees_7 = as.numeric(evacut_eaux_usees_7) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Trou creusé")),
+         
+                  evacut_eaux_usees_8 = as.numeric(evacut_eaux_usees_8) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Dans la rue/nature")), 
+                  
+         evacut_eaux_usees_9 = as.numeric(evacut_eaux_usees_9) %>% structure(label=paste0(Hmisc::label(menage_2002$evacut_eaux_usees), ":  Autre")),
+         
+    
+    # Nature du sol
+         nature_sol_1 = as.numeric(nature_sol_1) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_sol), ": Carrelage")),
+         
+         nature_sol_2 = as.numeric(nature_sol_2) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_sol), ": Ciment")),
+         
+         nature_sol_3 = as.numeric(nature_sol_3) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_sol), ": Argile/banco")),
+         
+         nature_sol_4 = as.numeric(nature_sol_4) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_sol), ": Sable")),
+         
+         nature_sol_5 = as.numeric(nature_sol_5) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_sol), ": Autre")),
+         
+        nature_toit_1 = as.numeric(nature_toit_1) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_toit), ": Beton")),
+        
+    
+    # Nature du toit
+                nature_toit_2 = as.numeric(nature_toit_2) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_toit), ": Tuile/ardoise")),
+        
+                nature_toit_3 = as.numeric(nature_toit_3) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_toit), ": Zinc")),
+        
+                nature_toit_4 = as.numeric(nature_toit_4) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_toit), ": Chaume")),
+        
+                nature_toit_5 = as.numeric(nature_toit_5) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_toit), ": Autre")),
+        
+        
+    # Nature du mur 
+        nature_mur_1 = as.numeric(nature_mur_1) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_mur), ": Ciment")),
+         
+                nature_mur_2 = as.numeric(nature_mur_2) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_mur), ": Bois")),
+        
+                nature_mur_3 = as.numeric(nature_mur_3) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_mur), ": Banco")),
+        
+                nature_mur_4 = as.numeric(nature_mur_4) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_mur), ": Paille/tige")),
+        
+                nature_mur_5 = as.numeric(nature_mur_5) %>% structure(label=paste0(Hmisc::label(menage_2002$nature_mur), ": Autre")),
+        
+        
+    # Combustible de cuisine
+                  combustible_cuisine_1 = as.numeric(combustible_cuisine_1) %>% structure(label=paste0(Hmisc::label(menage_2002$combustible_cuisine), ": Bois")),
+                           combustible_cuisine_2 = as.numeric(combustible_cuisine_2) %>% structure(label=paste0(Hmisc::label(menage_2002$combustible_cuisine), ": Charbon")),
+                          combustible_cuisine_3 = as.numeric(combustible_cuisine_3) %>% structure(label=paste0(Hmisc::label(menage_2002$combustible_cuisine), ": Gaz")),
+                          combustible_cuisine_4 = as.numeric(combustible_cuisine_4) %>% structure(label=paste0(Hmisc::label(menage_2002$combustible_cuisine), ": Electricite")),
+                          combustible_cuisine_5 = as.numeric(combustible_cuisine_5) %>% structure(label=paste0(Hmisc::label(menage_2002$combustible_cuisine), ": Autre")),
+        
+    # éclairage
+                  eclairage_1 = as.numeric(eclairage_1) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": Electricite")),
+        
+                          eclairage_2 = as.numeric(eclairage_2) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": olaire")),
+                          eclairage_3 = as.numeric(eclairage_3) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": Grpe.electrogene")),
+                          eclairage_4 = as.numeric(eclairage_4) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": Gaz")),
+        
+                          eclairage_5 = as.numeric(eclairage_5) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": Lampe a petrole")),
+                          eclairage_6 = as.numeric(eclairage_6) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": Lampe tempete")),
+                          eclairage_7 = as.numeric(eclairage_7) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": Bougie")),
+                          eclairage_8 = as.numeric(eclairage_8) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": Bois")),
+        
+                          eclairage_9 = as.numeric(eclairage_9) %>% structure(label=paste0(Hmisc::label(menage_2002$eclairage), ": Autre")),
+         
+    
+    # Approvisionnement en eau
+                  approv_eau_1 = as.numeric(approv_eau_1) %>% structure(label=paste0(Hmisc::label(menage_2002$approv_eau), ": Puits interieur")),
+        
+                          approv_eau_2 = as.numeric(approv_eau_2) %>% structure(label=paste0(Hmisc::label(menage_2002$approv_eau), ": Puits exterieur")),
+        
+                          approv_eau_3 = as.numeric(approv_eau_3) %>% structure(label=paste0(Hmisc::label(menage_2002$approv_eau), ": Robinet inter.")),
+        
+                          approv_eau_4 = as.numeric(approv_eau_4) %>% structure(label=paste0(Hmisc::label(menage_2002$approv_eau), ": Robinet public")),
+        
+                          approv_eau_5 = as.numeric(approv_eau_5) %>% structure(label=paste0(Hmisc::label(menage_2002$approv_eau), ": Forage")),
+        
+                          approv_eau_6 = as.numeric(approv_eau_6) %>% structure(label=paste0(Hmisc::label(menage_2002$approv_eau), ": Vendeurs d'eau")),
+        
+                          approv_eau_7 = as.numeric(approv_eau_7) %>% structure(label=paste0(Hmisc::label(menage_2002$approv_eau), ": Source, cours d'eau")),
+        
+                          approv_eau_8 = as.numeric(approv_eau_8) %>% structure(label=paste0(Hmisc::label(menage_2002$approv_eau), ": Autre")),
+    
+    # Type d'aisance
+         
+                  type_aisance_1 = as.numeric(type_aisance_1) %>% structure(label=paste0(Hmisc::label(menage_2002$type_aisance), ": Chasse egouts")),
+        
+                          type_aisance_2 = as.numeric(type_aisance_2) %>% structure(label=paste0(Hmisc::label(menage_2002$type_aisance), ": Chasse fosse")),
+        
+                          type_aisance_3 = as.numeric(type_aisance_3) %>% structure(label=paste0(Hmisc::label(menage_2002$type_aisance), ": Latrines")),
+        
+                          type_aisance_4 = as.numeric(type_aisance_4) %>% structure(label=paste0(Hmisc::label(menage_2002$type_aisance), ": Edicule public")),
+        
+                          type_aisance_5 = as.numeric(type_aisance_5) %>% structure(label=paste0(Hmisc::label(menage_2002$type_aisance), ": Dans la nature")),
+        
+                          type_aisance_6 = as.numeric(type_aisance_6) %>% structure(label=paste0(Hmisc::label(menage_2002$type_aisance), ": Autre")),
+        
+    # Statut d'occupation
+                  stat_occupation_1 = as.numeric(stat_occupation_1) %>% structure(label=paste0(Hmisc::label(menage_2002$stat_occupation), ": Proprietaire")),
+                          stat_occupation_2 = as.numeric(stat_occupation_2) %>% structure(label=paste0(Hmisc::label(menage_2002$stat_occupation), ": Co_proprietaire")),
+                          stat_occupation_3 = as.numeric(stat_occupation_3) %>% structure(label=paste0(Hmisc::label(menage_2002$stat_occupation), ": Locataire")),
+                          stat_occupation_4 = as.numeric(stat_occupation_4) %>% structure(label=paste0(Hmisc::label(menage_2002$stat_occupation), ": Loge' employeur")),
+                          stat_occupation_5 = as.numeric(stat_occupation_5) %>% structure(label=paste0(Hmisc::label(menage_2002$stat_occupation), ": Loge' famille")),
+                          stat_occupation_6 = as.numeric(stat_occupation_6) %>% structure(label=paste0(Hmisc::label(menage_2002$stat_occupation), ": Autre")),
+         
+    # Type de logement
+                  type_log_1 = as.numeric(type_log_1) %>% structure(label=paste0(Hmisc::label(menage_2002$type_log), ": Case")),
+         
+                          type_log_2 = as.numeric(type_log_2) %>% structure(label=paste0(Hmisc::label(menage_2002$type_log), ": Baraque")),
+        
+                          type_log_3 = as.numeric(type_log_3) %>% structure(label=paste0(Hmisc::label(menage_2002$type_log), ": Maison basse")),
+        
+                          type_log_4 = as.numeric(type_log_4) %>% structure(label=paste0(Hmisc::label(menage_2002$type_log), ": Maison à étage")),
+        
+                          type_log_5 = as.numeric(type_log_5) %>% structure(label=paste0(Hmisc::label(menage_2002$type_log), ": Appartement")),
+        
+                          type_log_6 = as.numeric(type_log_6) %>% structure(label=paste0(Hmisc::label(menage_2002$type_log), ": Autre"))
 
   ) %>%  
   
@@ -795,9 +933,8 @@ dr_2002 %>%
 # Generate a summary table using "tbl_summary" for the specified columns
   tbl_summary(
 
-    type = c(equipment_var_cat~"categorical",
-             equipment_var_num~"continuous",
-             equipment_var_dicho~"continuous"),
+    type = c(#equipment_var_cat~"continuous",
+             equipment_var_num~"continuous"),
     statistic = list(
                      all_categorical() ~ "{n} ({p}%)",
                      all_continuous() ~ "{mean} ({sd})"
@@ -815,31 +952,36 @@ dr_2002 %>%
 
 
 #### For the RGPH 2013 dataset 
-```{r, include = FALSE, warning=FALSE, echo = FALSE, eval=FALSE}
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
 #For the RGPH 2013 dataset
 #OK
 # 1. Main mode of household waste disposal, 2. Main mode of waste water disposal, 3. Main mode of lighting, 4. Main fuel for cooking
 #For the RGPH 2013 dataset
 
-equipment_var_cat <- c("evacut_eaux_usees","terrain_bat","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","type_log","terrain_bat")
+# equipment_var_cat <- c("evacut_eaux_usees","terrain_bat","nature_sol","nature_toit","nature_mur","combustible_cuisine","eclairage","approv_eau","type_aisance","stat_occupation","type_log","terrain_bat")
+# 
+# equipment_var_cat <- c( paste0("evacut_eaux_usees_",seq(1,9,1)),"evacut_eaux_usees_98",paste0("nature_sol_",seq(1,8,1)),paste0("nature_toit_",seq(0,4,1)),paste0("nature_mur_",seq(1,7,1)),"nature_mur_9",paste0("combustible_cuisine_",seq(1,5,1)),"combustible_cuisine_8",paste0("eclairage_",seq(1,9,1)),"eclairage_98",paste0("approv_eau_",seq(1,10,1)),"approv_eau_98","type_aisance_11","type_aisance_12","type_aisance_21","type_aisance_22","type_aisance_23","type_aisance_31","type_aisance_41","type_aisance_88",paste0("stat_occupation_",seq(1,8,1)),paste0("type_log_",seq(0,5,1)))
+# 
+
+
 
 # 
 # equipment_var_dicho <- c("soins_medicaux","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","repas_saute","terrain_bat")
 
-equipment_var_num <- c("piece_occup","soins_medicaux","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","repas_saute","terrain_bat")
+equipment_var_num <- c("repas_saute","piece_occup","soins_medicaux","appareil_photo","moulin","ordinateur","photocopieuse","telephone_tele","chaise_bache","materiel_musique","machine_coudre","refriger_congelat","mobylette_bicycl","voiture_cam","tracteur","animaux_traite","caleche_char","houe_charrue","pirogue","caleche_charette","bicyclette","mobylette","voiture","machine_coudre","climatisateur","foyer_ameli","rechaud_cuis","telephone","refri_conge","video","televiseur","radio","terrain_bat",paste0("evacut_eaux_usees_",seq(1,9,1)),"evacut_eaux_usees_98",paste0("nature_sol_",seq(1,8,1)),paste0("nature_toit_",seq(0,4,1)),paste0("nature_mur_",seq(1,7,1)),"nature_mur_9",paste0("combustible_cuisine_",seq(1,5,1)),"combustible_cuisine_8",paste0("eclairage_",seq(1,9,1)),"eclairage_98",paste0("approv_eau_",seq(1,10,1)),"approv_eau_98","type_aisance_11","type_aisance_12","type_aisance_21","type_aisance_22","type_aisance_23","type_aisance_31","type_aisance_41","type_aisance_88",paste0("stat_occupation_",seq(1,8,1)),paste0("type_log_",seq(0,5,1)))
 
 
 #For the RGPH 2013 dataset 
 dr_2013 %>% 
       
 # Selecting relevant variables
-select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,nature_sol,nature_toit,nature_mur,combustible_cuisine,eclairage,approv_eau,type_aisance,stat_occupation,piece_occup,type_log) %>% 
+select(soins_medicaux,repas_saute,terrain_bat,appareil_photo,moulin,ordinateur,photocopieuse,telephone_tele,chaise_bache,materiel_musique,machine_coudre,refriger_congelat,mobylette_bicycl,voiture_cam,tracteur,animaux_traite,caleche_char,houe_charrue,pirogue,caleche_charette,bicyclette,mobylette,voiture,machine_coudre,climatisateur,foyer_ameli,rechaud_cuis,telephone,refri_conge,video,televiseur,radio,piece_occup,starts_with("evacut_eaux_usees_"),starts_with("nature_sol_"),starts_with("nature_toit_"),starts_with("nature_mur_"),starts_with("combustible_cuisine_"),starts_with("eclairage_"),starts_with("approv_eau_"),starts_with("type_aisance_"),starts_with("stat_occupation_"),starts_with("type_log_")) %>% 
   
   mutate(
 
     soins_medicaux = labelled::remove_labels(soins_medicaux) %>% structure(label=Hmisc::label(menage_2013$soins_medicaux)),
     
-    repas_saute = labelled::remove_labels(repas_saute) %>% structure(label=Hmisc::label(menage_2013$repas_saute)),
+     repas_saute = labelled::remove_labels(repas_saute) %>% structure(label=Hmisc::label(menage_2013$repas_saute)),
     
     terrain_bat = labelled::remove_labels(terrain_bat) %>% structure(label=Hmisc::label(menage_2013$terrain_bat)),
     
@@ -899,7 +1041,163 @@ select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,m
     
     televiseur = labelled::remove_labels(televiseur) %>% structure(label=Hmisc::label(menage_2013$televiseur)),
     
-    radio = labelled::remove_labels(radio) %>% structure(label=Hmisc::label(menage_2013$radio))
+    radio = labelled::remove_labels(radio) %>% structure(label=Hmisc::label(menage_2013$radio)),
+    
+        piece_occup = labelled::remove_labels(piece_occup) %>% structure(label=Hmisc::label(menage_2002$piece_occup)),
+    
+    # Evacuation des eaux usées
+         evacut_eaux_usees_1 = as.numeric(evacut_eaux_usees_1) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Réseau d'égout")), 
+                  
+         evacut_eaux_usees_2 = as.numeric(evacut_eaux_usees_2) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Canal fermé")),
+                  evacut_eaux_usees_3 = as.numeric(evacut_eaux_usees_3) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Canal à ciel ouvert")),
+         
+                  evacut_eaux_usees_4 = as.numeric(evacut_eaux_usees_4) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Grille, bouche avaloir")), 
+                  
+         evacut_eaux_usees_5 = as.numeric(evacut_eaux_usees_5) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Fosse/puisard")),
+         
+                  evacut_eaux_usees_6 = as.numeric(evacut_eaux_usees_6) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Dans la mer, fleuve")),
+         
+          evacut_eaux_usees_7 = as.numeric(evacut_eaux_usees_7) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Cours d'eau")),
+         
+                  evacut_eaux_usees_8 = as.numeric(evacut_eaux_usees_8) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Trou creusé")), 
+                  
+         evacut_eaux_usees_9 = as.numeric(evacut_eaux_usees_9) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Dans la rue/nature")),
+         
+             evacut_eaux_usees_98 = as.numeric(evacut_eaux_usees_98) %>% structure(label=paste0(Hmisc::label(menage_2013$evacut_eaux_usees), ":  Autre")),
+         
+    # Nature du sol
+         nature_sol_1 = as.numeric(nature_sol_1) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_sol), ": Carrelage")),
+         
+         nature_sol_2 = as.numeric(nature_sol_2) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_sol), ": Ciment")),
+         
+         nature_sol_3 = as.numeric(nature_sol_3) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_sol), ": Argile/banco")),
+         
+         nature_sol_4 = as.numeric(nature_sol_4) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_sol), ": Sable")),
+         
+         nature_sol_5 = as.numeric(nature_sol_5) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_sol), ": Tapis")),
+         
+             nature_sol_6 = as.numeric(nature_sol_6) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_sol), ": Moquette")),
+    
+             nature_sol_7 = as.numeric(nature_sol_7) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_sol), ": Bois ciré")),
+    
+             nature_sol_8 = as.numeric(nature_sol_8) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_sol), ": Autre")),
+    
+    # Nature du toit
+        nature_toit_1 = as.numeric(nature_toit_1) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_toit), ": Béton")),
+        
+                nature_toit_2 = as.numeric(nature_toit_2) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_toit), ": Tuile/ardoise")),
+        
+                nature_toit_3 = as.numeric(nature_toit_3) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_toit), ": Zinc")),
+        
+                nature_toit_4 = as.numeric(nature_toit_4) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_toit), ": Chaume/paille")),
+        
+                nature_toit_0 = as.numeric(nature_toit_0) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_toit), ": Autre")),
+        
+        
+    # Nature du mur 
+        nature_mur_1 = as.numeric(nature_mur_1) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Ciment")),
+         
+                nature_mur_2 = as.numeric(nature_mur_2) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Ciment avec carreaux")),
+        
+                nature_mur_3 = as.numeric(nature_mur_3) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Ciment et marbre")),
+        
+                nature_mur_4 = as.numeric(nature_mur_4) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Ciment avec bois")),
+        
+                nature_mur_5 = as.numeric(nature_mur_5) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Bois")),
+        
+                nature_mur_6 = as.numeric( nature_mur_6) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Banco")),
+        
+                nature_mur_7 = as.numeric(nature_mur_7) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Banco+ enduit ciment")),
+        
+                # nature_mur_8 = nature_mur_8) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Paille/Tige")),
+        
+                nature_mur_9 = as.numeric(nature_mur_9) %>% structure(label=paste0(Hmisc::label(menage_2013$nature_mur), ": Autre")),
+        
+    # Combustible de cuisine
+                  combustible_cuisine_1 = as.numeric(combustible_cuisine_1) %>% structure(label=paste0(Hmisc::label(menage_2013$combustible_cuisine), ": Bois")),
+                  combustible_cuisine_2 = as.numeric(combustible_cuisine_2) %>% structure(label=paste0(Hmisc::label(menage_2013$combustible_cuisine), ": Charbon")),
+                  combustible_cuisine_3 = as.numeric(combustible_cuisine_3) %>% structure(label=paste0(Hmisc::label(menage_2013$combustible_cuisine), ": Gaz")),
+                          combustible_cuisine_4 = as.numeric(combustible_cuisine_4) %>% structure(label=paste0(Hmisc::label(menage_2013$combustible_cuisine), ": Electricite")),
+                          combustible_cuisine_5 = as.numeric(combustible_cuisine_5) %>% structure(label=paste0(Hmisc::label(menage_2013$combustible_cuisine), ": Bouse de vache")),
+                          combustible_cuisine_8 = as.numeric(combustible_cuisine_8) %>% structure(label=paste0(Hmisc::label(menage_2013$combustible_cuisine), ": Autre")),
+        
+    # éclairage
+                  eclairage_1 = as.numeric(eclairage_1) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Electricite")),
+                          eclairage_2 = as.numeric(eclairage_2) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": olaire")),
+                          eclairage_3 = as.numeric(eclairage_3) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Grpe.electrogene")),
+                          eclairage_4 = as.numeric(eclairage_4) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Gaz")),
+        
+                          eclairage_5 = as.numeric(eclairage_5) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Lampe a petrole")),
+                          eclairage_6 = as.numeric(eclairage_6) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Lampe tempête")),
+                          eclairage_7 = as.numeric(eclairage_7) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Bougie")),
+                          eclairage_8 = as.numeric(eclairage_8) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Bois")),
+        
+                          eclairage_9 = as.numeric(eclairage_9) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Lampe rechargeable")),
+                              eclairage_98 = as.numeric(eclairage_98) %>% structure(label=paste0(Hmisc::label(menage_2013$eclairage), ": Autre")),
+    
+    # Approvisionnement en eau
+                  approv_eau_1 = as.numeric(approv_eau_1) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Robinet dans logement")),
+        
+                          approv_eau_2 = as.numeric(approv_eau_2) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Robinet dans cour/parcelle")),
+        
+                          approv_eau_3 = as.numeric(approv_eau_3) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Robinet public/borne fontaine")),
+        
+                          approv_eau_4 = as.numeric(approv_eau_4) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Puits à pompe ou forage")),
+        
+                          approv_eau_5 = as.numeric(approv_eau_5) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Puits protégés")),
+        
+                          approv_eau_6 = as.numeric(approv_eau_6) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Puits non protégés")),
+        
+                          approv_eau_7 = as.numeric(approv_eau_7) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Vendeurs d’eau")),
+        
+                          approv_eau_8 = as.numeric(approv_eau_8) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Camion citerne")),
+    
+                          approv_eau_9 = as.numeric(approv_eau_9) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Eau de pluie")),
+        
+                          approv_eau_10 = as.numeric(approv_eau_10) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Source, cour d'eau")),
+        
+                          approv_eau_98 = as.numeric(approv_eau_98) %>% structure(label=paste0(Hmisc::label(menage_2013$approv_eau), ": Autre")),
+    
+    
+    # Type d'aisance
+                  type_aisance_11 = as.numeric(type_aisance_11) %>% structure(label=paste0(Hmisc::label(menage_2013$type_aisance), ": Chasse raccordée à l’égout")),
+        
+                          type_aisance_12 = as.numeric(type_aisance_12) %>% structure(label=paste0(Hmisc::label(menage_2013$type_aisance), ": Chasse avec fosse")),
+        
+                          type_aisance_21 = as.numeric(type_aisance_21) %>% structure(label=paste0(Hmisc::label(menage_2013$type_aisance), ": Couverte")),
+        
+                          type_aisance_22 = as.numeric(type_aisance_22) %>% structure(label=paste0(Hmisc::label(menage_2013$type_aisance), ": Non couverte")),
+        
+                          type_aisance_23 = as.numeric(type_aisance_23) %>% structure(label=paste0(Hmisc::label(menage_2013$type_aisance), ": Ventilée améliorée")),
+        
+                          type_aisance_31 = as.numeric(type_aisance_31) %>% structure(label=paste0(Hmisc::label(menage_2013$type_aisance), ": Edicule public")),
+    
+                              type_aisance_41 = as.numeric(type_aisance_41) %>% structure(label=paste0(Hmisc::label(menage_2013$type_aisance), ": Dans la nature")),
+        
+                          type_aisance_88 = as.numeric(type_aisance_88) %>% structure(label=paste0(Hmisc::label(menage_2013$type_aisance), ": Autre")),
+        
+    # Statut d'occupation
+                  stat_occupation_1 = as.numeric(stat_occupation_1) %>% structure(label=paste0(Hmisc::label(menage_2013$stat_occupation), ": Proprietaire")),
+                          stat_occupation_2 = as.numeric(stat_occupation_2) %>% structure(label=paste0(Hmisc::label(menage_2013$stat_occupation), ": Co proprietaire")),
+                          stat_occupation_3 = as.numeric(stat_occupation_3) %>% structure(label=paste0(Hmisc::label(menage_2013$stat_occupation), ": Locataire")),
+                          stat_occupation_4 = as.numeric(stat_occupation_4) %>% structure(label=paste0(Hmisc::label(menage_2013$stat_occupation), ": Co locataire")),
+                          stat_occupation_5 = as.numeric(stat_occupation_5) %>% structure(label=paste0(Hmisc::label(menage_2013$stat_occupation), ": Location vente")),
+                          stat_occupation_6 = as.numeric(stat_occupation_6) %>% structure(label=paste0(Hmisc::label(menage_2013$stat_occupation), ": Logé par employeur")),
+                          stat_occupation_7 = as.numeric(stat_occupation_7) %>% structure(label=paste0(Hmisc::label(menage_2013$stat_occupation), ": Logé par les parents/amis")),
+                          stat_occupation_8 = as.numeric(stat_occupation_8) %>% structure(label=paste0(Hmisc::label(menage_2013$stat_occupation), ": Autre")),
+         
+    # Type de logement
+                  type_log_1 = as.numeric(type_log_1) %>% structure(label=paste0(Hmisc::label(menage_2013$type_log), ": Case")),
+         
+                          type_log_2 = as.numeric(type_log_2) %>% structure(label=paste0(Hmisc::label(menage_2013$type_log), ": Baraque")),
+        
+                          type_log_3 = as.numeric(type_log_3) %>% structure(label=paste0(Hmisc::label(menage_2013$type_log), ": Maison basse")),
+        
+                          type_log_4 = as.numeric(type_log_4) %>% structure(label=paste0(Hmisc::label(menage_2013$type_log), ": Maison à étage")),
+        
+                          type_log_5 = as.numeric(type_log_5) %>% structure(label=paste0(Hmisc::label(menage_2013$type_log), ": Immeuble à Appartement")),
+        
+                          type_log_0 = as.numeric(type_log_0) %>% structure(label=paste0(Hmisc::label(menage_2013$type_log), ": Autre"))
 
   ) %>%
     labelled::unlabelled() %>% 
@@ -907,7 +1205,7 @@ select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,m
   tbl_summary(
 
     
-       type = c(equipment_var_cat~"categorical",
+       type = c(#equipment_var_cat~"continuous",
                 equipment_var_num~"continuous"#,
                  #equipment_var_dicho~"dichotomous"
                 ),
@@ -916,7 +1214,7 @@ select(soins_medicaux,repas_saute,evacut_eaux_usees,terrain_bat,appareil_photo,m
                      all_continuous() ~ "{mean} ({sd})"
                      ),
     missing_text = "(Missing)",
-    digits = everything() ~ c(2,2),
+    digits = everything() ~ c(2,2)
     #missing = "no"
   ) %>% 
 
