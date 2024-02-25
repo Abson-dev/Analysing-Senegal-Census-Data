@@ -423,14 +423,20 @@ dfw_pca <- dfw_pca_2002 %>%
   plyr::rbind.fill(dfw_pca_2013) %>% 
   st_as_sf()
 
+label_pca <- paste0("Dimension ",1:11)
+predictors_pca <- paste0("PC",1:11)
 
-dfw_pca %>% 
-    
-      ggplot(aes(fill = PC1))  + 
+purrr::map(predictors_pca, function(curr_var){ 
+
+curr_lab <- label_pca[match(as.character(sym(curr_var)), predictors_pca)]
+
+curr_plot <- dfw_pca %>% 
+      ggplot(aes(fill = !!sym(curr_var)))  + 
       
       # Adding spatial features to the plot
       geom_sf(color = NA) +
        scale_fill_viridis_c(direction = -1)+
+      labs(title = curr_lab, fill =  "values") +
       facet_wrap(~RGPH) +
       
 # Adjusting the plot theme
@@ -458,50 +464,53 @@ dfw_pca %>%
       width = unit(1, "cm"),
       )
 
-ggsave(paste0(here::here(),"/output/output_model/img/8_pc1_rgph.png"), width = 8, height = 5)
+print(curr_plot)
+
+ggsave(paste0(here::here(),"/output/output_model/img/8_values_",curr_lab,"_rgph.png"), width = 8, height = 5)
+}, .progress = TRUE)
 ```
 
 
 
 
 
-```{r}
-dfw_pca %>% 
-    
-      ggplot(aes(fill = PC2))  + 
-      
-      # Adding spatial features to the plot
-      geom_sf(color = NA) +
-       scale_fill_viridis_c(direction = -1)+
-      facet_wrap(~RGPH) +
-      
-      # Adjusting the plot theme
-      theme_map(base_size = 8) +
-      theme(panel.background = element_rect(),
-                #legend.background = element_blank(),
-                axis.ticks = element_blank(),
-                axis.text = element_blank(),
-                legend.position = "bottom", 
-                text = element_text(size = 8), 
-                #panel.grid = element_line(color = "white", size = 0.8),
-                legend.box.background = element_rect(),
-                legend.box.margin = margin(6, 6, 6, 6),
-                plot.background = element_rect(fill = "white"))+
-      ggspatial::annotation_scale(
-        location = "br",
-        bar_cols = c("grey60", "white"),
-        text_family = "ArcherPro Book"
-      ) +
-      ggspatial::annotation_north_arrow(
-        location = "tl", which_north = "true",
-        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
-        #which_north = "grid",
-      height = unit(1, "cm"),
-      width = unit(1, "cm"),
-      )
+<!-- ```{r} -->
+<!-- dfw_pca %>%  -->
 
-ggsave(paste0(here::here(),"/output/output_model/img/8_pc2_rgph.png"), width = 8, height = 5)
-```
+<!--       ggplot(aes(fill = PC2))  +  -->
+
+<!--       # Adding spatial features to the plot -->
+<!--       geom_sf(color = NA) + -->
+<!--        scale_fill_viridis_c(direction = -1)+ -->
+<!--       facet_wrap(~RGPH) + -->
+
+<!--       # Adjusting the plot theme -->
+<!--       theme_map(base_size = 8) + -->
+<!--       theme(panel.background = element_rect(), -->
+<!--                 #legend.background = element_blank(), -->
+<!--                 axis.ticks = element_blank(), -->
+<!--                 axis.text = element_blank(), -->
+<!--                 legend.position = "bottom",  -->
+<!--                 text = element_text(size = 8),  -->
+<!--                 #panel.grid = element_line(color = "white", size = 0.8), -->
+<!--                 legend.box.background = element_rect(), -->
+<!--                 legend.box.margin = margin(6, 6, 6, 6), -->
+<!--                 plot.background = element_rect(fill = "white"))+ -->
+<!--       ggspatial::annotation_scale( -->
+<!--         location = "br", -->
+<!--         bar_cols = c("grey60", "white"), -->
+<!--         text_family = "ArcherPro Book" -->
+<!--       ) + -->
+<!--       ggspatial::annotation_north_arrow( -->
+<!--         location = "tl", which_north = "true", -->
+<!--         #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"), -->
+<!--         #which_north = "grid", -->
+<!--       height = unit(1, "cm"), -->
+<!--       width = unit(1, "cm"), -->
+<!--       ) -->
+
+<!-- ggsave(paste0(here::here(),"/output/output_model/img/8_pc2_rgph.png"), width = 8, height = 5) -->
+<!-- ``` -->
 
 ```{r}
 # For the model output
@@ -891,17 +900,21 @@ gw_model_results <- gw_model_2002_results %>%
 
 
 purrr::map(predictors_2002, function(curr_var){ 
+
+curr_lab <- label_predictors_2002[match(as.character(sym(curr_var)), predictors_2002)]
+
+curr_plot <- gw_model_results %>% 
     
-    gw_model_results %>% 
-    
-      ggplot(aes(fill = !!sym(curr_var))) + 
+      ggplot(aes(fill = !!sym(curr_var))) + # Use !!sym() to handle variable names dynamically
       
       # Adding spatial features to the plot
       geom_sf() +
       
       scale_fill_viridis_c(direction = -1) +
       #scale_fill_continuous(labels = function(x) format(x, scientific = TRUE))+
-  labs(fill = paste0("Local β for \n household's ",curr_var))+
+  labs(
+    title = curr_lab,
+    fill =  "Local β") +
       facet_wrap(~RGPH) +
       
 # Adjusting the plot theme
@@ -928,8 +941,11 @@ purrr::map(predictors_2002, function(curr_var){
       height = unit(1, "cm"),
       width = unit(1, "cm"),
       )
+  
+print(curr_plot)
 
-ggsave(paste0(here::here(),"/output/output_model/img/12_beta_hh_",curr_var,"_rgph.png"), width = 8, height = 5)}, .progress = TRUE)
+ggsave(paste0(here::here(),"/output/output_model/img/12_beta_",curr_lab,"_rgph.png"), width = 8, height = 5)
+}, .progress = TRUE)
 ```
 
 
