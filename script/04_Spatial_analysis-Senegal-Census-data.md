@@ -1,7 +1,7 @@
 ---
 title: "Spatial analysis using the Guediawaye Census data"
-author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
-date: "2024-01-13"
+author: "HEMA Aboubacar"
+date: "2024-02-24"
 output: 
   html_document:
     toc: true
@@ -144,6 +144,7 @@ ggplot(MPI_data_dr_2002, aes(x = MPI_men, y = lag_MPI_men)) +
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/mpi_spatialLag_rgph_2002.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/mpi_spatialLag_rgph_2002.png"), width = 8, height = 5)
 ```
 
 ```r
@@ -225,7 +226,7 @@ labs(title = "Map of local Gi* scores for Guediawaye Census 2013")
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/localgi_rgph_2013.pdf"), width = 8, height = 5)
-
+ggsave(paste0(here::here(),"/output/output_img/localgi_rgph_2013.png"), width = 8, height = 5)
 #
 ggplot(MPI_data_dr_2002) + 
   geom_sf(aes(fill = localG), color = NA) + 
@@ -239,6 +240,7 @@ labs(title = "Map of local Gi* scores for Guediawaye Census 2002")
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/localgi_rgph_2002.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/localgi_rgph_2002.png"), width = 8, height = 5)
 ```
 
 Given that the returned results are z-scores, an analyst can choose hot spot thresholds in the statistic, calculate them with case_when(), then plot them accordingly.
@@ -263,6 +265,7 @@ labs(title = "Map of local Gi* scores with significant clusters highlighted for 
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/localgicluster_rgph_2013.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/localgicluster_rgph_2013.png"), width = 8, height = 5)
 ###
 MPI_data_dr_2002 <- MPI_data_dr_2002 %>%
   mutate(hotspot = case_when(
@@ -282,7 +285,60 @@ labs(title = "Map of local Gi* scores with significant clusters highlighted for 
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/localgicluster_rgph_2002.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/localgicluster_rgph_2002.png"), width = 8, height = 5)
 ```
+
+```r
+df <- MPI_data_dr_2002 %>%
+  dplyr::mutate(RGPH = "Census 2002") %>% 
+  plyr::rbind.fill(MPI_data_dr_2013 %>%
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
+  st_as_sf()
+
+
+df %>% 
+    
+      ggplot(aes(fill = hotspot)) + 
+      
+  geom_sf(size = 0.1) + 
+  scale_fill_manual(values = c("red", "blue", "grey")) +
+  #scale_fill_brewer(palette = "Set2") + 
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            #legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = "bottom", 
+            text = element_text(size = 8), 
+            #panel.grid = element_line(color = "white", size = 0.8),
+            legend.box.background = element_rect(),
+            legend.box.margin = margin(6, 6, 6, 6),
+            plot.background = element_rect(fill = "white"))+
+  ggspatial::annotation_scale(
+    location = "br",
+    bar_cols = c("grey60", "white"),
+    text_family = "ArcherPro Book"
+  ) +
+  ggspatial::annotation_north_arrow(
+    location = "tl", which_north = "true",
+    #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+    #which_north = "grid",
+  height = unit(1, "cm"),
+  width = unit(1, "cm"),
+  )
+```
+
+![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-12-1.png)<!-- -->
+
+```r
+#ggsave(paste0(here::here(),"/output/output_img/lisacluster.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/lisacluster.png"), width = 8, height = 5)
+```
+
+
 
 ## Identifying clusters and spatial outliers with local indicators of spatial association (LISA)
 
@@ -380,10 +436,12 @@ ggplot(dfw_lisa_2013_clusters, aes(x = scaled_MPI_men,
   labs(title = "LISA quadrant scatterplot for Guediawaye Census 2013")
 ```
 
-![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/lisaquadrant_rgph_2013.pdf"), width = 8, height = 5)
+
+ggsave(paste0(here::here(),"/output/output_img/lisaquadrant_rgph_2013.png"), width = 8, height = 5)
 
 ##
 ggplot(dfw_lisa_2002_clusters, aes(x = scaled_MPI_men, 
@@ -400,10 +458,11 @@ ggplot(dfw_lisa_2002_clusters, aes(x = scaled_MPI_men,
   labs(title = "LISA quadrant scatterplot for Guediawaye Census 2002")
 ```
 
-![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-14-2.png)<!-- -->
+![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-15-2.png)<!-- -->
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/lisaquadrant_rgph_2002.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/lisaquadrant_rgph_2002.png"), width = 8, height = 5)
 ```
 
 
@@ -416,10 +475,11 @@ ggplot(dfw_lisa_2013_clusters, aes(fill = lisa_cluster)) +
   labs(fill = "Cluster type")
 ```
 
-![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/lisacluster_rgph_2013.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/lisacluster_rgph_2013.png"), width = 8, height = 5)
 
 ###
 ggplot(dfw_lisa_2002_clusters, aes(fill = lisa_cluster)) + 
@@ -430,9 +490,61 @@ ggplot(dfw_lisa_2002_clusters, aes(fill = lisa_cluster)) +
   labs(fill = "Cluster type")
 ```
 
-![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-15-2.png)<!-- -->
+![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-16-2.png)<!-- -->
 
 ```r
 ggsave(paste0(here::here(),"/output/output_img/lisacluster_rgph_2002.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/lisacluster_rgph_2002.png"), width = 8, height = 5)
+```
+
+
+```r
+dfw_lisa_clusters <- dfw_lisa_2002_clusters %>%
+  dplyr::mutate(RGPH = "Census 2002") %>% 
+  plyr::rbind.fill(dfw_lisa_2013_clusters %>%
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
+  st_as_sf()
+
+
+dfw_lisa_clusters %>% 
+    
+      ggplot(aes(fill = lisa_cluster)) + 
+      
+  geom_sf(size = 0.1) + 
+  #scale_fill_manual(values = c("red", "blue", "grey")) +
+  scale_fill_brewer(palette = "Set2") + 
+      facet_wrap(~RGPH) +
+      
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            #legend.background = element_blank(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = "bottom", 
+            text = element_text(size = 8), 
+            #panel.grid = element_line(color = "white", size = 0.8),
+            legend.box.background = element_rect(),
+            legend.box.margin = margin(6, 6, 6, 6),
+            plot.background = element_rect(fill = "white"))+
+  ggspatial::annotation_scale(
+    location = "br",
+    bar_cols = c("grey60", "white"),
+    text_family = "ArcherPro Book"
+  ) +
+  ggspatial::annotation_north_arrow(
+    location = "tl", which_north = "true",
+    #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+    #which_north = "grid",
+  height = unit(1, "cm"),
+  width = unit(1, "cm"),
+  )
+```
+
+![](04_Spatial_analysis-Senegal-Census-data_files/figure-html/unnamed-chunk-17-1.png)<!-- -->
+
+```r
+#ggsave(paste0(here::here(),"/output/output_img/lisacluster.pdf"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_img/lisacluster.png"), width = 8, height = 5)
 ```
 

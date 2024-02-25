@@ -1,7 +1,7 @@
 ---
 title: "Computing the MPI using the Senegal Census data and visualization"
-author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
-date: "2024-01-13"
+author: "HEMA Aboubacar"
+date: "2024-02-11"
 output: 
   html_document:
     toc: true
@@ -168,23 +168,23 @@ menage_2002 %>%
 ```
 
 ```{=html}
-<div id="twmuftnsrg" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#twmuftnsrg table {
+<div id="symtxcnlqs" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#symtxcnlqs table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#twmuftnsrg thead, #twmuftnsrg tbody, #twmuftnsrg tfoot, #twmuftnsrg tr, #twmuftnsrg td, #twmuftnsrg th {
+#symtxcnlqs thead, #symtxcnlqs tbody, #symtxcnlqs tfoot, #symtxcnlqs tr, #symtxcnlqs td, #symtxcnlqs th {
   border-style: none;
 }
 
-#twmuftnsrg p {
+#symtxcnlqs p {
   margin: 0;
   padding: 0;
 }
 
-#twmuftnsrg .gt_table {
+#symtxcnlqs .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -210,12 +210,12 @@ menage_2002 %>%
   border-left-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_caption {
+#symtxcnlqs .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#twmuftnsrg .gt_title {
+#symtxcnlqs .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -227,7 +227,7 @@ menage_2002 %>%
   border-bottom-width: 0;
 }
 
-#twmuftnsrg .gt_subtitle {
+#symtxcnlqs .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -239,7 +239,7 @@ menage_2002 %>%
   border-top-width: 0;
 }
 
-#twmuftnsrg .gt_heading {
+#symtxcnlqs .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -251,13 +251,13 @@ menage_2002 %>%
   border-right-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_bottom_border {
+#symtxcnlqs .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_col_headings {
+#symtxcnlqs .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -272,7 +272,7 @@ menage_2002 %>%
   border-right-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_col_heading {
+#symtxcnlqs .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -292,7 +292,7 @@ menage_2002 %>%
   overflow-x: hidden;
 }
 
-#twmuftnsrg .gt_column_spanner_outer {
+#symtxcnlqs .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -304,15 +304,15 @@ menage_2002 %>%
   padding-right: 4px;
 }
 
-#twmuftnsrg .gt_column_spanner_outer:first-child {
+#symtxcnlqs .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#twmuftnsrg .gt_column_spanner_outer:last-child {
+#symtxcnlqs .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#twmuftnsrg .gt_column_spanner {
+#symtxcnlqs .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -324,11 +324,11 @@ menage_2002 %>%
   width: 100%;
 }
 
-#twmuftnsrg .gt_spanner_row {
+#symtxcnlqs .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#twmuftnsrg .gt_group_heading {
+#symtxcnlqs .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -354,7 +354,7 @@ menage_2002 %>%
   text-align: left;
 }
 
-#twmuftnsrg .gt_empty_group_heading {
+#symtxcnlqs .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -369,15 +369,15 @@ menage_2002 %>%
   vertical-align: middle;
 }
 
-#twmuftnsrg .gt_from_md > :first-child {
+#symtxcnlqs .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#twmuftnsrg .gt_from_md > :last-child {
+#symtxcnlqs .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#twmuftnsrg .gt_row {
+#symtxcnlqs .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -396,7 +396,7 @@ menage_2002 %>%
   overflow-x: hidden;
 }
 
-#twmuftnsrg .gt_stub {
+#symtxcnlqs .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -409,7 +409,7 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#twmuftnsrg .gt_stub_row_group {
+#symtxcnlqs .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -423,15 +423,15 @@ menage_2002 %>%
   vertical-align: top;
 }
 
-#twmuftnsrg .gt_row_group_first td {
+#symtxcnlqs .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#twmuftnsrg .gt_row_group_first th {
+#symtxcnlqs .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#twmuftnsrg .gt_summary_row {
+#symtxcnlqs .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -441,16 +441,16 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#twmuftnsrg .gt_first_summary_row {
+#symtxcnlqs .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_first_summary_row.thick {
+#symtxcnlqs .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#twmuftnsrg .gt_last_summary_row {
+#symtxcnlqs .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -460,7 +460,7 @@ menage_2002 %>%
   border-bottom-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_grand_summary_row {
+#symtxcnlqs .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -470,7 +470,7 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#twmuftnsrg .gt_first_grand_summary_row {
+#symtxcnlqs .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -480,7 +480,7 @@ menage_2002 %>%
   border-top-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_last_grand_summary_row_top {
+#symtxcnlqs .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -490,11 +490,11 @@ menage_2002 %>%
   border-bottom-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_striped {
+#symtxcnlqs .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#twmuftnsrg .gt_table_body {
+#symtxcnlqs .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -503,7 +503,7 @@ menage_2002 %>%
   border-bottom-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_footnotes {
+#symtxcnlqs .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -517,7 +517,7 @@ menage_2002 %>%
   border-right-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_footnote {
+#symtxcnlqs .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -526,7 +526,7 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#twmuftnsrg .gt_sourcenotes {
+#symtxcnlqs .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -540,7 +540,7 @@ menage_2002 %>%
   border-right-color: #D3D3D3;
 }
 
-#twmuftnsrg .gt_sourcenote {
+#symtxcnlqs .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -548,63 +548,63 @@ menage_2002 %>%
   padding-right: 5px;
 }
 
-#twmuftnsrg .gt_left {
+#symtxcnlqs .gt_left {
   text-align: left;
 }
 
-#twmuftnsrg .gt_center {
+#symtxcnlqs .gt_center {
   text-align: center;
 }
 
-#twmuftnsrg .gt_right {
+#symtxcnlqs .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#twmuftnsrg .gt_font_normal {
+#symtxcnlqs .gt_font_normal {
   font-weight: normal;
 }
 
-#twmuftnsrg .gt_font_bold {
+#symtxcnlqs .gt_font_bold {
   font-weight: bold;
 }
 
-#twmuftnsrg .gt_font_italic {
+#symtxcnlqs .gt_font_italic {
   font-style: italic;
 }
 
-#twmuftnsrg .gt_super {
+#symtxcnlqs .gt_super {
   font-size: 65%;
 }
 
-#twmuftnsrg .gt_footnote_marks {
+#symtxcnlqs .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#twmuftnsrg .gt_asterisk {
+#symtxcnlqs .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#twmuftnsrg .gt_indent_1 {
+#symtxcnlqs .gt_indent_1 {
   text-indent: 5px;
 }
 
-#twmuftnsrg .gt_indent_2 {
+#symtxcnlqs .gt_indent_2 {
   text-indent: 10px;
 }
 
-#twmuftnsrg .gt_indent_3 {
+#symtxcnlqs .gt_indent_3 {
   text-indent: 15px;
 }
 
-#twmuftnsrg .gt_indent_4 {
+#symtxcnlqs .gt_indent_4 {
   text-indent: 20px;
 }
 
-#twmuftnsrg .gt_indent_5 {
+#symtxcnlqs .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -913,7 +913,6 @@ L'âge du décès n'est pas mentionné dans le recensement de 2013, nous ne pouv
 
 
 
-
 ```r
 mat_status_var = c("Monogame","Polygame","Celibataire","Veuf","Divorce")
 fertility_var = c("fertility")
@@ -1144,7 +1143,7 @@ MPI_data_dr %>%
             panel.grid = element_line(color = "white", size = 0.8))
 ```
 
-![](03_MPI-Senegal-Census-data_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](03_MPI-Senegal-Census-data_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
 
 ```r
       # Adding plot titles, caption and saving the plot

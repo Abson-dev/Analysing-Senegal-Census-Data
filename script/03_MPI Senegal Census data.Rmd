@@ -1,6 +1,6 @@
 ---
 title: "Computing the MPI using the Senegal Census data and visualization"
-author: "IBRAHIM KASSOUM Habibou & HEMA Aboubacar"
+author: "HEMA Aboubacar"
 date: "`r Sys.Date()`"
 output: 
   html_document:
@@ -255,55 +255,6 @@ menage_2013 <- menage_2013 %>%
 
 L'âge du décès n'est pas mentionné dans le recensement de 2013, nous ne pouvons donc pas calculer le nombre de décès pour les personnes de moins de 18 ans.
 
-```{r eval=FALSE, include=FALSE}
-
-# We can then compute the number of poor 
-
-## For the RGPH 2002
-menage_2002 <- menage_2002 %>%
-  
-  ## Indicator for the being Poor
-  mutate(MPI_poor = as.factor(ifelse(MPI_index > 1/3, 1, 0)) %>%          
-          structure(label = "Multidimensional Poor Household"))
-
-## For the RGPH 2013
-menage_2013 <- menage_2013 %>%
-  
-  ## Indicator for the being Poor
-  mutate(MPI_poor = as.factor(ifelse(MPI_index > 1/2, 1, 0)) %>%          
-          structure(label = "Multidimensional Poor Household"))
-
-
-menage_2002 %>% 
-  
-  # Selecting relevant variables
-  select(RGPH, MPI_poor) %>% 
-  
-  plyr::rbind.fill(
-    
-    # Selecting relevant variables
-    menage_2013 %>% 
-      select(RGPH, MPI_poor)) %>% 
-
-# Generate a summary table using "tbl_summary" for the specified columns
-  tbl_summary(
-    by = RGPH,  # Group by "RGPH" column
-    label = list(MPI_poor ~ "Pauvre (Oui = 1, Non = 0)"),
-    type = c(MPI_poor~"dichotomous"),
-    statistic = list(
-                     all_categorical() ~ "{n} ({p}%)"
-                     ),
-    digits = everything() ~ c(0,0),
-    missing = "no"
-  ) %>% 
-
-  # Modify the table header to provide a descriptive label
-  modify_header(label ~ "Pauvreté multidimensionnelle entre les deux recensements") %>%
-  
-  # Add difference statistics to the table
-  add_difference() %>% 
-  bold_labels() 
-```
 
 
 ```{r}
@@ -525,7 +476,7 @@ MPI_data_dr %>%
       #   caption = "Données : RGPH, Indicateur: Indice Multidimensionnel de Pauvreté (IMP).")
     ggsave(paste0(here::here(),"/output/output_img/MPI_rgph.pdf"), width = 8, height = 5)
 
-
+ggsave(paste0(here::here(),"/output/output_img/MPI_rgph.png"), width = 8, height = 5)
 ```
 
 
@@ -573,3 +524,22 @@ haven::write_sav(MPI_data_household,paste0(here::here(), "/output/output_data/MP
 saveRDS(MPI_data_household,file=paste0(here::here(), "/output/output_data/MPI_data_household.rds"))
 
 ```
+
+
+https://ophi.org.uk/multidimensional-poverty-index/#:~:text=The%20global%20Multidimensional%20Poverty%20Index,that%20a%20person%20faces%20simultaneously.
+
+https://ophi.org.uk/ophi-mpi-methodological-note-49/ 
+
+https://www.ophi.org.uk/wp-content/uploads/OPHI_MPI_MN_49_2020.pdf
+
+http://hdr.undp.org/sites/default/files/mpi_trainingmaterial_mcc_mk_clean_june_2015.pdf
+
+https://www.ophi.org.uk/wp-content/uploads/MPI-Primer.pdf
+
+https://www.ophi.org.uk/wp-content/uploads/OPHI-wp38_with_note.pdf
+
+https://www.sciencedirect.com/science/article/abs/pii/S0305750X14000278#:~:text=The%20potential%20dimensions%20that%20a,culture%20(Alkire%2C%202008).
+
+https://www.ukessays.com/essays/economics/strengths-and-weaknesses-of-multidimensional-indicators-of-poverty-economics-essay.php
+
+https://mpra.ub.uni-muenchen.de/108501/1/MPRA_paper_108501.pdf

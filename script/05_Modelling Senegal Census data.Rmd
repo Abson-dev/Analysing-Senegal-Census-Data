@@ -56,13 +56,26 @@ MPI_data_dr <- MPI_data_dr_2013 %>%
   st_as_sf()
 ```
 
+```{r}
+names(MPI_data_dr)
+```
+
 
 # Regression modeling with Guediawaye Census data
 
 ```{r}
-#"hh_size",
-predictors = c("menage","Aucun","Primair","Moyen","Secondr","fertlty","Ltrcy_F","nbr_cm_h","nbr_cm_f","pct_cm_f")
+
 outcome = "MPI_men"
+vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","geometry",
+                   "MPI_men")
+predictors_2002 = setdiff(names(MPI_data_dr_2002),vars_to_remove)
+  
+predictors_2013 =  setdiff(names(MPI_data_dr_2013),vars_to_remove)
+
+
+formula_2002 = paste0("log(",outcome,") ~ ",paste(predictors_2002[-length(predictors_2002)]," + ", collapse = ""),predictors_2002[length(predictors_2002)])
+
+formula_2013 = paste0("log(",outcome,") ~ ",paste(predictors_2013[-length(predictors_2013)]," + ", collapse = ""),predictors_2013[length(predictors_2013)])
 ```
 
 ## Inspecting the outcome variable (MPI) with visualization
@@ -71,7 +84,7 @@ outcome = "MPI_men"
 
 mhv_map <- ggplot(MPI_data_dr_2013, aes(fill = MPI_men)) + 
   geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   theme_void() + 
   labs(fill = "MPI ")
 
@@ -92,7 +105,7 @@ MPI_data_dr %>%
       ggplot(aes(fill = MPI_men)) + 
       
       geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   theme_void() + 
   labs(fill = "MPI ")+
        
@@ -134,7 +147,7 @@ ggplot(MPI_data_dr, aes(x = MPI_men)) +
 
 mhv_map_log <- ggplot(MPI_data_dr_2013, aes(fill = log(MPI_men))) + 
   geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   theme_void() + 
   labs(fill = "MPI\nvalue (log)")
 
@@ -155,7 +168,7 @@ MPI_data_dr %>%
       ggplot(aes(fill = log(MPI_men))) + 
       
       geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   theme_void() + 
   labs(fill = "MPI\nvalue (log)")+
        
@@ -195,6 +208,7 @@ MPI_data_dr_2002_for_model<- MPI_data_dr_2002 %>%
 ```{r}
 
 formula <- "log(MPI_men) ~ menage  + Primair + Moyen + Secondr + Ltrcy_F + pct_cm_f + pop_density + Ltrcy_A + Ltrcy_W + Ltrcy_M + fertlty"
+
 
 model_2013 <- lm(formula = formula, data = MPI_data_dr_2013_for_model)
 summary(model_2013)
@@ -343,7 +357,7 @@ ggplot(dfw_pca_2013, aes(fill = PC1)) +
   geom_sf(color = NA) +
   labs(title = "Map of principal component 1 for Guediawaye Census 2013") +
   theme_void() +
-  scale_fill_viridis_c()
+  scale_fill_viridis_c(direction = -1)
 ```
 
 ```{r}
@@ -357,7 +371,7 @@ ggplot(dfw_pca_2002, aes(fill = PC1)) +
   geom_sf(color = NA) +
   labs(title = "Map of principal component 1 for Guediawaye Census 2002") +
   theme_void() +
-  scale_fill_viridis_c()
+  scale_fill_viridis_c(direction = -1)
 ```
 ```{r}
 dfw_pca_2002$RGPH<-"Census 2002"
@@ -373,7 +387,7 @@ dfw_pca %>%
       
       # Adding spatial features to the plot
       geom_sf(color = NA) +
-       scale_fill_viridis_c()+
+       scale_fill_viridis_c(direction = -1)+
       facet_wrap(~RGPH) +
       
       # Adjusting the plot theme
@@ -394,7 +408,7 @@ dfw_pca %>%
       
       # Adding spatial features to the plot
       geom_sf(color = NA) +
-       scale_fill_viridis_c()+
+       scale_fill_viridis_c(direction = -1)+
       facet_wrap(~RGPH) +
       
       # Adjusting the plot theme
@@ -608,14 +622,14 @@ names(gw_model_2002_results)
 ```{r}
 ggplot(gw_model_2013_results, aes(fill = Local_R2)) + 
   geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   labs(title = "Local R-squared values from the GWR model for Guediawaye Census 2013") +
   theme_void()
 ```
 ```{r}
 ggplot(gw_model_2002_results, aes(fill = Local_R2)) + 
   geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   labs(title = "Local R-squared values from the GWR model for Guediawaye Census 2002") +
   theme_void()
 ```
@@ -635,7 +649,7 @@ gw_model_results %>%
       # Adding spatial features to the plot
       geom_sf() +
       
-      scale_fill_viridis_c() +
+      scale_fill_viridis_c(direction = -1) +
        
       facet_wrap(~RGPH) +
       
@@ -657,7 +671,7 @@ gw_model_results %>%
 ```{r}
 ggplot(gw_model_2013_results, aes(fill = menage)) + 
   geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   labs(title = "Local parameter estimates for household members for Guediawaye Census 2013") +
   theme_void() + 
   labs(fill = "Local β for \nHH")
@@ -665,7 +679,7 @@ ggplot(gw_model_2013_results, aes(fill = menage)) +
 ```{r}
 ggplot(gw_model_2002_results, aes(fill = menage)) + 
   geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   labs(title = "Local parameter estimates for household members for Guediawaye Census 2002") +
   theme_void() + 
   labs(fill = "Local β for \nHH")
@@ -686,7 +700,7 @@ gw_model_results %>%
       # Adding spatial features to the plot
       geom_sf() +
       
-      scale_fill_viridis_c() +
+      scale_fill_viridis_c(direction = -1) +
   labs(fill = "Local β for \nHH")+
       facet_wrap(~RGPH) +
       
@@ -706,7 +720,7 @@ gw_model_results %>%
 ```{r}
 ggplot(gw_model_2013_results, aes(fill = pop_density)) + 
   geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   labs(title = "Local parameter estimates for population density for Guediawaye Census 2013") +
   theme_void() + 
   labs(fill = "Local β for \npopulation density")
@@ -714,7 +728,7 @@ ggplot(gw_model_2013_results, aes(fill = pop_density)) +
 ```{r}
 ggplot(gw_model_2002_results, aes(fill = pop_density)) + 
   geom_sf(color = NA) + 
-  scale_fill_viridis_c() + 
+  scale_fill_viridis_c(direction = -1) + 
   labs(title = "Local parameter estimates for population density for Guediawaye Census 2002") +
   theme_void() + 
   labs(fill = "Local β for \npopulation density")
@@ -735,7 +749,7 @@ gw_model_results %>%
       # Adding spatial features to the plot
       geom_sf() +
       
-      scale_fill_viridis_c() +
+      scale_fill_viridis_c(direction = -1) +
   labs(fill = "Local β for \npopulation density")+
       facet_wrap(~RGPH) +
       
