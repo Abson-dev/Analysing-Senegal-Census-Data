@@ -29,7 +29,7 @@ rm(list=ls())
 
 ## Importing library
 ### List of required packages
-required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf", "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot", "fastDummies","ggthemes","spdep","patchwork")
+required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf", "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot", "fastDummies","ggthemes","spdep","patchwork","corrr")
 
 # Check if packages are installed
 missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
@@ -66,16 +66,25 @@ names(MPI_data_dr)
 ```{r}
 
 outcome = "MPI_men"
-vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","geometry",
-                   "MPI_men")
+vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme",    "femme","hh_size","Aucun","Superir","Ltrcy_P","Ltrcy_S","Ltrcy_D","rsdnt_p","rsdnt_b","I_rps_s","I_sns_m","MPI_men","mdn_cm_","mn_cm_g","cm_homm","cm_femm","pct_cm_h","geometry")
+
+labels_var = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Nombre de femme","Taille ménage","Fertilité","Niveau d'instruction: Aucun","Niveau d'instruction: Primaire","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur","Nombre de French dans le ménage","Nombre de Arabic dans le ménage","Nombre de Wolof dans le ménage","Nombre de Pulaar dans le ménage","Nombre de Sereer dans le ménage","Nombre de Mandingo dans le ménage","Nombre de Diola dans le ménage","Nombre de Soninke dans le ménage","Nombre de résident permanent","Nombre de Résident Absent","Nombre de repas sauté","Nombre de soins médicaux","MPI","Nombre de ménage dans le DR","Age médian du CM dans le DR","Age moyen du CM dans le DR","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","Proportion de CM de sexe féminin","geometry")
+
+label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Nombre de femme","Taille ménage","Niveau d'instruction: Aucun", "Niveau d'instruction: Supérieur","Nombre de Pulaar dans le ménage","Nombre de Sereer dans le ménage","Nombre de Diola dans le ménage","Nombre de résident permanent","Nombre de Résident Absent","Nombre de repas sauté","Nombre de soins médicaux","MPI","Age médian du CM dans le DR","Age moyen du CM dans le DR","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","geometry")
+
 predictors_2002 = setdiff(names(MPI_data_dr_2002),vars_to_remove)
+label_predictors_2002 = append(setdiff(labels_var, label_to_remove), "densité de la population")
   
 predictors_2013 =  setdiff(names(MPI_data_dr_2013),vars_to_remove)
-
+label_predictors_2013 = append(setdiff(labels_var, label_to_remove), "densité de la population")
 
 formula_2002 = paste0("log(",outcome,") ~ ",paste(predictors_2002[-length(predictors_2002)]," + ", collapse = ""),predictors_2002[length(predictors_2002)])
 
 formula_2013 = paste0("log(",outcome,") ~ ",paste(predictors_2013[-length(predictors_2013)]," + ", collapse = ""),predictors_2013[length(predictors_2013)])
+
+
+formula_2002 <- paste0(formula_2002, " + pop_density")
+formula_2013 <- paste0(formula_2013, " + pop_density")
 ```
 
 ## Inspecting the outcome variable (MPI) with visualization
@@ -95,51 +104,79 @@ mhv_histogram <- ggplot(MPI_data_dr_2013, aes(x = MPI_men)) +
   scale_x_continuous(labels = scales::label_number_si(accuracy = 0.1)) + 
   labs(x = "MPI")
 
-mhv_map + mhv_histogram + labs(title = "MPI value charts for Guediawaye Census 2013")
+#grid.arrange(mhv_map, mhv_histogram, nrow = 1)
+# mhv_map + mhv_histogram + labs(title = "MPI value charts for Guediawaye Census 2013")
+gridExtra::grid.arrange(mhv_map, mhv_histogram, nrow = 1,
+                        top = "MPI value charts for Guediawaye Census 2013")
+
+ggsave(paste0(here::here(),"/output/output_model/img/1_hv_histogram.png"), width = 8, height = 5)
 ```
 
 
 ```{r}
 MPI_data_dr %>% 
+  mutate(RGPH=ifelse(RGPH=="2013","Census 2013", "Census 2002")) %>% 
     
       ggplot(aes(fill = MPI_men)) + 
       
       geom_sf(color = NA) + 
   scale_fill_viridis_c(direction = -1) + 
   theme_void() + 
-  labs(fill = "MPI ")+
+  labs(fill = "MPI")+
        
       facet_wrap(~RGPH) +
       
       # Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+        #which_north = "grid",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+
+ggsave(paste0(here::here(),"/output/output_model/img/2_mpi_rgph.png"), width = 8, height = 5)
 ```
 ```{r}
-ggplot(MPI_data_dr, aes(x = MPI_men)) + 
+MPI_data_dr %>% 
+  mutate(RGPH=ifelse(RGPH=="2013","Census 2013", "Census 2002")) %>%
+  ggplot(aes(x = MPI_men)) + 
   geom_histogram(alpha = 0.5, fill = "navy", color = "navy",
                  bins = 100) + 
   theme_minimal() + 
-  scale_x_continuous(labels = scales::label_number_si(accuracy = 0.1)) + 
-  labs(x = "MPI")+
-       
+  scale_x_continuous(labels = scales::label_number_si(accuracy = 0.1)) +
+      xlab("MPI")+
       facet_wrap(~RGPH) +
-      
       # Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))
+
+ggsave(paste0(here::here(),"/output/output_model/img/3_mpi_rgph_hist.png"), width = 8, height = 5)
 ```
 
 
@@ -158,7 +195,11 @@ mhv_histogram_log <- ggplot(MPI_data_dr_2013, aes(x = log(MPI_men))) +
   scale_x_continuous() + 
   labs(x = "MPI (log)")
 
-mhv_map_log + mhv_histogram_log + labs(title = "Logged MPI value charts for Guediawaye Census 2013")
+gridExtra::grid.arrange(mhv_map_log, mhv_histogram_log, nrow = 1,
+                        top = "Logged MPI value charts for Guediawaye Census 2013")
+
+ggsave(paste0(here::here(),"/output/output_model/img/4_hv_histogram_log.png"), width = 8, height = 5)
+
 ```
 
 
@@ -177,12 +218,28 @@ MPI_data_dr %>%
       # Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+        #which_north = "grid",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+ggsave(paste0(here::here(),"/output/output_model/img/5_log_mpi_rgph.png"), width = 8, height = 5)
 ```
 
 
@@ -191,7 +248,9 @@ MPI_data_dr %>%
 ```{r}
 library(sf)
 library(units)
+
 predictors = c("menage","Primair","Moyen","Secondr","Ltrcy_F","pct_cm_f","hh_size","Ltrcy_A","Ltrcy_W","Ltrcy_M","fertlty")
+
 outcome = "MPI_men"
 MPI_data_dr_2013_for_model<- MPI_data_dr_2013 %>%
   dplyr::select(MPI_men,predictors) %>% 
@@ -203,24 +262,45 @@ MPI_data_dr_2002_for_model<- MPI_data_dr_2002 %>%
   dplyr::select(MPI_men,predictors) %>% 
   mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
   dplyr::select(-hh_size)
+
+
 ```
 
 ```{r}
 
-formula <- "log(MPI_men) ~ menage  + Primair + Moyen + Secondr + Ltrcy_F + pct_cm_f + pop_density + Ltrcy_A + Ltrcy_W + Ltrcy_M + fertlty"
+# formula <- "log(MPI_men) ~ menage  + Primair + Moyen + Secondr + Ltrcy_F + pct_cm_f + pop_density + Ltrcy_A + Ltrcy_W + Ltrcy_M + fertlty"
 
 
-model_2013 <- lm(formula = formula, data = MPI_data_dr_2013_for_model)
-summary(model_2013)
-###
-model_2002 <- lm(formula = formula, data = MPI_data_dr_2002_for_model)
+### For 2002
+model_2002 <- lm(formula = formula_2002, data = MPI_data_dr_2002_for_model)
 
-summary(model_2002)
+### For 2013
+
+model_2013 <- lm(formula = formula_2013, data = MPI_data_dr_2013_for_model)
+
+
+
+stargazer::stargazer(model_2002, model_2013, type="html",
+
+keep = predictors_2002,
+
+covariate.labels = label_predictors_2002, out = (paste0(here::here(),"/output/output_model/1_reg_lineaire.html")))
 ```
 
 ```{r}
-library(corrr)
+#library(corrr)
 
+### 2002
+dfw_estimates_2002 <- MPI_data_dr_2002_for_model%>%
+  select(-MPI_men) %>%
+  st_drop_geometry()
+
+correlations <- correlate(dfw_estimates_2002, method = "pearson")
+network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Guediawaye Census 2002")
+
+ggsave(paste0(here::here(),"/output/output_model/img/6_corr_var.png"), width = 8, height = 5)
+
+### 2013
 dfw_estimates_2013 <- MPI_data_dr_2013_for_model%>%
   select(-MPI_men) %>%
   st_drop_geometry()
@@ -228,13 +308,9 @@ dfw_estimates_2013 <- MPI_data_dr_2013_for_model%>%
 correlations <- correlate(dfw_estimates_2013, method = "pearson")
 network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Guediawaye Census 2013")
 
-##
-dfw_estimates_2002 <- MPI_data_dr_2002_for_model%>%
-  select(-MPI_men) %>%
-  st_drop_geometry()
 
-correlations <- correlate(dfw_estimates_2002, method = "pearson")
-network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Guediawaye Census 2002")
+ggsave(paste0(here::here(),"/output/output_model/img/6_corr_var.png"), width = 8, height = 5)
+
 ```
 
 ```{r}
@@ -278,73 +354,40 @@ pca_2002_tibble <- pca_2002$rotation %>%
 pca_2002_tibble
 ```
 
-```{r}
 
-pca_2013_tibble %>%
+
+```{r}
+# For 2002
+pca_2002_graph <- pca_2002_tibble %>%
   select(predictor:PC5) %>%
   pivot_longer(PC1:PC5, names_to = "component", values_to = "value") %>%
   ggplot(aes(x = value, y = predictor)) + 
   geom_col(fill = "darkgreen", color = "darkgreen", alpha = 0.5) + 
   facet_wrap(~component, nrow = 1) + 
-  labs(y = NULL, x = "Value", title = " Loadings for first five principal components  for Guediawaye Census 2013") + 
+  labs(y = NULL, x = "Value", title = "Census 2002") + 
   theme_minimal()
 ```
+
 
 ```{r}
-pca_2002_tibble %>%
-  select(predictor:PC5) %>%
-  pivot_longer(PC1:PC5, names_to = "component", values_to = "value") %>%
-  ggplot(aes(x = value, y = predictor)) + 
-  geom_col(fill = "darkgreen", color = "darkgreen", alpha = 0.5) + 
-  facet_wrap(~component, nrow = 1) + 
-  labs(y = NULL, x = "Value", title = " Loadings for first five principal components  for Guediawaye Census 2002") + 
-  theme_minimal()
+# For 2013
+pca_2013_graph <- pca_2013_tibble %>%
+                  select(predictor:PC5) %>%
+                  pivot_longer(PC1:PC5, names_to = "component", values_to = "value") %>%
+                  ggplot(aes(x = value, y = predictor)) + 
+                  geom_col(fill = "darkgreen", color = "darkgreen", alpha = 0.5) + 
+                  facet_wrap(~component, nrow = 1) + 
+                  labs(y = NULL, x = "Value", title = "Census 2013") + 
+                  theme_minimal()
 ```
 
 
-```{r eval=FALSE, include=FALSE}
-pca_2013_tibble<-pca_2013_tibble %>% 
-  select(predictor:PC5) %>%
-  pivot_longer(PC1:PC5, names_to = "component", values_to = "value")
 
+```{r eval=TRUE, include=TRUE}
+gridExtra::grid.arrange(pca_2002_graph,pca_2013_graph, nrow = 1, top="Loadings for first five principal components  for Guediawaye ")
 
-pca_2013_tibble$RGPH<-"Census 2013"
-pca_2002_tibble<-pca_2002_tibble %>% 
-  select(predictor:PC5) %>%
-  pivot_longer(PC1:PC5, names_to = "component", values_to = "value")
-pca_2002_tibble$RGPH<-"Census 2002"
-
-pca_tibble <- pca_2013_tibble %>%
-  plyr::rbind.fill(pca_2002_tibble)
-esquisse::esquisser(pca_tibble)
-pca_tibble %>% 
-  ggplot(aes(x = value, y = predictor)) + 
-  geom_col(fill = "darkgreen", color = "darkgreen", alpha = 0.5) + 
-  facet_wrap(~component, nrow = 1) +
-       
-      facet_wrap(~RGPH) +
-      
-      # Adjusting the plot theme
-      theme_map(base_size = 8) +
-      theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+ggsave(paste0(here::here(),"/output/output_model/img/7_hist_pca_rgph.png"), width = 8, height = 5)
 ```
-
-```{r eval=FALSE, include=FALSE}
-ggplot(pca_tibble) +
-  aes(x = predictor, colour = RGPH, weight = value) +
-  geom_bar(position = "dodge", fill = "#112446") +
-  scale_color_brewer(palette = "Set1", direction = 1) +
-  coord_flip() +
-  ggthemes::theme_igray() +
-  facet_wrap(vars(component), scales = "free")
-```
-
 
 ```{r}
 components_2013 <- predict(pca_2013, dfw_estimates_2013)
@@ -390,16 +433,37 @@ dfw_pca %>%
        scale_fill_viridis_c(direction = -1)+
       facet_wrap(~RGPH) +
       
-      # Adjusting the plot theme
+# Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+        #which_north = "grid",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+
+ggsave(paste0(here::here(),"/output/output_model/img/8_pc1_rgph.png"), width = 8, height = 5)
 ```
+
+
+
+
 
 ```{r}
 dfw_pca %>% 
@@ -414,35 +478,72 @@ dfw_pca %>%
       # Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+        #which_north = "grid",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+
+ggsave(paste0(here::here(),"/output/output_model/img/8_pc2_rgph.png"), width = 8, height = 5)
+```
+
+```{r}
+# For the model output
+# Saving in the "dfw_pca"
+sf::st_write(obj=dfw_pca, paste0(here::here(), "/output/output_model/shp/dfw_pca.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) 
+
 ```
 
 
-
-
 ```{r}
-pca_2013_formula <- paste0("log(MPI_men) ~ ", 
-                      paste0('PC', 1:6, collapse = ' + '))
 
-pca_2013_model <- lm(formula = pca_2013_formula, data = dfw_pca_2013)
-
-summary(pca_2013_model)
-
-###
+### For 2002
 pca_2002_formula <- paste0("log(MPI_men) ~ ", 
                       paste0('PC', 1:6, collapse = ' + '))
 
 pca_2002_model <- lm(formula = pca_2002_formula, data = dfw_pca_2002)
 
-summary(pca_2002_model)
+
+### For 2013
+pca_2013_formula <- paste0("log(MPI_men) ~ ", 
+                      paste0('PC', 1:6, collapse = ' + '))
+
+pca_2013_model <- lm(formula = pca_2013_formula, data = dfw_pca_2013)
+
+
+
+stargazer::stargazer(pca_2002_model, pca_2013_model, type="text", out = (paste0(here::here(),"/output/output_model/2_reg_PCA.html")))
 ```
 
 ## Spatial regression
+
+
+
+```{r}
+MPI_data_dr_2002_for_model$residuals <- residuals(model_2002)
+
+ggplot(MPI_data_dr_2002_for_model, aes(x = residuals)) + 
+  geom_histogram(bins = 100, alpha = 0.5, color = "navy",
+                 fill = "navy") + 
+  labs(title = "Distribution of model residuals for Guediawaye Census 2002") +
+  theme_minimal()
+```
 
 ```{r}
 MPI_data_dr_2013_for_model$residuals <- residuals(model_2013)
@@ -454,15 +555,6 @@ ggplot(MPI_data_dr_2013_for_model, aes(x = residuals)) +
   theme_minimal()
 ```
 
-```{r}
-MPI_data_dr_2002_for_model$residuals <- residuals(model_2002)
-
-ggplot(MPI_data_dr_2002_for_model, aes(x = residuals)) + 
-  geom_histogram(bins = 100, alpha = 0.5, color = "navy",
-                 fill = "navy") + 
-  labs(title = "Distribution of model residuals for Guediawaye Census 2002") +
-  theme_minimal()
-```
 
 ```{r}
 MPI_data_dr_for_model <- MPI_data_dr_2002_for_model %>%
@@ -485,11 +577,23 @@ ggplot(MPI_data_dr_for_model, aes(x = residuals)) +
             legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
+
+ggsave(paste0(here::here(),"/output/output_model/3_reg_lineaire_residuals.png"), width = 8, height = 5)
 ```
 
 
 ```{r}
 library(spdep)
+
+wts_2002 <- MPI_data_dr_2002_for_model %>%
+  poly2nb() %>%
+  nb2listw()
+
+moran.test(MPI_data_dr_2002_for_model$residuals, wts_2002)
+```
+
+
+```{r}
 
 wts_2013 <- MPI_data_dr_2013_for_model %>%
   poly2nb() %>%
@@ -498,13 +602,6 @@ wts_2013 <- MPI_data_dr_2013_for_model %>%
 moran.test(MPI_data_dr_2013_for_model$residuals, wts_2013)
 ```
 
-```{r}
-wts_2002 <- MPI_data_dr_2002_for_model %>%
-  poly2nb() %>%
-  nb2listw()
-
-moran.test(MPI_data_dr_2002_for_model$residuals, wts_2002)
-```
 
 
 ```{r}
@@ -545,6 +642,8 @@ ggplot(MPI_data_dr_for_model, aes(x = residuals, y = lagged_residuals)) +
             legend.position = "bottom", 
             text = element_text(size = 8), 
             panel.grid = element_line(color = "white", size = 0.8))
+
+ggsave(paste0(here::here(),"/output/output_model/img/9_residuals_lagresiduals.png"), width = 8, height = 5)
 ```
 
 
@@ -557,46 +656,51 @@ ggplot(MPI_data_dr_for_model, aes(x = residuals, y = lagged_residuals)) +
 library(GWmodel)
 library(sf)
 
-dfw_data_sp_2013 <- MPI_data_dr_2013_for_model%>%
-  as_Spatial()
-
-bw <- bw.gwr(
-  formula = formula, 
-  data = dfw_data_sp_2013, 
-  kernel = "bisquare",
-  adaptive = TRUE
-)
-
-###
 dfw_data_sp_2002 <- MPI_data_dr_2002_for_model%>%
   as_Spatial()
 
 bw <- bw.gwr(
-  formula = formula, 
+  formula = formula_2002, 
   data = dfw_data_sp_2002, 
   kernel = "bisquare",
   adaptive = TRUE
 )
+
+dfw_data_sp_2013 <- MPI_data_dr_2013_for_model%>%
+  as_Spatial()
+
+bw <- bw.gwr(
+  formula = formula_2013, 
+  data = dfw_data_sp_2013, 
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+###
+
 ```
 
 ```{r}
 
+### 2002
+gw_model_2002 <- gwr.basic(
+  formula = formula_2002, 
+  data = dfw_data_sp_2002, 
+  bw = bw,
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+### 2013
 gw_model_2013 <- gwr.basic(
-  formula = formula, 
+  formula = formula_2013, 
   data = dfw_data_sp_2013, 
   bw = bw,
   kernel = "bisquare",
   adaptive = TRUE
 )
 
-###
-gw_model_2002 <- gwr.basic(
-  formula = formula, 
-  data = dfw_data_sp_2002, 
-  bw = bw,
-  kernel = "bisquare",
-  adaptive = TRUE
-)
+
 ```
 
 ```{r}
@@ -619,20 +723,23 @@ gw_model_2002_results <- gw_model_2002$SDF %>%
 names(gw_model_2002_results)
 ```
 
-```{r}
-ggplot(gw_model_2013_results, aes(fill = Local_R2)) + 
-  geom_sf(color = NA) + 
-  scale_fill_viridis_c(direction = -1) + 
-  labs(title = "Local R-squared values from the GWR model for Guediawaye Census 2013") +
-  theme_void()
-```
+
 ```{r}
 ggplot(gw_model_2002_results, aes(fill = Local_R2)) + 
   geom_sf(color = NA) + 
   scale_fill_viridis_c(direction = -1) + 
-  labs(title = "Local R-squared values from the GWR model for Guediawaye Census 2002") +
+  labs(title = "Local R-squared values from the GWR model for Guediawaye Census 2002",fill="R-squared") +
   theme_void()
 ```
+
+```{r}
+ggplot(gw_model_2013_results, aes(fill = Local_R2)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c(direction = -1) + 
+  labs(title = "Local R-squared values from the GWR model for Guediawaye Census 2013",fill="R-squared") +
+  theme_void()
+```
+
 
 ```{r}
 gw_model_results <- gw_model_2002_results %>%
@@ -652,21 +759,52 @@ gw_model_results %>%
       scale_fill_viridis_c(direction = -1) +
        
       facet_wrap(~RGPH) +
-      
-      # Adjusting the plot theme
+      labs(fill="R-squared")+
+# Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+        #which_north = "grid",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+
+ggsave(paste0(here::here(),"/output/output_model/img/10_rsquared_rgph.png"), width = 8, height = 5)
 ```
 
 
+```{r}
+# Saving the model output
+# Saving in the "gw_model_results"
+sf::st_write(obj=gw_model_results, paste0(here::here(), "/output/output_model/shp/gw_model_results.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) 
+
+```
 
 
+```{r}
+ggplot(gw_model_2002_results, aes(fill = menage)) + 
+  geom_sf(color = NA) + 
+  scale_fill_viridis_c(direction = -1) + 
+  labs(title = "Local parameter estimates for household members for Guediawaye Census 2002") +
+  theme_void() + 
+  labs(fill = "Local β for \nHH")
+```
 
 ```{r}
 ggplot(gw_model_2013_results, aes(fill = menage)) + 
@@ -676,14 +814,7 @@ ggplot(gw_model_2013_results, aes(fill = menage)) +
   theme_void() + 
   labs(fill = "Local β for \nHH")
 ```
-```{r}
-ggplot(gw_model_2002_results, aes(fill = menage)) + 
-  geom_sf(color = NA) + 
-  scale_fill_viridis_c(direction = -1) + 
-  labs(title = "Local parameter estimates for household members for Guediawaye Census 2002") +
-  theme_void() + 
-  labs(fill = "Local β for \nHH")
-```
+
 
 ```{r}
 gw_model_results <- gw_model_2002_results %>%
@@ -704,35 +835,52 @@ gw_model_results %>%
   labs(fill = "Local β for \nHH")+
       facet_wrap(~RGPH) +
       
-      # Adjusting the plot theme
+# Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+        #which_north = "grid",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+
+ggsave(paste0(here::here(),"/output/output_model/img/11_local_beta_rgph.png"), width = 8, height = 5)
 ```
-
-
 
 ```{r}
-ggplot(gw_model_2013_results, aes(fill = pop_density)) + 
+ggplot(gw_model_2002_results, aes(fill = fertlty)) + 
   geom_sf(color = NA) + 
   scale_fill_viridis_c(direction = -1) + 
-  labs(title = "Local parameter estimates for population density for Guediawaye Census 2013") +
+  labs(title = "Local parameter estimates for population fertility for Guediawaye Census 2002") +
   theme_void() + 
-  labs(fill = "Local β for \npopulation density")
+  labs(fill = "Local β for \n household's fertility")
 ```
+
 ```{r}
-ggplot(gw_model_2002_results, aes(fill = pop_density)) + 
+ggplot(gw_model_2013_results, aes(fill = fertlty)) + 
   geom_sf(color = NA) + 
   scale_fill_viridis_c(direction = -1) + 
-  labs(title = "Local parameter estimates for population density for Guediawaye Census 2002") +
+  labs(title = "Local parameter estimates for population fertility for Guediawaye Census 2013") +
   theme_void() + 
-  labs(fill = "Local β for \npopulation density")
+  labs(fill = "Local β for \n household's fertility")
 ```
+
 
 ```{r}
 gw_model_results <- gw_model_2002_results %>%
@@ -742,26 +890,46 @@ gw_model_results <- gw_model_2002_results %>%
   st_as_sf()
 
 
-gw_model_results %>% 
+purrr::map(predictors_2002, function(curr_var){ 
     
-      ggplot(aes(fill = pop_density)) + 
+    gw_model_results %>% 
+    
+      ggplot(aes(fill = !!sym(curr_var))) + 
       
       # Adding spatial features to the plot
       geom_sf() +
       
       scale_fill_viridis_c(direction = -1) +
-  labs(fill = "Local β for \npopulation density")+
+      #scale_fill_continuous(labels = function(x) format(x, scientific = TRUE))+
+  labs(fill = paste0("Local β for \n household's ",curr_var))+
       facet_wrap(~RGPH) +
       
-      # Adjusting the plot theme
+# Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+        #which_north = "grid",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+
+ggsave(paste0(here::here(),"/output/output_model/img/12_beta_hh_",curr_var,"_rgph.png"), width = 8, height = 5)}, .progress = TRUE)
 ```
 
 
@@ -789,17 +957,6 @@ dfw_kmeans_2002 <- dfw_pca_2002 %>%
 table(dfw_kmeans_2002$cluster)
 ```
 
-```{r}
-dfw_clusters_2013 <- dfw_pca_2013 %>%
-  mutate(cluster = as.character(dfw_kmeans_2013$cluster))
-
-ggplot(dfw_clusters_2013, aes(fill = cluster)) + 
-  geom_sf(size = 0.1) + 
-  scale_fill_brewer(palette = "Set1") + 
-  labs(title = "Map of geodemographic clusters for Guediawaye Census 2013") +
-  theme_void() + 
-  labs(fill = "Cluster ")
-```
 
 
 ```{r}
@@ -808,11 +965,26 @@ dfw_clusters_2002 <- dfw_pca_2002 %>%
 
 ggplot(dfw_clusters_2002, aes(fill = cluster)) + 
   geom_sf(size = 0.1) + 
-  scale_fill_brewer(palette = "Set1") + 
+  #scale_fill_brewer(palette = "Set1") + 
+  scale_fill_brewer(palette = "Set3")+
   labs(title = "Map of geodemographic clusters for Guediawaye Census 2002") +
   theme_void() + 
   labs(fill = "Cluster ")
 ```
+
+
+```{r}
+dfw_clusters_2013 <- dfw_pca_2013 %>%
+  mutate(cluster = as.character(dfw_kmeans_2013$cluster))
+
+ggplot(dfw_clusters_2013, aes(fill = cluster)) + 
+  geom_sf(size = 0.1) + 
+  scale_fill_brewer(palette = "Set3")+
+  labs(title = "Map of geodemographic clusters for Guediawaye Census 2013") +
+  theme_void() + 
+  labs(fill = "Cluster ")
+```
+
 ```{r}
 dfw_clusters <- dfw_clusters_2002 %>%
   dplyr::mutate(RGPH = "Census 2002") %>% 
@@ -826,19 +998,45 @@ dfw_clusters %>%
       ggplot(aes(fill = cluster)) + 
       
   geom_sf(size = 0.1) + 
-  scale_fill_brewer(palette = "Set1") + 
+  scale_fill_brewer(palette = "Set3")+ 
       facet_wrap(~RGPH) +
       
-      # Adjusting the plot theme
+# Adjusting the plot theme
       theme_map(base_size = 8) +
       theme(panel.background = element_rect(),
-            legend.background = element_blank(),
-            axis.ticks = element_blank(),
-            axis.text = element_blank(),
-            legend.position = "bottom", 
-            text = element_text(size = 8), 
-            panel.grid = element_line(color = "white", size = 0.8))
+                #legend.background = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                #panel.grid = element_line(color = "white", size = 0.8),
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+        #pad_x = unit(0.4, "in"), pad_y = unit(0.4, "in"),
+        #which_north = "grid",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+
+ggsave(paste0(here::here(),"/output/output_model/img/13_cluster_rgph.png"), width = 8, height = 5)
 ```
+
+```{r}
+# Saving the model output
+# Saving in the "dfw_clusters"
+sf::st_write(obj=dfw_clusters, paste0(here::here(), "/output/output_model/shp/dfw_clusters_pca.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) 
+
+```
+
+
 
 ```{r}
 library(plotly)
@@ -891,7 +1089,7 @@ mst <- mstree(skater_weights)
 regions <- skater(
   mst[,1:2], 
   input_vars, 
-  ncuts = 7,
+  ncuts = 5,
   crit = 10
 )
 ```
@@ -903,7 +1101,7 @@ dfw_clusters_2013$region <- as.character(regions$group)
 ggplot(dfw_clusters_2013, aes(fill = region)) + 
   geom_sf(size = 0.1) + 
   labs(title = "Map of contiguous regions derived with the SKATER algorithm for Guediawaye Census 2013") +
-  scale_fill_brewer(palette = "Set1") + 
+  scale_fill_brewer(palette = "Set3")+
   theme_void()
 ```
 ```{r}
@@ -923,7 +1121,7 @@ mst <- mstree(skater_weights)
 regions <- skater(
   mst[,1:2], 
   input_vars, 
-  ncuts = 7,
+  ncuts = 5,
   crit = 10
 )
 ```
@@ -935,7 +1133,7 @@ dfw_clusters_2002$region <- as.character(regions$group)
 ggplot(dfw_clusters_2002, aes(fill = region)) + 
   geom_sf(size = 0.1) + 
   labs(title = "Map of contiguous regions derived with the SKATER algorithm for Guediawaye Census 2002") +
-  scale_fill_brewer(palette = "Set1") + 
+  scale_fill_brewer(palette = "Set3")+ 
   theme_void()
 ```
 
@@ -953,7 +1151,7 @@ dfw_clusters %>%
       ggplot(aes(fill = region)) + 
       
   geom_sf(size = 0.1) + 
-  scale_fill_brewer(palette = "Set2") + 
+  scale_fill_brewer(palette = "Set3")+
       facet_wrap(~RGPH) +
       
       # Adjusting the plot theme
@@ -980,6 +1178,14 @@ dfw_clusters %>%
   height = unit(1, "cm"),
   width = unit(1, "cm"),
   )
+
+ggsave(paste0(here::here(),"/output/output_model/img/14_dfw_pca_rgph.png"), width = 8, height = 5)
 ```
 
+```{r}
+# Saving the model output
+# Saving in the "dfw_clusters"
+sf::st_write(obj=dfw_clusters, paste0(here::here(), "/output/output_model/shp/dfw_clusters.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) 
+
+```
 
