@@ -82,8 +82,9 @@ head(sp_rgph_2013, 10L)
 
 ### Importing the census datasets 
 
-**For the 2002 census data**
+#### The household datasets 
 
+**For the 2002 census data**
 ```{r, results='hide', include = TRUE, warning=FALSE, echo = FALSE}
 
 # Read and check for duplicated rows in the "menage_2002" dataset
@@ -104,6 +105,28 @@ menage_2013 %>% janitor::get_dupes()
 menage_2013 %>% janitor::get_dupes(ID_MENAGE)
 ```
 
+
+#### The individuals datasets
+
+
+**For the 2002 census data**
+```{r, results='hide', include = TRUE, warning=FALSE, echo = FALSE}
+# Read and check for duplicated rows in the "individus_2002" dataset
+individus_2002 <- haven::read_sav(paste0(here::here(),"/output/output_data/individus_2002.sav"))
+individus_2002 %>% janitor::get_dupes() 
+
+```
+
+
+**For the 2013 census dataset**
+
+```{r, include = FALSE, warning=FALSE, echo = FALSE}
+
+# Read and check for duplicated rows in the "individus_2013" dataset
+individus_2013 <- haven::read_sav(paste0(here::here(),"/output/output_data/individus_2013.sav"))
+individus_2013 %>% janitor::get_dupes() 
+
+```
 
 
 # Study Variables
@@ -1016,6 +1039,203 @@ menage_2002 %>%
 
 
 ## Health dimension
+
+
+# Building the population graph
+
+
+```{r , include = TRUE, warning=FALSE, echo = FALSE}
+
+# Creating a summary of demographic data for the year 2002
+dataPop_graph_2002 <- individus_2002 %>% 
+    # Grouping by sex
+    group_by(QB04) %>% 
+    # Summarizing various counts based on age (QB06 column)
+      summarise(
+        n=n(), # number of individuals by household
+        nbrAge_0_14 = sum(QB06 <= 14, na.rm = TRUE),  # Count of people aged less than 14
+        nbrAge_15_19 = sum(QB06 >= 15 & QB06 <= 19, na.rm = TRUE),  # Count of individuals between 15 and 19
+        nbrAge_20_24 = sum(QB06 >= 20 & QB06 <= 24, na.rm = TRUE),  # Count of individuals aged 20-24
+        nbrAge_25_29 = sum(QB06 >= 25 & QB06 <= 29, na.rm = TRUE),  # Count of individuals aged 25-29
+        nbrAge_30_34 = sum(QB06 >= 30 & QB06 <= 34, na.rm = TRUE),  # Count of individuals aged 30-34
+        nbrAge_35_39 = sum(QB06 >= 35 & QB06 <= 39, na.rm = TRUE),  # Count of individuals aged 35-39 
+        nbrAge_40_44 = sum(QB06 >= 40 & QB06 <= 44, na.rm = TRUE),  # Count of individuals aged 40-44
+        nbrAge_45_49 = sum(QB06 >= 45 & QB06 <= 49, na.rm = TRUE),  # Count of individuals aged 45-49
+        nbrAge_50_54 = sum(QB06 >= 50 & QB06 <= 54, na.rm = TRUE),  # Count of individuals aged 50-54
+        nbrAge_55_59 = sum(QB06 >= 55 & QB06 <= 59, na.rm = TRUE),  # Count of individuals aged 55-59
+        nbrAge_60_64 = sum(QB06 >= 60 & QB06 <= 64, na.rm = TRUE),  # Count of individuals aged 60-64
+        nbrAge_65_69 = sum(QB06 >= 65 & QB06 <= 69, na.rm = TRUE),  # Count of individuals aged 65-69
+        nbrAge_70_74 = sum(QB06 >= 70 & QB06 <= 74, na.rm = TRUE),  # Count of individuals aged 70-74
+        nbrAge_75_79 = sum(QB06 >= 75 & QB06 <= 79, na.rm = TRUE),  # Count of individuals aged 75-79
+        nbrAge_80_over = sum(QB06 >= 80, na.rm = TRUE)  # Count of individuals aged more than 80
+) %>% 
+  ungroup() %>% 
+  pivot_longer(cols = nbrAge_0_14:nbrAge_80_over, names_to = "Age_group", values_to = "count")
+
+# Creating a summary of demographic data for the year 2013
+dataPop_graph_2013 <- individus_2013 %>% 
+    # Grouping by sex
+    group_by(B06) %>% 
+    # Summarizing various counts based on age (B08 column)
+      summarise(
+        n=n(), # number of individuals by household
+        nbrAge_0_14 = sum(B08 <= 14, na.rm = TRUE),  # Count of people aged less than 14
+        nbrAge_15_19 = sum(B08 >= 15 & B08 <= 19, na.rm = TRUE),  # Count of individuals between 15 and 19
+        nbrAge_20_24 = sum(B08 >= 20 & B08 <= 24, na.rm = TRUE),  # Count of individuals aged 20-24
+        nbrAge_25_29 = sum(B08 >= 25 & B08 <= 29, na.rm = TRUE),  # Count of individuals aged 25-29
+        nbrAge_30_34 = sum(B08 >= 30 & B08 <= 34, na.rm = TRUE),  # Count of individuals aged 30-34
+        nbrAge_35_39 = sum(B08 >= 35 & B08 <= 39, na.rm = TRUE),  # Count of individuals aged 35-39 
+        nbrAge_40_44 = sum(B08 >= 40 & B08 <= 44, na.rm = TRUE),  # Count of individuals aged 40-44
+        nbrAge_45_49 = sum(B08 >= 45 & B08 <= 49, na.rm = TRUE),  # Count of individuals aged 45-49
+        nbrAge_50_54 = sum(B08 >= 50 & B08 <= 54, na.rm = TRUE),  # Count of individuals aged 50-54
+        nbrAge_55_59 = sum(B08 >= 55 & B08 <= 59, na.rm = TRUE),  # Count of individuals aged 55-59
+        nbrAge_60_64 = sum(B08 >= 60 & B08 <= 64, na.rm = TRUE),  # Count of individuals aged 60-64
+        nbrAge_65_69 = sum(B08 >= 65 & B08 <= 69, na.rm = TRUE),  # Count of individuals aged 65-69
+        nbrAge_70_74 = sum(B08 >= 70 & B08 <= 74, na.rm = TRUE),  # Count of individuals aged 70-74
+        nbrAge_75_79 = sum(B08 >= 75 & B08 <= 79, na.rm = TRUE),  # Count of individuals aged 75-79
+        nbrAge_80_over = sum(B08 >= 80, na.rm = TRUE)  # Count of individuals aged more than 80
+) %>% 
+  ungroup() %>% 
+  pivot_longer(cols = nbrAge_0_14:nbrAge_80_over, names_to = "Age_group", values_to = "count")
+
+```
+
+
+```{r}
+# Modify the existing dataPop_graph_2002 dataframe
+dataPop_graph_2002 <- dataPop_graph_2002 %>% 
+  mutate(
+    # Convert QB04 to a factor variable
+    QB04 = as.factor(QB04),
+    # Recode QB04 to represent Male and Female
+    QB04 = recode(QB04, "1"="Male", "2"="Female"),
+    
+    # Recode Age_group for better readability
+    Age_group = recode(Age_group,
+                       "nbrAge_0_14"="0 to 14",
+                       "nbrAge_15_19"="15 to 19",
+                       "nbrAge_20_24"="20 to 24",
+                       "nbrAge_25_29"="25 to 29",
+                       "nbrAge_30_34"="30 to 34",
+                       "nbrAge_35_39"="35 to 39",
+                       "nbrAge_40_44"="40 to 44",
+                       "nbrAge_45_49"="45 to 49",
+                       "nbrAge_50_54"="50 to 54",
+                       "nbrAge_55_59"="55 to 59",
+                       "nbrAge_60_64"="60 to 64",
+                       "nbrAge_65_69"="65 to 69",
+                       "nbrAge_70_74"="70 to 74",
+                       "nbrAge_75_79"="75 to 79",
+                       "nbrAge_80_over"="80 and over"),
+    
+    # Adjust count based on gender
+    count = ifelse(QB04 == "Male", -count, count),
+    # Normalize count by total number of individuals
+    count = count/n
+  )
+
+# Modify the existing dataPop_graph_2013 dataframe
+dataPop_graph_2013 <- dataPop_graph_2013 %>% 
+  mutate(
+    # Convert B06 to a factor variable
+    B06 = as.factor(B06),
+    # Recode B06 to represent Male and Female
+    B06 = recode(B06, "1"="Male", "2"="Female"),
+    
+    # Recode Age_group for better readability
+    Age_group = recode(Age_group,
+                       "nbrAge_0_14"="0 to 14",
+                       "nbrAge_15_19"="15 to 19",
+                       "nbrAge_20_24"="20 to 24",
+                       "nbrAge_25_29"="25 to 29",
+                       "nbrAge_30_34"="30 to 34",
+                       "nbrAge_35_39"="35 to 39",
+                       "nbrAge_40_44"="40 to 44",
+                       "nbrAge_45_49"="45 to 49",
+                       "nbrAge_50_54"="50 to 54",
+                       "nbrAge_55_59"="55 to 59",
+                       "nbrAge_60_64"="60 to 64",
+                       "nbrAge_65_69"="65 to 69",
+                       "nbrAge_70_74"="70 to 74",
+                       "nbrAge_75_79"="75 to 79",
+                       "nbrAge_80_over"="80 and over"),
+    
+    # Adjust count based on gender
+    count = ifelse(B06 == "Male", -count, count),
+    # Normalize count by total number of individuals
+    count = count/n
+  )
+```
+
+
+
+```{r}
+# Create a bar plot using ggplot with data from dataPop_graph_2002
+ggplot(dataPop_graph_2002, 
+       aes(x = count, 
+           y = Age_group, 
+           fill = QB04)) + 
+  # Use geom_col to create a column chart with specified width and transparency
+  geom_col(width = 0.95, alpha = 0.75) + 
+  
+  # Set the theme to minimal with specified font family and size
+  theme_minimal(base_family = "Verdana", 
+                base_size = 12) + 
+  
+  # Customize the x-axis labels to show percentages and limit the range
+  scale_x_continuous(
+    labels = ~ scales::number_format(scale = 100, suffix = " percent")(abs(.x)),
+    limits = 0.4 * c(-1,1)
+  ) + 
+  
+  # Manually set fill colors for Male and Female
+  scale_fill_manual(values = c("darkblue", "darkgoldenrod1")) + 
+  
+  # Customize labels and title
+  labs(x = "", 
+       y = " ", 
+       title = "Population structure in Guediawaye in 2002 ", 
+       fill = "", 
+       caption = "Data source: 2002 Senegal's RGPH")
+
+# Save the plot as an image file in the specified directory
+ggsave(paste0(here::here(),"/output/output_img/pyramide_2002.png"), width = 8, height = 5)
+```
+
+
+```{r}
+# Create a bar plot using ggplot with data from dataPop_graph_2013
+ggplot(dataPop_graph_2013, 
+       aes(x = count, 
+           y = Age_group, 
+           fill = B06)) + 
+  # Use geom_col to create a column chart with specified width and transparency
+  geom_col(width = 0.95, alpha = 0.75) + 
+  
+  # Set the theme to minimal with specified font family and size
+  theme_minimal(base_family = "Verdana", 
+                base_size = 12) + 
+  
+  # Customize the x-axis labels to show percentages and limit the range
+  scale_x_continuous(
+    labels = ~ scales::number_format(scale = 100, suffix = " percent")(abs(.x)),
+    limits = 0.4 * c(-1,1)
+  ) + 
+  
+  # Manually set fill colors for Male and Female
+  scale_fill_manual(values = c("darkblue", "darkgoldenrod1")) + 
+  
+  # Customize labels and title
+  labs(x = "", 
+       y = " ", 
+       title = "Population structure in Guediawaye in 2013 ", 
+       fill = "", 
+       caption = "Data source: 2013 Senegal's RGPH")
+
+# Save the plot as an image file in the specified directory
+ggsave(paste0(here::here(),"/output/output_img/pyramide_2013.png"), width = 8, height = 5)
+```
+
 
 
 
