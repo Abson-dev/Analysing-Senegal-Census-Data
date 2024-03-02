@@ -1105,6 +1105,8 @@ dataPop_graph_2013 <- individus_2013 %>%
 # Modify the existing dataPop_graph_2002 dataframe
 dataPop_graph_2002 <- dataPop_graph_2002 %>% 
   mutate(
+    # Survey year
+    RGPH="2002",
     # Convert QB04 to a factor variable
     QB04 = as.factor(QB04),
     # Recode QB04 to represent Male and Female
@@ -1132,11 +1134,14 @@ dataPop_graph_2002 <- dataPop_graph_2002 %>%
     count = ifelse(QB04 == "Male", -count, count),
     # Normalize count by total number of individuals
     count = count/n
-  )
+  ) %>% 
+  rename("Sexe"="QB04")
 
 # Modify the existing dataPop_graph_2013 dataframe
 dataPop_graph_2013 <- dataPop_graph_2013 %>% 
   mutate(
+     # Survey year
+    RGPH="2013",
     # Convert B06 to a factor variable
     B06 = as.factor(B06),
     # Recode B06 to represent Male and Female
@@ -1164,7 +1169,8 @@ dataPop_graph_2013 <- dataPop_graph_2013 %>%
     count = ifelse(B06 == "Male", -count, count),
     # Normalize count by total number of individuals
     count = count/n
-  )
+  ) %>% 
+  rename("Sexe"="B06")
 ```
 
 
@@ -1174,7 +1180,7 @@ dataPop_graph_2013 <- dataPop_graph_2013 %>%
 ggplot(dataPop_graph_2002, 
        aes(x = count, 
            y = Age_group, 
-           fill = QB04)) + 
+           fill = Sexe)) + 
   # Use geom_col to create a column chart with specified width and transparency
   geom_col(width = 0.95, alpha = 0.75) + 
   
@@ -1184,7 +1190,7 @@ ggplot(dataPop_graph_2002,
   
   # Customize the x-axis labels to show percentages and limit the range
   scale_x_continuous(
-    labels = ~ scales::number_format(scale = 100, suffix = " percent")(abs(.x)),
+    labels = ~ scales::number_format(scale = 100, suffix = "")(abs(.x)),
     limits = 0.4 * c(-1,1)
   ) + 
   
@@ -1192,11 +1198,11 @@ ggplot(dataPop_graph_2002,
   scale_fill_manual(values = c("darkblue", "darkgoldenrod1")) + 
   
   # Customize labels and title
-  labs(x = "", 
+  labs(x = "percent (%)", 
        y = " ", 
        title = "Population structure in Guediawaye in 2002 ", 
        fill = "", 
-       caption = "Data source: 2002 Senegal's RGPH")
+       caption = "")
 
 # Save the plot as an image file in the specified directory
 ggsave(paste0(here::here(),"/output/output_img/pyramide_2002.png"), width = 8, height = 5)
@@ -1208,7 +1214,7 @@ ggsave(paste0(here::here(),"/output/output_img/pyramide_2002.png"), width = 8, h
 ggplot(dataPop_graph_2013, 
        aes(x = count, 
            y = Age_group, 
-           fill = B06)) + 
+           fill = Sexe)) + 
   # Use geom_col to create a column chart with specified width and transparency
   geom_col(width = 0.95, alpha = 0.75) + 
   
@@ -1218,7 +1224,7 @@ ggplot(dataPop_graph_2013,
   
   # Customize the x-axis labels to show percentages and limit the range
   scale_x_continuous(
-    labels = ~ scales::number_format(scale = 100, suffix = " percent")(abs(.x)),
+    labels = ~ scales::number_format(scale = 100, suffix = "")(abs(.x)),
     limits = 0.4 * c(-1,1)
   ) + 
   
@@ -1226,14 +1232,64 @@ ggplot(dataPop_graph_2013,
   scale_fill_manual(values = c("darkblue", "darkgoldenrod1")) + 
   
   # Customize labels and title
-  labs(x = "", 
+  labs(x = "percent (%)", 
        y = " ", 
        title = "Population structure in Guediawaye in 2013 ", 
        fill = "", 
-       caption = "Data source: 2013 Senegal's RGPH")
+       caption = "")
 
 # Save the plot as an image file in the specified directory
 ggsave(paste0(here::here(),"/output/output_img/pyramide_2013.png"), width = 8, height = 5)
+```
+
+```{r}
+# Combine two data frames using rbind.fill from the plyr package
+dataPop_graph_2013 %>%
+  plyr::rbind.fill(dataPop_graph_2002) %>%
+  
+  # Create a ggplot object
+  ggplot() +
+  
+  # Create a column plot with specified aesthetics
+  geom_col(aes(
+    fill = interaction(Sexe, RGPH, sep = " in "),
+    x = Age_group,
+    y = count
+  ), position = "dodge") +
+  
+  # Customize the y-axis labels as percentages
+  scale_y_continuous(labels = ~ scales::number_format(scale = 100)(abs(.x)),
+                     expand = c(0, 0)) +
+  
+  # Set manual fill colors for the plot
+  scale_fill_manual(values = c("lightblue1", "lightblue4", "lightgoldenrod1", "lightgoldenrod4"),
+                    name = "") +
+  
+  # Flip the coordinates to create a horizontal bar chart
+  coord_flip() +
+  
+  # Create facets based on the variable 'Sexe'
+  facet_wrap(~ Sexe,
+             scale = "free_x",
+             strip.position = "top") +
+  
+  # Customize plot labels and title
+  labs(x = "",
+       y = "percent (%)",
+       title = "Population structure in Guediawaye by sex",
+       caption = "") +
+  
+  # Apply a minimal theme to the plot
+  theme_minimal() +
+  
+  # Customize additional theme elements
+  theme(
+    strip.background = element_blank(),
+    legend.position = "bottom",
+    panel.spacing.x = unit(0, "pt")
+  )
+# Save the plot as an image file in the specified directory
+ggsave(paste0(here::here(),"/output/output_img/pyramide_all.png"), width = 8, height = 5)
 ```
 
 
