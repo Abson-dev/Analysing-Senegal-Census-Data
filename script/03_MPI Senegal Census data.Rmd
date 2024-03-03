@@ -65,6 +65,10 @@ sp_rgph_2013 <- sf::read_sf(paste0(here::here(),"/data/EAs_2013_2002_SHP/EAs_201
 # Importing the crosswalk
 #crosswalk_table_dr <- readxl::read_excel(paste0(here::here(),"/data/TABLE_CORRESPONDANCE_SPATIALE_DR.xls"))
 ```
+
+
+
+
 ```{r}
 edu_var = c("Primaire","Moyen","Secondaire","Superieur")
 #educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
@@ -255,6 +259,15 @@ menage_2013 <- menage_2013 %>%
 
 L'âge du décès n'est pas mentionné dans le recensement de 2013, nous ne pouvons donc pas calculer le nombre de décès pour les personnes de moins de 18 ans.
 
+```{r}
+# Normalising by the number of houses in the hh
+
+menage_2002 <- menage_2002 %>% 
+  mutate(indice_peoplement = hh_size/piece_occup)
+
+menage_2013 <- menage_2013 %>% 
+  mutate(indice_peoplement = hh_size/piece_occup)
+```
 
 
 ```{r}
@@ -262,48 +275,96 @@ mat_status_var = c("Monogame","Polygame","Celibataire","Veuf","Divorce")
 fertility_var = c("fertility")
 educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
 literacy_var = c("Literacy_French","Literacy_Arabic","Literacy_Wolof","Literacy_Pulaar","Literacy_Mandingo","Literacy_Diola","Literacy_Soninke")#"Literacy_Sereer",
-mig_var = c("resident_pres","resident_abs")#,"resident_vis"
+#dec_var =c("deces_mat_oui")
+mig_var = c("resident_pres","resident_abs","resident_vis")
 gender_var = c("homme","femme","hh_size")
 income_var = c("I_repas_saute","I_soins_medicaux")
+sitoccup_var = c("sit_occup_occup","sit_occup_chomeur","sit_occup_etudiant","sit_occup_foyer","sit_occup_retraite","sit_occup_rentier","sit_occup_autre")
+
+comp_var=c("nbr_babies","nbr_under_14","nbr_young_people","nbr_adult","nbr_elder_adult","nbr_senior")
+
+occup_var = c("sit_occup_occup","sit_occup_chomeur","sit_occup_etudiant","sit_occup_foyer","sit_occup_retraite","sit_occup_rentier","sit_occup_autre" )
+
 study_var = c(gender_var,
               fertility_var,
               educ_var,
               literacy_var,
               mig_var,
-              income_var)
+              income_var,
+              comp_var,
+              occup_var)
 ```
 
 ```{r}
 
 # The RGPH 2002
 # Grouping menage_2002 data by id_dr and summarizing relevant information
-plt_df_2002 <- menage_2002 %>% 
-  group_by(id_dr) %>% 
-  summarise_at(study_var, sum, na.rm = TRUE) %>% 
-  left_join(
-    menage_2002 %>% 
+plt_df_2002 <- menage_2002 %>%
   group_by(id_dr) %>%
-    summarise(menage = n(),  # Counting the number of households in each id_dr group
+  summarise_at(study_var, sum, na.rm = TRUE) %>%
+  left_join(
+    menage_2002 %>%
+  group_by(id_dr) %>%
+  summarise(menage = n(),  # Counting the number of households in each id_dr group
             MPI_mean = mean(MPI_index, na.rm = TRUE),
             median_cm_age = median(age_cm, na.rm =TRUE),
             mean_cm_age = mean(age_cm, na.rm =TRUE),
+            mean_ind_peo = mean(indice_peoplement, na.rm=TRUE),
+            median_ind_peo = median(indice_peoplement, na.rm=TRUE),
             cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
             cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
             pct_cm_homme = cm_homme/(cm_homme + cm_femme),
-            pct_cm_femme = cm_femme/(cm_homme + cm_femme))
-  )%>%  
+            pct_cm_femme = cm_femme/(cm_homme + cm_femme)
+            )
+  
+  )%>%
   # Ungrouping the data to avoid unintended side effects in subsequent operations
   ungroup() %>%
-  
+
   # Calculating the proportion of poor households and adding the results as a new column
   mutate(#prop_poor = poor / menage,
-                  
+
          # The information on the survey
          RGPH = "2002") %>%
 
 
   # Joining with the sp_rgph_2002 data frame based on the id_dr column
   left_join(sp_rgph_2002, by = "id_dr")
+
+
+plt_df_2002 <- menage_2002 %>% 
+  group_by(id_dr) %>% 
+  summarise_at(study_var, sum, na.rm = TRUE) %>% 
+  left_join(
+     plt_df_2002
+  )
+  # group_by(id_dr) %>%
+  # summarise_at(menage = n(),  # Counting the number of households in each id_dr group
+  #           MPI_mean = mean(MPI_index, na.rm = TRUE),
+  #           median_cm_age = median(age_cm, na.rm =TRUE),
+  #           mean_cm_age = mean(age_cm, na.rm =TRUE),
+  #           cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
+  #           cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
+  #           pct_cm_homme = cm_homme/(cm_homme + cm_femme),
+  #           pct_cm_femme = cm_femme/(cm_homme + cm_femme)),
+  # 
+  #           nbr_babies_mean = sum(nbr_babies, na.rm=TRUE),
+  # )%>%  
+  # Ungrouping the data to avoid unintended side effects in subsequent operations
+  # ungroup() %>%
+  
+  # Calculating the proportion of poor households and adding the results as a new column
+  # mutate(#prop_poor = poor / menage,
+  #                 
+  #        # The information on the survey
+  #        RGPH = "2002") %>%
+  # 
+  # 
+  # # Joining with the sp_rgph_2002 data frame based on the id_dr column
+  # left_join(sp_rgph_2002, by = "id_dr")
+
+
+
 
 
 
@@ -319,6 +380,8 @@ plt_df_2013 <- menage_2013 %>%
                 MPI_mean = mean(MPI_index, na.rm = TRUE),
                 median_cm_age = median(age_cm, na.rm =TRUE),
                 mean_cm_age = mean(age_cm, na.rm =TRUE),
+                mean_ind_peo = mean(indice_peoplement, na.rm=TRUE),
+                median_ind_peo = median(indice_peoplement, na.rm=TRUE),
                 cm_homme = sum(sexe_cm == 1, na.rm = TRUE),
                 cm_femme = sum(sexe_cm == 2, na.rm = TRUE),
                 pct_cm_homme = cm_homme/(cm_homme + cm_femme),
@@ -338,6 +401,13 @@ plt_df_2013 <- menage_2013 %>%
   left_join(
     sp_rgph_2013 %>%
   rename(id_dr=COD_DR2012), by = "id_dr")
+
+plt_df_2013 <- menage_2013 %>% 
+  group_by(id_dr) %>% 
+  summarise_at(study_var, sum, na.rm = TRUE) %>% 
+  left_join(
+     plt_df_2013
+  )
 ```
 
 
@@ -388,8 +458,12 @@ plt_df_2013 = plt_df_2013 %>%
 
 
 ```{r}
+# Adding other variables to the variables
+
 
 ```
+
+
 
 
 ```{r}
@@ -482,48 +556,48 @@ ggsave(paste0(here::here(),"/output/output_img/MPI_rgph.png"), width = 8, height
 
 
 
-# Exporting the datasets
+<!-- # Exporting the datasets -->
 
-```{r eval=FALSE, include=FALSE, results='hide'}
+<!-- ```{r eval=FALSE, include=FALSE, results='hide'} -->
 
-# Selecting the relevant variables
-MPI_data_dr <- MPI_data_dr %>% 
-  select(id_dr, REGION, DEPT, RGPH, NOM_ARRDT, NOM_CA, MPI_index, menage, hh_size, Shape_Leng, Shape_Area, geometry)
+<!-- # Selecting the relevant variables -->
+<!-- MPI_data_dr <- MPI_data_dr %>%  -->
+<!--   select(id_dr, REGION, DEPT, RGPH, NOM_ARRDT, NOM_CA, MPI_mean, menage, hh_size, Shape_Leng, Shape_Area, geometry) -->
 
-# Saving the merged dataset in the sf format (for the household data)
-sf::st_write(obj = MPI_data_dr, paste0(here::here(), "/output/output_data/MPI_data_dr.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
-```
-
-
-
-```{r eval=FALSE, include=FALSE}
-
-# Selecting specific columns from the 'menage_2002' data frame
-MPI_data_household <- 
-    menage_2002 %>% 
-    select(id_dr, ID_MENAGE, MPI_index, MPI_poor,  hh_size,  RGPH) %>% 
-  
-  # Binding with the menage_2013 data frame
-  
-    plyr::rbind.fill(
-      # Selecting specific columns from the 'menage_2013' data frame
-      menage_2013 <-
-        menage_2013 %>% 
-        select(id_dr, ID_MENAGE, MPI_index, MPI_poor,  hh_size, RGPH)
-    )
-```
+<!-- # Saving the merged dataset in the sf format (for the household data) -->
+<!-- sf::st_write(obj = MPI_data_dr, paste0(here::here(), "/output/output_data/MPI_data_dr.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) -->
+<!-- ``` -->
 
 
-```{r eval=FALSE, include=FALSE}
-# Exporting the MPI_data_dr dataset to include the MPI indicator
 
-# Saving in SPSS format
-haven::write_sav(MPI_data_household,paste0(here::here(), "/output/output_data/MPI_data_household.sav"))
+<!-- ```{r eval=FALSE, include=FALSE} -->
 
-# Saving in R format
-saveRDS(MPI_data_household,file=paste0(here::here(), "/output/output_data/MPI_data_household.rds"))
+<!-- # Selecting specific columns from the 'menage_2002' data frame -->
+<!-- MPI_data_household <-  -->
+<!--     menage_2002 %>%  -->
+<!--     select(id_dr, ID_MENAGE, MPI_index, MPI_poor,  hh_size,  RGPH) %>%  -->
 
-```
+<!--   # Binding with the menage_2013 data frame -->
+
+<!--     plyr::rbind.fill( -->
+<!--       # Selecting specific columns from the 'menage_2013' data frame -->
+<!--       menage_2013 <- -->
+<!--         menage_2013 %>%  -->
+<!--         select(id_dr, ID_MENAGE, MPI_index, MPI_poor,  hh_size, RGPH) -->
+<!--     ) -->
+<!-- ``` -->
+
+
+<!-- ```{r eval=FALSE, include=FALSE} -->
+<!-- # Exporting the MPI_data_dr dataset to include the MPI indicator -->
+
+<!-- # Saving in SPSS format -->
+<!-- haven::write_sav(MPI_data_household,paste0(here::here(), "/output/output_data/MPI_data_household.sav")) -->
+
+<!-- # Saving in R format -->
+<!-- saveRDS(MPI_data_household,file=paste0(here::here(), "/output/output_data/MPI_data_household.rds")) -->
+
+<!-- ``` -->
 
 
 https://ophi.org.uk/multidimensional-poverty-index/#:~:text=The%20global%20Multidimensional%20Poverty%20Index,that%20a%20person%20faces%20simultaneously.
