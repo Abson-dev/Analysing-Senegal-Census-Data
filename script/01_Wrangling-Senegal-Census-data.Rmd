@@ -1048,7 +1048,7 @@ menage_2002 <- menage_2002 %>%
       filter(QB03== 1) %>% #"Chef de menage"
       
       # Creating the "niveau_instruction_cm" variable from QB15 column
-      mutate(niveau_instruction_cm = QB15 %>% structure(label=paste0(Hmisc::label(individus_2002$QB15), " CM")),
+      mutate(niveau_instruction_cm = educ %>% structure(label=paste0(Hmisc::label(individus_2002$educ), " CM")),
       
              # Creating the "sexe_cm" variable from QB04 column
           sexe_cm = QB04 %>% structure(label= paste0(Hmisc::label(individus_2002$QB04), " Sexe CM")),
@@ -1075,7 +1075,7 @@ menage_2013 <- menage_2013 %>%
       filter(B04==1) %>% #"Chef de ménage"
       
       # Renaming the B32 column to "niveau_instruction_cm"
-      mutate(niveau_instruction_cm = B32 %>% structure(label=paste0(Hmisc::label(individus_2013$B32),"du CM")), 
+      mutate(niveau_instruction_cm = educ %>% structure(label=paste0(Hmisc::label(individus_2013$educ),"du CM")), 
       
       # Creating the "sexe_cm" variable from B06 column
           sexe_cm = B06 %>% structure(label= paste0(Hmisc::label(individus_2013$B06), "du CM")),
@@ -1090,8 +1090,72 @@ menage_2013 <- menage_2013 %>%
     
   )
 
+
+
+
 cm_var=c("niveau_instruction_cm","sexe_cm","age_cm")
 ```
+
+```{r}
+# FOr CM
+#For the RGPH 2002 dataset
+#QB15 | educ
+     # 0      Aucun
+     # 1   Primaire
+     # 2      Moyen
+     # 3 Secondaire
+     # 4  Supérieur
+     # 9   manquant
+menage_2002 <- menage_2002 %>% 
+      mutate(
+        Aucun_cm =ifelse(niveau_instruction_cm == 0, 1,0),
+        Primaire_cm = ifelse(niveau_instruction_cm == 1, 1,0),
+        Moyen_cm = ifelse(niveau_instruction_cm == 2, 1,0),
+        Secondaire_cm = ifelse(niveau_instruction_cm == 3, 1,0),
+        Superieur_cm = ifelse(niveau_instruction_cm == 4, 1,0)
+      ) %>% 
+      
+  mutate(
+        Aucun_cm = as.numeric(Aucun_cm)%>%
+          structure(label = "CM a aucun niveau de d'instruction") ,
+        Primaire_cm = as.numeric(Primaire_cm) %>%
+          structure(label = "CM a un niveau d'instruction Primaire"),
+        Moyen_cm = as.numeric(Moyen_cm) %>%
+          structure(label = "CM a un niveau d'instruction Moyen"),
+        Secondaire_cm = as.numeric(Secondaire_cm) %>%
+          structure(label = "CM a un niveau d'instruction de Secondaire"),
+        Superieur_cm = as.numeric(Superieur_cm) %>%
+          structure(label = "CM a un niveau d'instruction Supérieur"))
+
+#For the RGPH 2013 dataset
+
+menage_2013 <- menage_2013 %>% 
+  
+  mutate(
+        Aucun_cm =ifelse(niveau_instruction_cm == 0, 1,0),
+        Primaire_cm = ifelse(niveau_instruction_cm == 1, 1,0),
+        Moyen_cm = ifelse(niveau_instruction_cm == 2, 1,0),
+        Secondaire_cm = ifelse(niveau_instruction_cm == 3, 1,0),
+        Superieur_cm = ifelse(niveau_instruction_cm == 4, 1,0)
+      ) %>% 
+      
+  mutate(
+        Aucun_cm = as.numeric(Aucun_cm)%>%
+          structure(label = "CM a aucun niveau de d'instruction") ,
+        Primaire_cm = as.numeric(Primaire_cm) %>%
+          structure(label = "CM a un niveau d'instruction Primaire"),
+        Moyen_cm = as.numeric(Moyen_cm) %>%
+          structure(label = "CM a un niveau d'instruction Moyen"),
+        Secondaire_cm = as.numeric(Secondaire_cm) %>%
+          structure(label = "CM a un niveau d'instruction de Secondaire"),
+        Superieur_cm = as.numeric(Superieur_cm) %>%
+          structure(label = "CM a un niveau d'instruction Supérieur"))
+    
+
+educ_var = c("Aucun_cm","Primaire_cm","Moyen_cm","Secondaire_cm","Superieur_cm")
+```
+
+
 
 ### Household composition
 

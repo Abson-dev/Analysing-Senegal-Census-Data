@@ -274,6 +274,7 @@ menage_2013 <- menage_2013 %>%
 mat_status_var = c("Monogame","Polygame","Celibataire","Veuf","Divorce")
 fertility_var = c("fertility")
 educ_var = c("Aucun","Primaire","Moyen","Secondaire","Superieur")
+educ_cm_var = c("Aucun_cm","Primaire_cm","Moyen_cm","Secondaire_cm","Superieur_cm")
 literacy_var = c("Literacy_French","Literacy_Arabic","Literacy_Wolof","Literacy_Pulaar","Literacy_Mandingo","Literacy_Diola","Literacy_Soninke")#"Literacy_Sereer",
 #dec_var =c("deces_mat_oui")
 mig_var = c("resident_pres","resident_abs","resident_vis")
@@ -288,9 +289,11 @@ occup_var = c("sit_occup_occup","sit_occup_chomeur","sit_occup_etudiant","sit_oc
 study_var = c(gender_var,
               fertility_var,
               educ_var,
+              educ_cm_var,
               literacy_var,
               mig_var,
               income_var,
+              sitoccup_var,
               comp_var,
               occup_var)
 ```
@@ -331,13 +334,20 @@ plt_df_2002 <- menage_2002 %>%
   # Joining with the sp_rgph_2002 data frame based on the id_dr column
   left_join(sp_rgph_2002, by = "id_dr")
 
+# Average accross the household size
+plt_df_2002 <- plt_df_2002 %>% 
+  mutate(across(setdiff(study_var,educ_cm_var), ~ . / hh_size))
 
-plt_df_2002 <- menage_2002 %>% 
-  group_by(id_dr) %>% 
-  summarise_at(study_var, sum, na.rm = TRUE) %>% 
-  left_join(
-     plt_df_2002
-  )
+# Average across the number of hh in the DR
+plt_df_2002 <- plt_df_2002 %>% 
+  mutate(across(educ_cm_var, ~ . / menage))
+
+# plt_df_2002 <- menage_2002 %>% 
+#   group_by(id_dr) %>% 
+#   summarise_at(study_var, mean, na.rm = TRUE) %>% 
+#   left_join(
+#      plt_df_2002
+#   )
   # group_by(id_dr) %>%
   # summarise_at(menage = n(),  # Counting the number of households in each id_dr group
   #           MPI_mean = mean(MPI_index, na.rm = TRUE),
@@ -402,12 +412,23 @@ plt_df_2013 <- menage_2013 %>%
     sp_rgph_2013 %>%
   rename(id_dr=COD_DR2012), by = "id_dr")
 
-plt_df_2013 <- menage_2013 %>% 
-  group_by(id_dr) %>% 
-  summarise_at(study_var, sum, na.rm = TRUE) %>% 
-  left_join(
-     plt_df_2013
-  )
+
+# Average accross the household size
+plt_df_2013 <- plt_df_2013 %>% 
+  mutate(across(setdiff(study_var,educ_cm_var), ~ . / hh_size))
+
+# Average across the number of hh in the DR
+plt_df_2013 <- plt_df_2013 %>% 
+  mutate(across(educ_cm_var, ~ . / menage))
+
+# plt_df_2013 <- menage_2013 %>% 
+#   group_by(id_dr) %>% 
+#   summarise_at(study_var, mean, na.rm = TRUE) %>% 
+#   left_join(
+#      plt_df_2013
+#   )
+
+
 ```
 
 
@@ -482,6 +503,7 @@ df_2013=plt_df_2013 %>%
 
 # Saving the merged dataset in the sf format (for the household data)
 sf::st_write(obj = df_2002, paste0(here::here(), "/output/output_data/MPI_data_dr_2002.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
+
 # Saving the merged dataset in the sf format (for the household data)
 sf::st_write(obj = df_2013, paste0(here::here(), "/output/output_data/MPI_data_dr_2013.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE)
 

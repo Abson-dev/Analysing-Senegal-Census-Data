@@ -50,7 +50,9 @@ lapply(required_packages, library, character.only = TRUE)
 
 
 MPI_data_dr_2013 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2013.shp"))
+
 MPI_data_dr_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2002.shp"))
+
 MPI_data_dr <- MPI_data_dr_2013 %>%
   plyr::rbind.fill(MPI_data_dr_2002) %>% 
   st_as_sf()
@@ -66,16 +68,24 @@ names(MPI_data_dr)
 ```{r}
 
 outcome = "MPI_men"
-vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme",    "femme","hh_size","Aucun","Superir","Ltrcy_P","Ltrcy_S","Ltrcy_D","rsdnt_p","rsdnt_b","I_rps_s","I_sns_m","MPI_men","mdn_cm_","mn_cm_g","cm_homm","cm_femm","pct_cm_h","geometry")
+# vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme",    "femme","hh_size","Aucun","Superir","Ltrcy_P","Ltrcy_S","Ltrcy_D","rsdnt_p","rsdnt_b","I_rps_s","I_sns_m","MPI_men","mdn_cm_","mn_cm_g","cm_homm","cm_femm","pct_cm_h","geometry")
 
-labels_var = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Nombre de femme","Taille ménage","Fertilité","Niveau d'instruction: Aucun","Niveau d'instruction: Primaire","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur","Nombre de French dans le ménage","Nombre de Arabic dans le ménage","Nombre de Wolof dans le ménage","Nombre de Pulaar dans le ménage","Nombre de Sereer dans le ménage","Nombre de Mandingo dans le ménage","Nombre de Diola dans le ménage","Nombre de Soninke dans le ménage","Nombre de résident permanent","Nombre de Résident Absent","Nombre de repas sauté","Nombre de soins médicaux","MPI","Nombre de ménage dans le DR","Age médian du CM dans le DR","Age moyen du CM dans le DR","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","Proportion de CM de sexe féminin","geometry")
+# remove some variables because of the multicolinearity problem
+vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme","hh_size","Aucun","Ltrcy_F","rsdnt_p","MPI_men","cm_homm","pct_cm_h","geometry")
 
-label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Nombre de femme","Taille ménage","Niveau d'instruction: Aucun", "Niveau d'instruction: Supérieur","Nombre de Pulaar dans le ménage","Nombre de Sereer dans le ménage","Nombre de Diola dans le ménage","Nombre de résident permanent","Nombre de Résident Absent","Nombre de repas sauté","Nombre de soins médicaux","MPI","Age médian du CM dans le DR","Age moyen du CM dans le DR","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","geometry")
+labels_var = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Nombre de femme","Taille ménage","Fertilité","Niveau d'instruction: Aucun","Niveau d'instruction: Primaire","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur","Nombre de French dans le ménage","Nombre de Arabic dans le ménage","Nombre de Wolof dans le ménage","Nombre de Pulaar dans le ménage","Nombre de Sereer dans le ménage","Nombre de Mandingo dans le ménage","Nombre de Diola dans le ménage","Nombre de Soninke dans le ménage","Nombre de résident permanent","Nombre de Résident Absent","Nombre de repas sauté","Nombre de soins médicaux","Nombre de ménage dans le DR","Age médian du CM dans le DR","Age moyen du CM dans le DR","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","Proportion de CM de sexe féminin","geometry")
+
+# label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Nombre de femme","Taille ménage","Niveau d'instruction: Aucun", "Niveau d'instruction: Supérieur","Nombre de Pulaar dans le ménage","Nombre de Sereer dans le ménage","Nombre de Diola dans le ménage","Nombre de résident permanent","Nombre de Résident Absent","Nombre de repas sauté","Nombre de soins médicaux","MPI","Age médian du CM dans le DR","Age moyen du CM dans le DR","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","geometry")
+
+
+label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Taille ménage","Taille ménage","Niveau d'instruction: Aucun","Nombre de French dans le ménage","Nombre de résident permanent","Nombre de CM de sexe masculin","Proportion de CM de sexe masculin","geometry")
 
 predictors_2002 = setdiff(names(MPI_data_dr_2002),vars_to_remove)
+predictors_2002 = append(predictors_2002,"pop_density")
 label_predictors_2002 = append(setdiff(labels_var, label_to_remove), "densité de la population")
   
 predictors_2013 =  setdiff(names(MPI_data_dr_2013),vars_to_remove)
+predictors_2013 =  append(predictors_2013,"pop_density")
 label_predictors_2013 = append(setdiff(labels_var, label_to_remove), "densité de la population")
 
 formula_2002 = paste0("log(",outcome,") ~ ",paste(predictors_2002[-length(predictors_2002)]," + ", collapse = ""),predictors_2002[length(predictors_2002)])
@@ -83,8 +93,14 @@ formula_2002 = paste0("log(",outcome,") ~ ",paste(predictors_2002[-length(predic
 formula_2013 = paste0("log(",outcome,") ~ ",paste(predictors_2013[-length(predictors_2013)]," + ", collapse = ""),predictors_2013[length(predictors_2013)])
 
 
-formula_2002 <- paste0(formula_2002, " + pop_density")
-formula_2013 <- paste0(formula_2013, " + pop_density")
+# formula_2002 <- paste0(formula_2002, " + pop_density")
+# formula_2013 <- paste0(formula_2013, " + pop_density")
+
+## Remove the household size from the formula
+
+formula_2002 <- gsub(' + hh_size ','',formula_2002, fixed = TRUE)
+formula_2013 <- gsub(' + hh_size ','',formula_2013, fixed = TRUE)
+
 ```
 
 ## Inspecting the outcome variable (MPI) with visualization
@@ -249,21 +265,30 @@ ggsave(paste0(here::here(),"/output/output_model/img/5_log_mpi_rgph.png"), width
 library(sf)
 library(units)
 
-predictors = c("menage","Primair","Moyen","Secondr","Ltrcy_F","pct_cm_f","hh_size","Ltrcy_A","Ltrcy_W","Ltrcy_M","fertlty")
+# predictors = c("menage","Primair","Moyen","Secondr","Ltrcy_F","pct_cm_f","hh_size","Ltrcy_A","Ltrcy_W","Ltrcy_M","fertlty")
+
+# outcome = "MPI_men"
+# MPI_data_dr_2013_for_model<- MPI_data_dr_2013 %>%
+#   dplyr::select(MPI_men,predictors) %>% 
+#   mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
+#   dplyr::select(-hh_size)
 
 outcome = "MPI_men"
 MPI_data_dr_2013_for_model<- MPI_data_dr_2013 %>%
-  dplyr::select(MPI_men,predictors) %>% 
   mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
-  dplyr::select(-hh_size)
+  dplyr::select(MPI_men,predictors_2013)
 
 ##
+# MPI_data_dr_2002_for_model<- MPI_data_dr_2002 %>%
+#   dplyr::select(MPI_men,predictors) %>% 
+#   mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
+#   dplyr::select(-hh_size)
+
 MPI_data_dr_2002_for_model<- MPI_data_dr_2002 %>%
-  dplyr::select(MPI_men,predictors) %>% 
   mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
-  dplyr::select(-hh_size)
+  dplyr::select(MPI_men,predictors_2002) 
 
-
+# Appending pop density as a predictor for 
 ```
 
 ```{r}
@@ -280,11 +305,9 @@ model_2013 <- lm(formula = formula_2013, data = MPI_data_dr_2013_for_model)
 
 
 
-stargazer::stargazer(model_2002, model_2013, type="html",
+stargazer::stargazer(model_2002, model_2013, type="text",
 
-keep = predictors_2002,
-
-covariate.labels = label_predictors_2002, out = (paste0(here::here(),"/output/output_model/1_reg_lineaire.html")))
+covariate.labels = label_predictors_2002, out = (paste0(here::here(),"/output/output_model/1_reg_lineaire.txt")))
 ```
 
 ```{r}
