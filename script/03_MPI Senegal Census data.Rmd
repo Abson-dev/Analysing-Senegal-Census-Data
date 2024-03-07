@@ -448,6 +448,8 @@ other_var = c(
               "cm_femme",
               "pct_cm_homme",
               "pct_cm_femme",
+              "mean_ind_peo",
+              "median_ind_peo",
               "geometry"
               )
 ```
