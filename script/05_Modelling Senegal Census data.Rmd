@@ -58,9 +58,6 @@ MPI_data_dr <- MPI_data_dr_2013 %>%
   st_as_sf()
 ```
 
-```{r}
-names(MPI_data_dr)
-```
 
 
 # Regression modeling with Guediawaye Census data
@@ -71,24 +68,24 @@ outcome = "MPI_men"
 # vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme",    "femme","hh_size","Aucun","Superir","Ltrcy_P","Ltrcy_S","Ltrcy_D","rsdnt_p","rsdnt_b","I_rps_s","I_sns_m","MPI_men","mdn_cm_","mn_cm_g","cm_homm","cm_femm","pct_cm_h","geometry")
 
 # remove some variables because of the multicolinearity problem
-vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme","hh_size","Aucun","Aucn_cm","Ltrcy_F","rsdnt_p","st_ccp_cc","st_ccp_rn","nbr_bbs","nbr_snr","MPI_men","cm_homm","pct_cm_h","geometry")
+vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme","hh_size","Primair","Prmr_cm","Ltrcy_F","rsdnt_p","st_ccp_cc","st_ccp_rn","nbr_bbs","nbr_snr","MPI_men","cm_homm","cm_femm","pct_cm_h","geometry")
 
 
-labels_var = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Nombre de femme","Taille ménage","Fertilité","Niveau d'instruction: Aucun","Niveau d'instruction: Primaire","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur",
+labels_var = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d'homme","proportion de femme","Taille moyenne du ménage","Fertilité moyenne","Niveau d'instruction: Aucun","Niveau d'instruction: Primaire","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur",
                
-"Niveau d'instruction du CM: Aucun","Niveau d'instruction du CM: Primaire","Niveau d'instruction du CM: Moyen","Niveau d'instruction du CM: Secondaire", "Niveau d'instruction du CM: Supérieur","Nombre de French dans le ménage","Nombre de Arabic dans le ménage","Nombre de Wolof dans le ménage","Nombre de Pulaar dans le ménage","Nombre de Sereer dans le ménage","Nombre de Mandingo dans le ménage","Nombre de Diola dans le ménage","Nombre de Soninke dans le ménage","Nombre de résident permanent","Nombre de Résident Absent","Nombre de repas sauté","Nombre de soins médicaux",
+"Niveau d'instruction du CM: Aucun","Niveau d'instruction du CM: Primaire","Niveau d'instruction du CM: Moyen","Niveau d'instruction du CM: Secondaire", "Niveau d'instruction du CM: Supérieur","Proportion de French","Proportion de Arabic ","Proportion de Wolof","Proportion de Pulaar","Proportion de Sereer","Proportion de Mandingo","Proportion de Diola","Proportion de Soninke","Proportion de résident permanent","Proportion de Résident Absent","Proportion de repas sauté","Proportion de soins médicaux",
                
-"Nombre d'individus qui sont occupés dans leur occupation principale dans le DR","Nombre d'individus qui sont au chômage ou à la recherche d'un premier emploi dans leur occupation principale dans le DR","Nombre d'individus qui sont occupés au foyer dans leur occupation principale dans le DR","Nombre d'individus qui sont étudiants/élèves dans leur occupation principale dans le DR","Nombre d'individus qui sont rentiers dans leur occupation principale dans le DR","Nombre d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale dans le DR","Nombre d'individus qui ont d'autres situations dans leur occupation principale dans le DR","Nombre d'enfant agée de moins d'un an dans le DR","Nombre d'enfant agée de moins de 14 ans dans le DR","Nombre d'individus agée entre 15 et 29 ans dans le DR","Nombre d'individus agées entre 30 et 44 ans dans le DR","Nombre d'individus agées entre 45 et 59 ans dans le DR","Nombre d'individus agée de plus de 60 ans dans le DR",
-"Nombre de ménage dans le DR","Age médian du CM dans le DR","Age moyen du CM dans le DR","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","Proportion de CM de sexe féminin",
+"Proportion d'individus qui sont occupés dans leur occupation principale ","Proportion d'individus qui sont au chômage ou à la recherche d'un premier emploi dans leur occupation principale","Proportion d'individus qui sont occupés au foyer dans leur occupation principale","Proportion d'individus qui sont étudiants/élèves dans leur occupation principale","Proportion d'individus qui sont rentiers dans leur occupation principale","Proportion d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale","Proportion d'individus qui ont d'autres situations dans leur occupation principale","Proportion d'enfant agée de moins d'un an ","Proportion d'enfant agée de moins de 14 ans","Proportion d'individus agée entre 15 et 29 ans","Proportion d'individus agées entre 30 et 44 ans","Proportion d'individus agées entre 45 et 59 ans","Proportion d'individus agée de plus de 60 ans",
+"Proportion de ménage","Age médian du CM","Age moyen du CM","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","Proportion de CM de sexe féminin",
 
 "Moyenne de l'indice de peoplement", "Médiane de l'indice de peoplement",
 
 "geometry")
 
-# label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Nombre de femme","Taille ménage","Niveau d'instruction: Aucun", "Niveau d'instruction: Supérieur","Nombre de Pulaar dans le ménage","Nombre de Sereer dans le ménage","Nombre de Diola dans le ménage","Nombre de résident permanent","Nombre de Résident Absent","Nombre de repas sauté","Nombre de soins médicaux","MPI","Age médian du CM dans le DR","Age moyen du CM dans le DR","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","geometry")
+# label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d'homme","Proportion de femme","Taille ménage","Niveau d'instruction: Aucun", "Niveau d'instruction: Supérieur","Proportion de Pulaar ","Proportion de Sereer ","Proportion de Diola ","Proportion de résident permanent","Proportion de Résident Absent","Proportion de repas sauté","Proportion de soins médicaux","MPI","Age médian du CM dans le DR","Age moyen du CM dans le DR","Proportion de CM de sexe masculin","Proportion de CM de sexe feminin","Proportion de CM de sexe masculin","geometry")
 
 
-label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Nombre d'homme","Taille ménage","Taille ménage","Niveau d'instruction: Aucun","Niveau d'instruction du CM: Aucun","Nombre de French dans le ménage","Nombre de résident permanent","Nombre d'individus qui sont occupés dans leur occupation principale dans le DR","Nombre d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale dans le DR","Nombre d'enfant agée de moins d'un an dans le DR","Nombre d'individus agée de plus de 60 ans dans le DR","Nombre de CM de sexe masculin","Proportion de CM de sexe masculin","geometry")
+label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d'homme","Taille ménage","Taille ménage","Niveau d'instruction: Aucun","Niveau d'instruction du CM: Primaire","Proportion de French","Proportion de résident permanent","Proportion d'individus qui sont occupés dans leur occupation principale","Proportion d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale","Proportion d'enfant agée de moins d'un an","Proportion d'individus agée de plus de 60 ans","Nombre de CM de sexe masculin","Nombre de CM de sexe féminin","Proportion de CM de sexe masculin","geometry")
 
 
 predictors_2002 = setdiff(names(MPI_data_dr_2002),vars_to_remove)
@@ -325,10 +322,33 @@ covariate.labels = label_predictors_2002, out = (paste0(here::here(),"/output/ou
 ```{r}
 
 ##unlist(noquote(paste0(predictors_2002, " ~ " , shQuote(label_predictors_2002), collapse = " , ")))
-gtsummary::tbl_regression(model_2002,
+
+tbl_2002 <- gtsummary::tbl_regression(model_2002,
                           include = everything(),
                           intercept = TRUE, show_single_row = everything(),
-label = list(femme ~ "Nombre de femme" , fertlty ~ "Fertilité" , Primair ~ "Niveau d'instruction: Primaire" , Moyen ~ "Niveau d'instruction: Moyen" , Secondr ~ "Niveau d'instruction: Secondaire" , Superir ~ "Niveau d'instruction: Supérieur" , Prmr_cm ~ "Niveau d'instruction du CM: Primaire" , Moyn_cm ~ "Niveau d'instruction du CM: Moyen" , Scndr_c ~ "Niveau d'instruction du CM: Secondaire" , Sprr_cm ~ "Niveau d'instruction du CM: Supérieur" , Ltrcy_A ~ "Nombre de Arabic dans le ménage" , Ltrcy_W ~ "Nombre de Wolof dans le ménage" , Ltrcy_P ~ "Nombre de Pulaar dans le ménage" , Ltrcy_M ~ "Nombre de Sereer dans le ménage" , Ltrcy_D ~ "Nombre de Mandingo dans le ménage" , Ltrcy_S ~ "Nombre de Diola dans le ménage" , rsdnt_b ~ "Nombre de Soninke dans le ménage" , rsdnt_v ~ "Nombre de Résident Absent" , I_rps_s ~ "Nombre de repas sauté" , I_sns_m ~ "Nombre de soins médicaux" , st_ccp_ch ~ "Nombre d'individus qui sont au chômage ou à la recherche d'un premier emploi dans leur occupation principale dans le DR" , st_ccp_td ~ "Nombre d'individus qui sont occupés au foyer dans leur occupation principale dans le DR" , st_ccp_f ~ "Nombre d'individus qui sont étudiants/élèves dans leur occupation principale dans le DR" , st_ccp_rt ~ "Nombre d'individus qui sont rentiers dans leur occupation principale dans le DR" ,  st_ccp_tr ~ "Nombre d'individus qui ont d'autres situations dans leur occupation principale dans le DR" , nbr__14 ~ "Nombre d'enfant agée de moins de 14 ans dans le DR" , nbr_yn_ ~ "Nombre d'individus agée entre 15 et 29 ans dans le DR" , nbr_dlt ~ "Nombre d'individus agées entre 30 et 44 ans dans le DR" , nbr_ld_ ~ "Nombre d'individus agées entre 45 et 59 ans dans le DR" ,  menage ~ "Nombre de ménage dans le DR" , mdn_cm_ ~ "Age médian du CM dans le DR" , mn_cm_g ~ "Age moyen du CM dans le DR" , cm_femm ~ "Nombre de CM de sexe feminin" , pct_cm_f ~ "Proportion de CM de sexe féminin" , mn_nd_p ~ "Moyenne de l'indice de peoplement" , mdn_nd_ ~ "Médiane de l'indice de peoplement" , pop_density ~ "densité de la population")
+                          label = list(femme ~ "- Proportion de femme" , fertlty ~ "- Fertilité" , Aucun ~ "- Aucun" , Moyen ~ "- Moyen" , Secondr ~ "- Secondaire" , Superir ~ "- Supérieur" , Aucn_cm ~ "- Aucun" , Moyn_cm ~ "- Moyen" , Scndr_c ~ "- Secondaire" , Sprr_cm ~ "- Supérieur" , Ltrcy_A ~ "- Arabic" , Ltrcy_W ~ "- Wolof" , Ltrcy_P ~ "- Pulaar" , Ltrcy_M ~ "- Sereer" , Ltrcy_D ~ "- Mandingo" , Ltrcy_S ~ "- Diola" , rsdnt_b ~ "- Proportion de résident permanent", rsdnt_v ~ "- Proportion de Résident Absent", I_rps_s ~ "- Proportion de repas sauté" , I_sns_m ~ "- Proportion de soins médicaux" , st_ccp_ch ~ "- Proportion d'individus qui sont au chômage ou à la recherche d'un premier emploi" , st_ccp_td ~ "- Proportion d'individus qui sont occupés au foyer" , st_ccp_f ~ "- Proportion d'individus qui sont étudiants/élèves" , st_ccp_rt ~ "- Proportion d'individus qui sont rentiers" ,  st_ccp_tr ~ "- Proportion d'individus qui ont d'autres situations" , nbr__14 ~ "- moins de 14 ans" , nbr_yn_ ~ "- entre 15 et 29 ans" , nbr_dlt ~ "- entre 30 et 44 ans" , nbr_ld_ ~ "- entre 45 et 59 ans" ,  menage ~ "- Proportion de ménage" , mdn_cm_ ~ "- Age médian du CM" , mn_cm_g ~ "- Age moyen du CM" , pct_cm_f ~ "- Proportion de CM de sexe féminin" , mn_nd_p ~ "- Moyenne de l'indice de peoplement" , mdn_nd_ ~ "- Médiane de l'indice de peoplement" , pop_density ~ "- Densité de la population")
+
+
+                          )%>%
+  modify_header(update = list(
+  label ~ "**Covariates**",
+  estimate ~ '**Estimate**',
+  std.error ~ '**Std. Error**',
+  statistic ~ '**z value**', 
+  p.value = "**Pr(>|z|)**")) %>% 
+  add_significance_stars(hide_ci = TRUE, hide_p = FALSE) %>% 
+  add_glance_table(include = c(r.squared, adj.r.squared, nobs)) %>%
+  modify_column_unhide(columns = c(statistic, std.error)) 
+
+
+tbl_2002
+```
+
+```{r}
+tbl_2013 <- gtsummary::tbl_regression(model_2013,
+                          include = everything(),
+                          intercept = TRUE, show_single_row = everything(),
+                          label = list(femme ~ "- Proportion de femme" , fertlty ~ "- Fertilité" , Aucun ~ "- Aucun" , Moyen ~ "- Moyen" , Secondr ~ "- Secondaire" , Superir ~ "- Supérieur" , Aucn_cm ~ "- Aucun" , Moyn_cm ~ "- Moyen" , Scndr_c ~ "- Secondaire" , Sprr_cm ~ "- Supérieur" , Ltrcy_A ~ "- Arabic" , Ltrcy_W ~ "- Wolof" , Ltrcy_P ~ "- Pulaar" , Ltrcy_M ~ "- Sereer" , Ltrcy_D ~ "- Mandingo" , Ltrcy_S ~ "- Diola" , rsdnt_b ~ "- Proportion de résident permanent", rsdnt_v ~ "- Proportion de Résident Absent", I_rps_s ~ "- Proportion de repas sauté" , I_sns_m ~ "- Proportion de soins médicaux" , st_ccp_ch ~ "- Proportion d'individus qui sont au chômage ou à la recherche d'un premier emploi" , st_ccp_td ~ "- Proportion d'individus qui sont occupés au foyer" , st_ccp_f ~ "- Proportion d'individus qui sont étudiants/élèves" , st_ccp_rt ~ "- Proportion d'individus qui sont rentiers" ,  st_ccp_tr ~ "- Proportion d'individus qui ont d'autres situations" , nbr__14 ~ "- moins de 14 ans" , nbr_yn_ ~ "- entre 15 et 29 ans" , nbr_dlt ~ "- entre 30 et 44 ans" , nbr_ld_ ~ "- entre 45 et 59 ans" ,  menage ~ "- Proportion de ménage" , mdn_cm_ ~ "- Age médian du CM" , mn_cm_g ~ "- Age moyen du CM" , pct_cm_f ~ "- Proportion de CM de sexe féminin" , mn_nd_p ~ "- Moyenne de l'indice de peoplement" , mdn_nd_ ~ "- Médiane de l'indice de peoplement" , pop_density ~ "- Densité de la population")
 
 
                           )%>%
@@ -342,39 +362,55 @@ label = list(femme ~ "Nombre de femme" , fertlty ~ "Fertilité" , Primair ~ "Niv
   add_glance_table(include = c(r.squared, adj.r.squared, nobs)) %>%
   modify_column_unhide(columns = c(statistic, std.error))
 
+tbl_2013
+```
 
-# gtsummary::tbl_regression(model_2002,
-#                      
-#                            # label = list(age ~ "Age (in year)", 
-#                            #              female ~ "Sex  of the target person (1 = Female, 0 = Male)", 
-#                            #              male ~ "Sex  of the target person (0 = Female, 1 = Male)", 
-#                            #              famstat ~ "Family status (1= Married or Cohabitation, 0= Otherwise)", 
-#                            #              hh_size ~ "Household size",
-#                            #              eduattain ~ "Educational attainment (0 = primary education or less; 1 = secondary education or more)", 
-#                            #              contact_abroad_b ~ "Contacts with people abroad (1 =Yes, 0 = No)", 
-#                            #              employed_b ~ "Any work in the last 30 days (1 =Yes, 0 = No)", 
-#                            #              save_b ~ "Able to save every month (1 =Nothing, 0 = A little bit or a lot)", 
-#                            #              hh_remit_b ~ "Receiving remittances (1 =Yes, 0 = No)",
-#                            #              mig_before ~ "Previous migration experience  (1 =Yes, 0 = No)",
-#                            #              know_return2_b ~ "Knowledge of a returnee irregular migrant (1= Yes, 0 = No)", 
-#                            #              urban ~ "Living in urban area (1 = Urban or semi-urban, 0 = Rural)", 
-#                            #              rural ~ "Living in rural area (1 = Rural, 0 = Urban or semi-urban)"),
-#                            #  statistic = list(all_continuous() ~ "{mean}"
-#                             digits = everything() ~ c(2,2),
-#                             missing = "no") %>% 
-#   
-#   modify_header(label ~ "Covariates") %>%
-#   add_difference() %>% modify_column_hide(c(ci, p.value)) #%>%
-  # add_overall() %>%
-  # add_n()%>% 
-  # add_stat(fns = everything() ~ add_by_n) %>%
-  # modify_header(starts_with("add_n_stat") ~ "**N**", stat_0 ~ "**All**", stat_1 ~ "**Control**", stat_2 ~ "**Treatment**") %>%
-  # modify_table_body(~ .x %>%
-  #     dplyr::relocate(add_n_stat_1, .before = stat_1) %>%
-  #     dplyr::relocate(add_n_stat_2, .before = stat_2))
+
+
+```{r}
+tbl_mrg <-
+  tbl_merge(
+    tbls = list(tbl_2002, tbl_2013),
+    tab_spanner = c("**Census 2002**", "**Census 2013**")
+  ) %>% 
+  as_gt() %>%
+  gt::tab_row_group(
+    group = "Occupation: (réf. occupés)",
+    rows = 22:26) %>%
+  gt::tab_row_group(
+    group = "Groupe d'age: (réf. 60 ans et plus)",
+    rows = 27:30) %>%
+  gt::tab_row_group(
+    group = "Caractéristiques de la population:",
+    rows = 35:37)    %>%
+    gt::tab_row_group(
+    group = "Caractéristiques du ménage: ",
+    rows = c(2, 3, 20, 21, 31,34,32,33)) %>%
+  gt::tab_row_group(
+    group = "Niveau d'instruction: (ref. Primaire)",
+    rows = 4:7) %>%
+  gt::tab_row_group(
+    group = "Niveau d'instruction du CM: (ref. Primaire)",
+    rows = 8:11) %>%
+  gt::tab_row_group(
+    group = "Langues parlées: (ref. Français)",
+    rows = 12:17) %>%
+  gt::tab_row_group(
+    group = "Migration: (ref. Visiteur)",
+    rows = c(18,19))
+
+tbl_mrg
 ```
 
 ```{r}
+
+
+```
+
+
+```{r}
+
+
 #library(corrr)
 
 ### 2002
@@ -385,7 +421,7 @@ dfw_estimates_2002 <- MPI_data_dr_2002_for_model%>%
 correlations <- correlate(dfw_estimates_2002, method = "pearson")
 network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Guediawaye Census 2002")
 
-ggsave(paste0(here::here(),"/output/output_model/img/6_corr_var.png"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_model/img/6_corr_var_2002.png"), width = 8, height = 5)
 
 ### 2013
 dfw_estimates_2013 <- MPI_data_dr_2013_for_model%>%
@@ -396,7 +432,7 @@ correlations <- correlate(dfw_estimates_2013, method = "pearson")
 network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Guediawaye Census 2013")
 
 
-ggsave(paste0(here::here(),"/output/output_model/img/6_corr_var.png"), width = 8, height = 5)
+ggsave(paste0(here::here(),"/output/output_model/img/6_corr_var_2013.png"), width = 8, height = 5)
 
 ```
 
