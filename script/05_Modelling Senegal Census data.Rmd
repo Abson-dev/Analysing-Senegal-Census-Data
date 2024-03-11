@@ -67,8 +67,6 @@ MPI_data_dr <- MPI_data_dr_2013 %>%
 outcome = "MPI_men"
 # vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme",    "femme","hh_size","Aucun","Superir","Ltrcy_P","Ltrcy_S","Ltrcy_D","rsdnt_p","rsdnt_b","I_rps_s","I_sns_m","MPI_men","mdn_cm_","mn_cm_g","cm_homm","cm_femm","pct_cm_h","geometry")
 
-# remove some variables because of the multicolinearity problem
-vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme","hh_size","Primair","Prmr_cm","Ltrcy_F","rsdnt_p","st_ccp_cc","st_ccp_rn","nbr_bbs","nbr_snr","MPI_men","cm_homm","cm_femm","pct_cm_h","geometry")
 
 
 labels_var = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d'homme","proportion de femme","Taille moyenne du ménage","Fertilité moyenne","Niveau d'instruction: Aucun","Niveau d'instruction: Primaire","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur",
@@ -83,6 +81,9 @@ labels_var = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d
 "geometry")
 
 # label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d'homme","Proportion de femme","Taille ménage","Niveau d'instruction: Aucun", "Niveau d'instruction: Supérieur","Proportion de Pulaar ","Proportion de Sereer ","Proportion de Diola ","Proportion de résident permanent","Proportion de Résident Absent","Proportion de repas sauté","Proportion de soins médicaux","MPI","Age médian du CM dans le DR","Age moyen du CM dans le DR","Proportion de CM de sexe masculin","Proportion de CM de sexe feminin","Proportion de CM de sexe masculin","geometry")
+
+# remove some variables because of the multicolinearity problem
+vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme","hh_size","Primair","Prmr_cm","Ltrcy_F","rsdnt_p","st_ccp_cc","st_ccp_rn","nbr_bbs","nbr_snr","MPI_men","cm_homm","cm_femm","pct_cm_h","geometry")
 
 
 label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d'homme","Taille ménage","Taille ménage","Niveau d'instruction: Aucun","Niveau d'instruction du CM: Primaire","Proportion de French","Proportion de résident permanent","Proportion d'individus qui sont occupés dans leur occupation principale","Proportion d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale","Proportion d'enfant agée de moins d'un an","Proportion d'individus agée de plus de 60 ans","Nombre de CM de sexe masculin","Nombre de CM de sexe féminin","Proportion de CM de sexe masculin","geometry")
@@ -340,8 +341,6 @@ tbl_2002 <- gtsummary::tbl_regression(model_2002,
   add_glance_table(include = c(r.squared, adj.r.squared, nobs)) %>%
   modify_column_unhide(columns = c(statistic, std.error)) 
 
-
-tbl_2002
 ```
 
 ```{r}
@@ -362,7 +361,6 @@ tbl_2013 <- gtsummary::tbl_regression(model_2013,
   add_glance_table(include = c(r.squared, adj.r.squared, nobs)) %>%
   modify_column_unhide(columns = c(statistic, std.error))
 
-tbl_2013
 ```
 
 
@@ -403,8 +401,143 @@ tbl_mrg
 ```
 
 ```{r}
+## Removing the unwanted variables from the model
+
+# remove some variables because of the multicolinearity problem
+vars_to_remove_add = c("Aucun","Moyen","Secondr","Superir","mn_cm_g")
 
 
+label_to_remove_add = c("Niveau d'instruction: Aucun","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur","Age moyen du CM")
+
+
+predictors_2002 = setdiff(predictors_2002,vars_to_remove_add)
+label_predictors_2002 = setdiff(label_predictors_2002, label_to_remove_add)
+  
+predictors_2013 =  setdiff(predictors_2013,c(vars_to_remove_add,"Aucn_cm"))
+label_predictors_2013 = setdiff(label_predictors_2013, c(label_to_remove_add,"Niveau d'instruction du CM: Aucun"))
+
+formula_2002 = paste0("log(",outcome,") ~ ",paste(predictors_2002[-length(predictors_2002)]," + ", collapse = ""),predictors_2002[length(predictors_2002)])
+
+formula_2013 = paste0("log(",outcome,") ~ ",paste(predictors_2013[-length(predictors_2013)]," + ", collapse = ""),predictors_2013[length(predictors_2013)])
+
+
+# Formula 
+# formula_2002 <- gsub(' + hh_size ','',formula_2002, fixed = TRUE)
+# formula_2013 <- gsub(' + hh_size ','',formula_2013, fixed = TRUE)
+
+
+# Data selection
+
+outcome = "MPI_men"
+
+
+MPI_data_dr_2002_for_model<- MPI_data_dr_2002_for_model %>%
+  dplyr::select(MPI_men,predictors_2002) 
+
+MPI_data_dr_2013_for_model<- MPI_data_dr_2013_for_model %>%
+  dplyr::select(MPI_men,predictors_2013)
+
+
+
+```
+
+
+
+
+```{r}
+# Rerun the regression model
+
+### For 2002
+model_2002 <- lm(formula = formula_2002, data = MPI_data_dr_2002_for_model)
+
+### For 2013
+
+model_2013 <- lm(formula = formula_2013, data = MPI_data_dr_2013_for_model)
+
+
+
+stargazer::stargazer(model_2002, model_2013, type="text",
+
+covariate.labels = label_predictors_2002, out = (paste0(here::here(),"/output/output_model/2_reg_lineaire.txt")))
+```
+
+
+```{r}
+
+##unlist(noquote(paste0(predictors_2002, " ~ " , shQuote(label_predictors_2002), collapse = " , ")))
+
+tbl_2002 <- gtsummary::tbl_regression(model_2002,
+                          include = everything(),
+                          intercept = TRUE, show_single_row = everything(),
+                          label = list(femme ~ "- Proportion de femme" , fertlty ~ "- Fertilité" , Aucn_cm ~ "- Aucun" , Moyn_cm ~ "- Moyen" , Scndr_c ~ "- Secondaire" , Sprr_cm ~ "- Supérieur" , Ltrcy_A ~ "- Arabic" , Ltrcy_W ~ "- Wolof" , Ltrcy_P ~ "- Pulaar" , Ltrcy_M ~ "- Sereer" , Ltrcy_D ~ "- Mandingo" , Ltrcy_S ~ "- Diola" , rsdnt_b ~ "- Proportion de résident permanent", rsdnt_v ~ "- Proportion de Résident Absent", I_rps_s ~ "- Proportion de repas sauté" , I_sns_m ~ "- Proportion de soins médicaux" , st_ccp_ch ~ "- Proportion d'individus qui sont au chômage ou à la recherche d'un premier emploi" , st_ccp_td ~ "- Proportion d'individus qui sont occupés au foyer" , st_ccp_f ~ "- Proportion d'individus qui sont étudiants/élèves" , st_ccp_rt ~ "- Proportion d'individus qui sont rentiers" ,  st_ccp_tr ~ "- Proportion d'individus qui ont d'autres situations" , nbr__14 ~ "- moins de 14 ans" , nbr_yn_ ~ "- entre 15 et 29 ans" , nbr_dlt ~ "- entre 30 et 44 ans" , nbr_ld_ ~ "- entre 45 et 59 ans" ,  menage ~ "- Proportion de ménage" , mdn_cm_ ~ "- Age médian du CM" , pct_cm_f ~ "- Proportion de CM de sexe féminin" , mn_nd_p ~ "- Moyenne de l'indice de peoplement" , mdn_nd_ ~ "- Médiane de l'indice de peoplement" , pop_density ~ "- Densité de la population")
+
+
+                          )%>%
+  modify_header(update = list(
+  label ~ "**Covariates**",
+  estimate ~ '**Estimate**',
+  std.error ~ '**Std. Error**',
+  statistic ~ '**z value**', 
+  p.value = "**Pr(>|z|)**")) %>% 
+  add_significance_stars(hide_ci = TRUE, hide_p = FALSE) %>% 
+  add_glance_table(include = c(r.squared, adj.r.squared, nobs)) %>%
+  modify_column_unhide(columns = c(statistic, std.error)) 
+
+
+```
+
+```{r}
+tbl_2013 <- gtsummary::tbl_regression(model_2013,
+                          include = everything(),
+                          intercept = TRUE, show_single_row = everything(),
+                          label = list(femme ~ "- Proportion de femme" , fertlty ~ "- Fertilité" , Moyn_cm ~ "- Moyen" , Scndr_c ~ "- Secondaire" , Sprr_cm ~ "- Supérieur" , Ltrcy_A ~ "- Arabic" , Ltrcy_W ~ "- Wolof" , Ltrcy_P ~ "- Pulaar" , Ltrcy_M ~ "- Sereer" , Ltrcy_D ~ "- Mandingo" , Ltrcy_S ~ "- Diola" , rsdnt_b ~ "- Proportion de résident permanent", rsdnt_v ~ "- Proportion de Résident Absent", I_rps_s ~ "- Proportion de repas sauté" , I_sns_m ~ "- Proportion de soins médicaux" , st_ccp_ch ~ "- Proportion d'individus qui sont au chômage ou à la recherche d'un premier emploi" , st_ccp_td ~ "- Proportion d'individus qui sont occupés au foyer" , st_ccp_f ~ "- Proportion d'individus qui sont étudiants/élèves" , st_ccp_rt ~ "- Proportion d'individus qui sont rentiers" ,  st_ccp_tr ~ "- Proportion d'individus qui ont d'autres situations" , nbr__14 ~ "- moins de 14 ans" , nbr_yn_ ~ "- entre 15 et 29 ans" , nbr_dlt ~ "- entre 30 et 44 ans" , nbr_ld_ ~ "- entre 45 et 59 ans" ,  menage ~ "- Proportion de ménage" , mdn_cm_ ~ "- Age médian du CM" , pct_cm_f ~ "- Proportion de CM de sexe féminin" , mn_nd_p ~ "- Moyenne de l'indice de peoplement" , mdn_nd_ ~ "- Médiane de l'indice de peoplement" , pop_density ~ "- Densité de la population")
+
+
+                          )%>%
+  modify_header(update = list(
+  label ~ "**Covariates**",
+  estimate ~ '**Estimate**',
+  std.error ~ '**Std. Error**',
+  statistic ~ '**z value**', 
+  p.value = "**Pr(>|z|)**")) %>% 
+  add_significance_stars(hide_ci = TRUE, hide_p = FALSE) %>% 
+  add_glance_table(include = c(r.squared, adj.r.squared, nobs)) %>%
+  modify_column_unhide(columns = c(statistic, std.error))
+
+```
+
+
+
+```{r}
+tbl_mrg <-
+  tbl_merge(
+    tbls = list(tbl_2002, tbl_2013),
+    tab_spanner = c("**Census 2002**", "**Census 2013**")
+  ) %>% 
+  as_gt() %>%
+  gt::tab_row_group(
+    group = "Occupation: (réf. occupés)",
+    rows = 18:22) %>%
+  gt::tab_row_group(
+    group = "Groupe d'age: (réf. 60 ans et plus)",
+    rows = 23:26) %>%
+  gt::tab_row_group(
+    group = "Caractéristiques de la population:",
+    rows = 28:32)    %>%
+    gt::tab_row_group(
+    group = "Caractéristiques du ménage: ",
+    rows = c(2, 3, 16, 17, 27)) %>%
+  gt::tab_row_group(
+    group = "Niveau d'instruction du CM: (ref. Primaire)",
+    rows = 4:7) %>%
+  gt::tab_row_group(
+    group = "Langues parlées: (ref. Français)",
+    rows = 8:13) %>%
+  gt::tab_row_group(
+    group = "Migration: (ref. Visiteur)",
+    rows = 14:15)
+
+tbl_mrg
 ```
 
 
@@ -429,6 +562,7 @@ dfw_estimates_2013 <- MPI_data_dr_2013_for_model%>%
   st_drop_geometry()
 
 correlations <- correlate(dfw_estimates_2013, method = "pearson")
+
 network_plot(correlations) + labs(title = "Network plot of correlations between model predictors for Guediawaye Census 2013")
 
 
