@@ -1,0 +1,776 @@
+---
+title: "CHAPTER FOUR: RESULTS AND ANALYSIS OF FINDINGS"
+author: "IBRAHIM KASSOUM Habibou"
+date: "`r Sys.Date()`"
+output: 
+  officedown::rdocx_document:
+    mapstyles:
+      Normal: ['First Paragraph']
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, error=FALSE)
+```
+
+
+
+```{r, results = "hide", include=FALSE}
+rm(list=ls())
+```
+
+
+```{r Package needed, results = "hide", include=FALSE}
+
+
+## Importing library
+### List of required packages
+required_packages <- c("tidyverse","janitor" ,"readr","dplyr","haven","sf", "flextable","sp", "factoextra", "FactoMineR","gtsummary", "sjPlot", "fastDummies","ggthemes","spdep","patchwork","corrr","units","GWmodel")
+
+# Check if packages are installed
+missing_packages <- setdiff(required_packages, installed.packages()[,"Package"])
+
+### Install missing packages
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages)
+}
+
+### Load all packages
+lapply(required_packages, library, character.only = TRUE)
+
+```
+
+
+```{r, results = "hide", include=FALSE}
+# Read shapefile data for 2013 and 2013
+
+
+MPI_data_dr_2013 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2013.shp"))
+
+MPI_data_dr_2002 <- sf::read_sf(paste0(here::here(),"/output/output_data/MPI_data_dr_2002.shp"))
+
+MPI_data_dr <- MPI_data_dr_2013 %>%
+  plyr::rbind.fill(MPI_data_dr_2002) %>% 
+  st_as_sf()
+```
+
+
+
+```{r, results = "hide", include=FALSE}
+
+labels_var = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d'homme","proportion de femme","Taille moyenne du ménage","Fertilité moyenne","Niveau d'instruction: Aucun","Niveau d'instruction: Primaire","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur",
+               
+"Niveau d'instruction du CM: Aucun","Niveau d'instruction du CM: Primaire","Niveau d'instruction du CM: Moyen","Niveau d'instruction du CM: Secondaire", "Niveau d'instruction du CM: Supérieur","Proportion de French","Proportion de Arabic ","Proportion de Wolof","Proportion de Pulaar","Proportion de Sereer","Proportion de Mandingo","Proportion de Diola","Proportion de Soninke","Proportion de résident permanent","Proportion de Résident Absent","Proportion de repas sauté","Proportion de soins médicaux",
+               
+"Proportion d'individus qui sont occupés dans leur occupation principale ","Proportion d'individus qui sont au chômage ou à la recherche d'un premier emploi dans leur occupation principale","Proportion d'individus qui sont occupés au foyer dans leur occupation principale","Proportion d'individus qui sont étudiants/élèves dans leur occupation principale","Proportion d'individus qui sont rentiers dans leur occupation principale","Proportion d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale","Proportion d'individus qui ont d'autres situations dans leur occupation principale","Proportion d'enfant agée de moins d'un an ","Proportion d'enfant agée de moins de 14 ans","Proportion d'individus agée entre 15 et 29 ans","Proportion d'individus agées entre 30 et 44 ans","Proportion d'individus agées entre 45 et 59 ans","Proportion d'individus agée de plus de 60 ans",
+"Proportion de ménage","Age médian du CM","Age moyen du CM","Nombre de CM de sexe masculin","Nombre de CM de sexe feminin","Proportion de CM de sexe masculin","Proportion de CM de sexe féminin",
+
+"Moyenne de l'indice de peoplement", "Médiane de l'indice de peoplement",
+
+"geometry")
+
+
+# remove some variables because of the multicolinearity problem
+vars_to_remove = c("id_dr","REGION","DEPT","NOM_ARR","NOM_CA","RGPH","homme","hh_size","Primair","Prmr_cm","Ltrcy_F","rsdnt_p","st_ccp_cc","st_ccp_rn","nbr_bbs","nbr_snr","MPI_men","cm_homm","cm_femm","pct_cm_h","geometry")
+
+
+label_to_remove = c("Id dr","Region","Dept.","Nom Arr.","Nom CA","RGPH","Proportion d'homme","Taille ménage","Taille ménage","Niveau d'instruction: Aucun","Niveau d'instruction du CM: Primaire","Proportion de French","Proportion de résident permanent","Proportion d'individus qui sont occupés dans leur occupation principale","Proportion d'individus qui sont retraités ou personnes du 3ème âge dans leur occupation principale","Proportion d'enfant agée de moins d'un an","Proportion d'individus agée de plus de 60 ans","Nombre de CM de sexe masculin","Nombre de CM de sexe féminin","Proportion de CM de sexe masculin","geometry")
+
+
+# predictors_2002 = setdiff(names(MPI_data_dr_2002),vars_to_remove)
+# predictors_2002 = append(predictors_2002,"pop_density")
+# label_predictors_2002 = append(setdiff(labels_var, label_to_remove), "densité de la population")
+#   
+# predictors_2013 =  setdiff(names(MPI_data_dr_2013),vars_to_remove)
+# predictors_2013 =  append(predictors_2013,"pop_density")
+# label_predictors_2013 = append(setdiff(labels_var, label_to_remove), "densité de la population")
+
+
+```
+
+
+```{r, results = "hide", include=FALSE}
+neighbors_2013 <- poly2nb(MPI_data_dr_2013, queen = TRUE)
+neighbors_2002 <- poly2nb(MPI_data_dr_2002, queen = TRUE)
+
+#Generating the spatial weights matrix
+weights_2013 <- nb2listw(neighbors_2013, style = "W")
+weights_2002 <- nb2listw(neighbors_2002, style = "W")
+```
+
+
+
+```{r, results = "hide", include=FALSE}
+source(paste0(here::here(),"/script/00_functions.R"))
+```
+
+
+# Demographic dynamics
+##	Population Dynamics analysis
+### Spatial distribution relationship fertility rate and mortality
+
+#### **Global Moran Index**
+
+- *Descriptive statistics*
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+# Define the outcome variable
+outcome = "fertlty"
+label_outcome="Fertilité moyenne"
+
+# regression variables
+vars_to_remove_curr = append(vars_to_remove, outcome)
+label_to_remove_curr = append(vars_to_remove, label_outcome)
+
+predictors_2013_curr = setdiff(names(MPI_data_dr_2013),vars_to_remove_curr)
+predictors_2013_curr = append(predictors_2013_curr,"pop_density")
+label_predictors_2013_curr = append(setdiff(labels_var, label_to_remove_curr), "densité de la population")
+
+predictors_2002_curr = setdiff(names(MPI_data_dr_2002),vars_to_remove_curr)
+predictors_2002_curr = append(predictors_2002_curr,"pop_density")
+label_predictors_2002_curr = append(setdiff(labels_var, label_to_remove_curr), "densité de la population")
+
+
+# Return the formulas
+formula_2013_curr <- set_formula(outcome, predictors_2013_curr)
+formula_2002_curr <- set_formula(outcome, predictors_2002_curr)
+
+
+# Get descriptive statistics
+get_descriptive_stat2(outcome, MPI_data_dr, label_outcome)
+
+```
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+get_descriptive_stat3(outcome, MPI_data_dr, label_outcome)
+```
+
+- *Global moran test*
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+
+moran.test(MPI_data_dr_2013 %>% 
+    as.data.frame() %>% 
+    select(!!as.name(outcome)) %>% 
+      pull(), weights_2013)
+
+moran.test(MPI_data_dr_2002 %>% 
+    as.data.frame() %>% 
+    select(!!as.name(outcome)) %>% 
+      pull(), weights_2002)
+```
+
+
+#### **Local indicators of spatial association (LISA)**
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+
+# For Gi*, re-compute the weights with `include.self()`
+localg_weights_2013 <- nb2listw(include.self(neighbors_2013))
+
+MPI_data_dr_2013$localG <- localG(MPI_data_dr_2013 %>% 
+    as.data.frame() %>% 
+    select(!!as.name(outcome)) %>% 
+      pull(), localg_weights_2013)
+
+MPI_data_dr_2013$localG <- as.numeric(MPI_data_dr_2013$localG)
+
+
+# For Gi*, re-compute the weights with `include.self()`
+localg_weights_2002 <- nb2listw(include.self(neighbors_2002))
+MPI_data_dr_2002$localG <- localG(MPI_data_dr_2002 %>% 
+    as.data.frame() %>% 
+    select(!!as.name(outcome)) %>% 
+      pull(), localg_weights_2002)
+
+MPI_data_dr_2002$localG <- as.numeric(MPI_data_dr_2002$localG)
+
+# merging the two dataframes
+MPI_data_dr <- MPI_data_dr_2013 %>%
+  plyr::rbind.fill(MPI_data_dr_2002) %>% 
+  st_as_sf()
+
+# Get LISA
+get_LISA(outcome, MPI_data_dr, label_outcome)
+```
+
+- *LISA quadrant scatterplot*
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+
+MPI_data_dr <- MPI_data_dr %>%
+  mutate(hotspot = case_when(
+    localG >= 2.576 ~ "High cluster",
+    localG <= -2.576 ~ "Low cluster",
+    TRUE ~ "Not significant"
+  ))
+
+
+get_LISA_scatter(outcome, MPI_data_dr, label_outcome)
+```
+
+- *LISA quadrant scatterplot point*
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+set.seed(1994)
+
+MPI_data_dr_2013$scaled_outcome <- 
+  as.numeric(scale(MPI_data_dr_2013 %>%
+    as.data.frame() %>% 
+    select(!!as.name(outcome))))
+
+MPI_data_dr_2002$scaled_outcome <- 
+  as.numeric(scale(MPI_data_dr_2002 %>% 
+    as.data.frame() %>% 
+    select(!!as.name(outcome))))
+
+dfw_lisa_2013 <- localmoran_perm(
+  MPI_data_dr_2013$scaled_outcome, 
+  weights_2013, 
+  nsim = 999L, 
+  alternative = "two.sided"
+) %>%
+  as_tibble() %>%
+  set_names(c("local_i", "exp_i", "var_i", "z_i", "p_i",
+              "p_i_sim", "pi_sim_folded", "skewness", "kurtosis"))
+
+dfw_lisa_2013_df <- MPI_data_dr_2013 %>%
+  select(id_dr, RGPH, scaled_outcome) %>%
+  mutate(lagged_estimate = lag.listw(weights_2013, scaled_outcome)) %>%
+  bind_cols(dfw_lisa_2013)
+
+##
+dfw_lisa_2002 <- localmoran_perm(
+  MPI_data_dr_2002$scaled_outcome, 
+  weights_2002, 
+  nsim = 999L, 
+  alternative = "two.sided"
+) %>%
+  as_tibble() %>%
+  set_names(c("local_i", "exp_i", "var_i", "z_i", "p_i",
+              "p_i_sim", "pi_sim_folded", "skewness", "kurtosis"))
+
+dfw_lisa_2002_df <- MPI_data_dr_2002 %>%
+  select(id_dr, RGPH, scaled_outcome) %>%
+  mutate(lagged_estimate = lag.listw(weights_2002, scaled_outcome)) %>%
+  bind_cols(dfw_lisa_2002)
+
+
+dfw_lisa_2013_clusters <- dfw_lisa_2013_df %>%
+  mutate(lisa_cluster = case_when(
+    p_i >= 0.05 ~ "Not significant",
+    scaled_outcome > 0 & local_i > 0 ~ "High-high",
+    scaled_outcome > 0 & local_i < 0 ~ "High-low",
+    scaled_outcome < 0 & local_i > 0 ~ "Low-low",
+    scaled_outcome < 0 & local_i < 0 ~ "Low-high"
+  ))
+
+
+##
+dfw_lisa_2002_clusters <- dfw_lisa_2002_df %>%
+  mutate(lisa_cluster = case_when(
+    p_i >= 0.05 ~ "Not significant",
+    scaled_outcome > 0 & local_i > 0 ~ "High-high",
+    scaled_outcome > 0 & local_i < 0 ~ "High-low",
+    scaled_outcome < 0 & local_i > 0 ~ "Low-low",
+    scaled_outcome < 0 & local_i < 0 ~ "Low-high"
+  ))
+
+# merging the two dataframes
+dfw_lisa_clusters <- dfw_lisa_2013_clusters %>%
+  plyr::rbind.fill(dfw_lisa_2002_clusters) %>% 
+  st_as_sf()
+
+
+# get LISA
+
+get_LISA_scatter_points(outcome, dfw_lisa_clusters, label_outcome)
+```
+
+
+#### **Ordinary Least Square (OLS)** 
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+
+MPI_data_dr_2013_for_model<- MPI_data_dr_2013 %>%
+  mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
+  dplyr::select(!!as.name(outcome),predictors_2013_curr)
+
+
+MPI_data_dr_2002_for_model<- MPI_data_dr_2002 %>%
+  mutate(pop_density = as.numeric(set_units(hh_size / st_area(.), "1/km2"))) %>% 
+  dplyr::select(!!as.name(outcome),predictors_2002_curr)
+
+
+model_resuls <- lm(formula = formula_2013_curr, data = MPI_data_dr_2013_for_model)
+  
+tbl_2013 <- gtsummary::tbl_regression(model_resuls,
+                                        include = everything(),
+                                        intercept = TRUE, show_single_row = everything(),
+                                        label = list(femme ~ "- Proportion de femme" ,  Aucun ~ "- Aucun" , Moyen ~ "- Moyen" , 
+                                                     Secondr ~ "- Secondaire" , Superir ~ "- Supérieur" , Aucn_cm ~ "- Aucun" , Moyn_cm ~ "- Moyen" , 
+                                                     Scndr_c ~ "- Secondaire" , Sprr_cm ~ "- Supérieur" , Ltrcy_A ~ "- Arabic" , Ltrcy_W ~ "- Wolof" , 
+                                                     Ltrcy_P ~ "- Pulaar" , Ltrcy_M ~ "- Sereer" , Ltrcy_D ~ "- Mandingo" , Ltrcy_S ~ "- Diola" , 
+                                                     rsdnt_b ~ "- Proportion de résident permanent", rsdnt_v ~ "- Proportion de Résident Absent", 
+                                                     I_rps_s ~ "- Proportion de repas sauté" , I_sns_m ~ "- Proportion de soins médicaux" , 
+                                                     st_ccp_ch ~ "- Proportion d'individus qui sont au chômage ou à la recherche d'un premier emploi" , 
+                                                     st_ccp_td ~ "- Proportion d'individus qui sont occupés au foyer" , st_ccp_f ~ "- Proportion d'individus qui sont étudiants/élèves" , 
+                                                     st_ccp_rt ~ "- Proportion d'individus qui sont rentiers" ,  st_ccp_tr ~ "- Proportion d'individus qui ont d'autres situations" , 
+                                                     nbr__14 ~ "- moins de 14 ans" , nbr_yn_ ~ "- entre 15 et 29 ans" , nbr_dlt ~ "- entre 30 et 44 ans" , 
+                                                     nbr_ld_ ~ "- entre 45 et 59 ans" ,  menage ~ "- Proportion de ménage" , mdn_cm_ ~ "- Age médian du CM" , 
+                                                     mn_cm_g ~ "- Age moyen du CM" , pct_cm_f ~ "- Proportion de CM de sexe féminin" , mn_nd_p ~ "- Moyenne de l'indice de peoplement" , 
+                                                     mdn_nd_ ~ "- Médiane de l'indice de peoplement" , pop_density ~ "- Densité de la population")
+                                        
+                                        
+  )%>%
+    modify_header(update = list(
+      label ~ "**Covariates**",
+      estimate ~ '**Estimate**',
+      std.error ~ '**Std. Error**',
+      statistic ~ '**z value**', 
+      p.value = "**Pr(>|z|)**")) %>% 
+    add_significance_stars(hide_ci = TRUE, hide_p = FALSE) %>% 
+    add_glance_table(include = c(r.squared, adj.r.squared, nobs)) %>%
+    modify_column_unhide(columns = c(statistic, std.error)) 
+
+
+# tbl_2002 <- get_OLS_results(outcome, formula_2002_curr, MPI_data_dr_2002_for_model, label_outcome, label_predictors_2002_curr)
+
+
+model_resuls <- lm(formula = formula_2002_curr, data = MPI_data_dr_2002_for_model)
+  
+tbl_2002 <- gtsummary::tbl_regression(model_resuls,
+                                        include = everything(),
+                                        intercept = TRUE, show_single_row = everything(),
+                                        label = list(femme ~ "- Proportion de femme" , Aucun ~ "- Aucun" , Moyen ~ "- Moyen" , 
+                                                     Secondr ~ "- Secondaire" , Superir ~ "- Supérieur" , Aucn_cm ~ "- Aucun" , Moyn_cm ~ "- Moyen" , 
+                                                     Scndr_c ~ "- Secondaire" , Sprr_cm ~ "- Supérieur" , Ltrcy_A ~ "- Arabic" , Ltrcy_W ~ "- Wolof" , 
+                                                     Ltrcy_P ~ "- Pulaar" , Ltrcy_M ~ "- Sereer" , Ltrcy_D ~ "- Mandingo" , Ltrcy_S ~ "- Diola" , 
+                                                     rsdnt_b ~ "- Proportion de résident permanent", rsdnt_v ~ "- Proportion de Résident Absent", 
+                                                     I_rps_s ~ "- Proportion de repas sauté" , I_sns_m ~ "- Proportion de soins médicaux" , 
+                                                     st_ccp_ch ~ "- Proportion d'individus qui sont au chômage ou à la recherche d'un premier emploi" , 
+                                                     st_ccp_td ~ "- Proportion d'individus qui sont occupés au foyer" , st_ccp_f ~ "- Proportion d'individus qui sont étudiants/élèves" , 
+                                                     st_ccp_rt ~ "- Proportion d'individus qui sont rentiers" ,  st_ccp_tr ~ "- Proportion d'individus qui ont d'autres situations" , 
+                                                     nbr__14 ~ "- moins de 14 ans" , nbr_yn_ ~ "- entre 15 et 29 ans" , nbr_dlt ~ "- entre 30 et 44 ans" , 
+                                                     nbr_ld_ ~ "- entre 45 et 59 ans" ,  menage ~ "- Proportion de ménage" , mdn_cm_ ~ "- Age médian du CM" , 
+                                                     mn_cm_g ~ "- Age moyen du CM" , pct_cm_f ~ "- Proportion de CM de sexe féminin" , mn_nd_p ~ "- Moyenne de l'indice de peoplement" , 
+                                                     mdn_nd_ ~ "- Médiane de l'indice de peoplement" , pop_density ~ "- Densité de la population")
+                                        
+                                        
+  )%>%
+    modify_header(update = list(
+      label ~ "**Covariates**",
+      estimate ~ '**Estimate**',
+      std.error ~ '**Std. Error**',
+      statistic ~ '**z value**', 
+      p.value = "**Pr(>|z|)**")) %>% 
+    add_significance_stars(hide_ci = TRUE, hide_p = FALSE) %>% 
+    add_glance_table(include = c(r.squared, adj.r.squared, nobs)) %>%
+    modify_column_unhide(columns = c(statistic, std.error)) 
+
+tbl_mrg <-
+  tbl_merge(
+    tbls = list(tbl_2002, tbl_2013),
+    tab_spanner = c("**Census 2002**", "**Census 2013**")
+  ) %>% 
+  as_gt() %>%
+  gt::tab_row_group(
+    group = "Occupation: (réf. occupés)",
+    rows = 22:26) %>%
+  gt::tab_row_group(
+    group = "Groupe d'age: (réf. 60 ans et plus)",
+    rows = 27:30) %>%
+  gt::tab_row_group(
+    group = "Caractéristiques de la population:",
+    rows = 35:36)    %>%
+    gt::tab_row_group(
+    group = "Caractéristiques du ménage: ",
+    rows = c(2, 3, 20, 21, 31,34,32,33)) %>%
+  gt::tab_row_group(
+    group = "Niveau d'instruction: (ref. Primaire)",
+    rows = 4:7) %>%
+  gt::tab_row_group(
+    group = "Niveau d'instruction du CM: (ref. Primaire)",
+    rows = 8:11) %>%
+  gt::tab_row_group(
+    group = "Langues parlées: (ref. Français)",
+    rows = 12:17) %>%
+  gt::tab_row_group(
+    group = "Migration: (ref. Visiteur)",
+    rows = c(18,19))
+
+tbl_mrg
+```
+
+
+#### **Geographically weighted regression (GWR)**
+
+```{r, include = FALSE, warning=FALSE, echo = FALSE}
+
+## Removing the unwanted variables from the model
+
+# remove some variables because of the multicolinearity problem
+vars_to_remove_add = c("Aucun","Moyen","Secondr","Superir","mn_cm_g")
+
+
+label_to_remove_add = c("Niveau d'instruction: Aucun","Niveau d'instruction: Moyen","Niveau d'instruction: Secondaire", "Niveau d'instruction: Supérieur","Age moyen du CM")
+
+
+predictors_2002_curr = setdiff(predictors_2002_curr,vars_to_remove_add)
+label_predictors_2002_curr = setdiff(label_predictors_2002_curr, label_to_remove_add)
+  
+predictors_2013_curr =  setdiff(predictors_2013_curr,c(vars_to_remove_add,"Aucn_cm"))
+label_predictors_2013_curr = setdiff(label_predictors_2013_curr, c(label_to_remove_add,"Niveau d'instruction du CM: Aucun"))
+
+
+formula_2002_curr = paste0(outcome," ~ ",paste(predictors_2002_curr[-length(predictors_2002_curr)]," + ", collapse = ""),predictors_2002_curr[length(predictors_2002_curr)])
+
+formula_2013_curr = paste0(outcome," ~ ",paste(predictors_2013_curr[-length(predictors_2013_curr)]," + ", collapse = ""),predictors_2013_curr[length(predictors_2013_curr)])
+
+
+### 2013
+dfw_data_sp_2013 <- MPI_data_dr_2013_for_model%>%
+  as_Spatial()
+
+bw <- bw.gwr(
+  formula = formula_2013_curr, 
+  data = dfw_data_sp_2013, 
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+
+gw_model_2013 <- gwr.basic(
+  formula = formula_2013_curr, 
+  data = dfw_data_sp_2013, 
+  bw = bw,
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+gw_model_2013_results <- gw_model_2013$SDF %>%
+  st_as_sf() 
+
+#names(gw_model_2013_results)=str_sub(names(gw_model_2013_results),2)
+
+
+
+# gw_model_2013_results <- gw_model_2013_results %>% 
+#   rename(geometry = eometry)
+
+st_geometry(gw_model_2013_results) <- "geometry"
+#rename variable
+# gw_model_2013_results <- gw_model_2013_results %>% 
+#   rename(intrc_SE = Intercept_SE,
+#          intrc_TV = Intercept_TV,
+#           ccp_ch_SE = st_ccp_ch_SE,
+#           ccp_f_SE = st_ccp_f_SE,
+#           ccp_rt_SE = st_ccp_rt_SE,
+#           ccp_td_SE = st_ccp_td_SE,
+#           ccp_tr_SE = st_ccp_tr_SE,
+#           ccp_ch_TV = st_ccp_ch_TV,
+#           ccp_f_TV = st_ccp_f_TV,
+#           ccp_rt_TV = st_ccp_rt_TV,
+#           ccp_td_TV = st_ccp_td_TV,
+#           ccp_tr_TV = st_ccp_tr_TV,
+#           rps_s_SE = I_rps_s_SE,
+#           rps_s_TV = I_rps_s_TV,
+#           sns_m_SE = I_sns_m_SE,
+#           sns_m_TV = I_sns_m_TV,
+#           mdn_cm = mdn_cm_,
+#           mdn_nd = mdn_nd_)
+
+
+
+# Saving in the "gw_model_2013_results"
+# sf::st_write(obj=gw_model_2013_results, paste0(here::here(), "/output/output_model/shp/gw_model_results_2013_",label_outcome,".shp"),  quiet = TRUE, driver = "ESRI Shapefile", delete_layer = TRUE, overwrite_layer = TRUE) 
+
+### 2002
+dfw_data_sp_2002 <- MPI_data_dr_2002_for_model%>%
+  as_Spatial()
+
+bw <- bw.gwr(
+  formula = formula_2002_curr, 
+  data = dfw_data_sp_2002, 
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+gw_model_2002 <- gwr.basic(
+  formula = formula_2002_curr, 
+  data = dfw_data_sp_2002, 
+  bw = bw,
+  kernel = "bisquare",
+  adaptive = TRUE
+)
+
+gw_model_2002_results <- gw_model_2002$SDF %>%
+   st_as_sf() #%>% 
+   #rename(outcome_y=y)
+# 
+# names(gw_model_2002_results)=str_sub(names(gw_model_2002_results),3)
+# 
+# gw_model_2002_results <-  gw_model_2002_results %>% rename_with(~str_replace_all(.x, "_", "-"))
+# 
+# st_geometry(gw_model_2002_results) <- "ometry"
+# 
+# gw_model_2002_results <- gw_model_2002_results %>% 
+#   mutate(trcpt=tercept)  
+# # Saving in the "gw_model_2013_results"
+# 
+# #st_sf(very_long_field_name=1, very_long_field_namee=1) %>% 
+# sf::st_write(obj=gw_model_2002_results, paste0(here::here(), "/output/output_model/shp/gw_model_results_2002_",label_outcome,".shp"),  driver = "ESRI Shapefile", delete_layer = TRUE, quiet = TRUE) 
+
+## Final results
+gw_model_results <- gw_model_2002_results %>%
+  dplyr::mutate(RGPH = "Census 2002") %>% 
+  plyr::rbind.fill(gw_model_2013_results %>%
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
+  st_as_sf()
+
+
+```
+
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+get_results_gwr_1(outcome, gw_model_results, label_outcome)
+```
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+get_results_gwr_2(outcome, gw_model_results, label_outcome)
+```
+
+
+#### **K-means algorithm**
+
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+
+
+### 2002
+dfw_estimates_2002 <- MPI_data_dr_2002_for_model%>%
+  st_drop_geometry()
+
+pca_2002 <- prcomp(
+  formula = ~., 
+  data = dfw_estimates_2002, 
+  scale. = TRUE, 
+  center = TRUE
+)
+
+### 2013
+dfw_estimates_2013 <- MPI_data_dr_2013_for_model%>%
+  select(-c(Aucun,Aucn_cm)) %>%
+  st_drop_geometry()
+
+pca_2013 <- prcomp(
+  formula = ~., 
+  data = dfw_estimates_2013, 
+  scale. = TRUE, 
+  center = TRUE
+)
+
+```
+
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+components_2002 <- predict(pca_2002, dfw_estimates_2002)
+dfw_pca_2002 <- MPI_data_dr_2002_for_model%>%
+  select(-c(as.name(outcome))) %>%
+  cbind(components_2002) 
+
+
+components_2013 <- predict(pca_2013, dfw_estimates_2013)
+dfw_pca_2013 <- MPI_data_dr_2013_for_model%>%
+    select(-c(as.name(outcome))) %>%
+  cbind(components_2013) 
+
+dfw_pca_2002$RGPH<-"Census 2002"
+dfw_pca_2013$RGPH<-"Census 2013"
+
+dfw_pca <- dfw_pca_2002 %>%
+  plyr::rbind.fill(dfw_pca_2013) %>% 
+  st_as_sf()
+
+```
+
+```{r, include = FALSE, warning=FALSE, echo = FALSE}
+
+# Saving in the "dfw_pca"
+sf::st_write(obj=dfw_pca, paste0(here::here(), "/output/output_model/shp/dfw_pca.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) 
+```
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+set.seed(1994)
+
+dfw_kmeans_2002 <- dfw_pca_2002 %>%
+  st_drop_geometry() %>%
+  select(PC1:PC8) %>%
+  kmeans(centers = 6)
+
+dfw_kmeans_2013 <- dfw_pca_2013 %>%
+  st_drop_geometry() %>%
+  select(PC1:PC8) %>%
+  kmeans(centers = 6)
+
+```
+
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+dfw_clusters_2002 <- dfw_pca_2002 %>%
+  mutate(cluster = as.character(dfw_kmeans_2002$cluster))
+
+dfw_clusters_2013 <- dfw_pca_2013 %>%
+  mutate(cluster = as.character(dfw_kmeans_2013$cluster))
+
+dfw_clusters <- dfw_clusters_2002 %>%
+  dplyr::mutate(RGPH = "Census 2002") %>% 
+  plyr::rbind.fill(dfw_clusters_2013 %>%
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
+  st_as_sf()
+
+
+dfw_clusters %>% 
+  ggplot(aes(fill = cluster)) + 
+  geom_sf(size = 0.1) + 
+  scale_fill_brewer(palette = "Set3")+ 
+      facet_wrap(~RGPH) +
+      labs(fill="Cluster number")+
+# Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                legend.position = "bottom", 
+                text = element_text(size = 8), 
+                legend.box.background = element_rect(),
+                legend.box.margin = margin(6, 6, 6, 6),
+                plot.background = element_rect(fill = "white"))+
+      ggspatial::annotation_scale(
+        location = "br",
+        bar_cols = c("grey60", "white"),
+        text_family = "ArcherPro Book"
+      ) +
+      ggspatial::annotation_north_arrow(
+        location = "tl", which_north = "true",
+      height = unit(1, "cm"),
+      width = unit(1, "cm"),
+      )
+
+ggsave(paste0(here::here(),"/output/output_model/img/13_cluster_rgph.png"), width = 8, height = 5)
+```
+
+
+```{r, include = FALSE, warning=FALSE, echo = FALSE}
+# Saving in the "dfw_clusters"
+sf::st_write(obj=dfw_clusters, paste0(here::here(), "/output/output_model/shp/dfw_clusters_pca.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) 
+```
+
+#### **K-Medoids Clustering Methods** 
+
+
+#### SKATER Algorithm 
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+library(spdep)
+
+input_vars <- dfw_pca_2002 %>%
+  select(PC1:PC8) %>%
+  st_drop_geometry() %>%
+  as.data.frame() 
+
+skater_nbrs <- poly2nb(dfw_pca_2002, queen = TRUE)
+costs <- nbcosts(skater_nbrs, input_vars)
+skater_weights <- nb2listw(skater_nbrs, costs, style = "B")
+
+
+mst <- mstree(skater_weights)
+regions <- skater(
+  mst[,1:2], 
+  input_vars, 
+  ncuts = 5,
+  crit = 10
+)
+
+dfw_clusters_2002$region <- as.character(regions$group)
+```
+
+
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+
+input_vars <- dfw_pca_2013 %>%
+  select(PC1:PC8) %>%
+  st_drop_geometry() %>%
+  as.data.frame() 
+
+skater_nbrs <- poly2nb(dfw_pca_2013, queen = TRUE)
+costs <- nbcosts(skater_nbrs, input_vars)
+skater_weights <- nb2listw(skater_nbrs, costs, style = "B")
+
+mst <- mstree(skater_weights)
+
+regions <- skater(
+  mst[,1:2], 
+  input_vars, 
+  ncuts = 5,
+  crit = 10
+)
+
+dfw_clusters_2013$region <- as.character(regions$group)
+```
+
+
+
+```{r, include = TRUE, warning=FALSE, echo = FALSE}
+dfw_clusters <- dfw_clusters_2002 %>%
+  dplyr::mutate(RGPH = "Census 2002") %>% 
+  plyr::rbind.fill(dfw_clusters_2013 %>%
+  dplyr::mutate(RGPH = "Census 2013")) %>% 
+  st_as_sf()
+
+
+dfw_clusters %>% 
+  ggplot(aes(fill = region)) + 
+  geom_sf(size = 0.1) + 
+  scale_fill_brewer(palette = "Set3")+
+      facet_wrap(~RGPH) +
+       labs(fill="Region")+
+      # Adjusting the plot theme
+      theme_map(base_size = 8) +
+      theme(panel.background = element_rect(),
+            axis.ticks = element_blank(),
+            axis.text = element_blank(),
+            legend.position = "bottom", 
+            text = element_text(size = 8), 
+            legend.box.background = element_rect(),
+            legend.box.margin = margin(6, 6, 6, 6),
+            plot.background = element_rect(fill = "white"))+
+  ggspatial::annotation_scale(
+    location = "br",
+    bar_cols = c("grey60", "white"),
+    text_family = "ArcherPro Book"
+  ) +
+  ggspatial::annotation_north_arrow(
+    location = "tl", which_north = "true",
+  height = unit(1, "cm"),
+  width = unit(1, "cm"),
+  )
+
+ggsave(paste0(here::here(),"/output/output_model/img/14_dfw_pca_rgph.png"), width = 8, height = 5)
+```
+
+
+```{r, include = FALSE, warning=FALSE, echo = FALSE}
+
+# Saving in the "dfw_clusters"
+sf::st_write(obj=dfw_clusters, paste0(here::here(), "/output/output_model/shp/dfw_clusters.shp"),  driver = "ESRI Shapefile", delete_layer = TRUE) 
+```
+
+
+## Analysis of household changes
+### Analysis of the situation of the head of household
+#### Employment situation of the head of household
+#### Marital status of the head of household
+
+### Analysis of the household situation
+#### Quality of housing and household Facilities
+#### Household size and poverty
